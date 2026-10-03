@@ -1,0 +1,35 @@
+{
+  "apiVersion": "1.0",
+  "jobs": [
+    {
+      "id": "ashby-job-001",
+      "title": "Junior Backend Engineer",
+      "department": "Core Platform",
+      "location": "Bengaluru, India",
+      "isListed": true,
+      "publishedAt": "2026-03-01T10:00:00.000Z",
+      "jobUrl": "https://jobs.ashbyhq.com/example/ashby-job-001",
+      "descriptionPlain": "Build backend APIs using Python and FastAPI."
+    },
+    {
+      "id": "ashby-job-002",
+      "title": "Frontend Engineer (Unlisted Draft)",
+      "department": "Web",
+      "location": "Pune, India",
+      "isListed": false,
+      "publishedAt": "2026-03-01T10:00:00.000Z",
+      "jobUrl": "https://jobs.ashbyhq.com/example/ashby-job-002",
+      "descriptionPlain": "Should be skipped because isListed is false."
+    },
+    {
+      "id": "ashby-job-003",
+      "title": "Machine Learning Engineer",
+      "department": "AI Research",
+      "location": "San Francisco, CA",
+      "isListed": true,
+      "publishedAt": "2026-03-01T10:00:00.000Z",
+      "jobUrl": "https://jobs.ashbyhq.com/example/ashby-job-003",
+      "descriptionPlain": "Should be filtered because it is abroad."
+    }
+  ]
+}

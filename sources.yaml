@@ -1,4 +1,4 @@
-# Verified company board slugs for Greenhouse and Lever
+# Verified company board slugs for Greenhouse, Lever, Ashby, SmartRecruiters, Workable
 version: 1
 
 greenhouse:
@@ -30,3 +30,25 @@ lever:
   - "linear"
   - "docker"
   - "browserstack"
+
+ashby:
+  - "openai"
+  - "retool"
+  - "ramp"
+  - "anthropic"
+  - "notion"
+  - "figma"
+  - "linear"
+  - "monzo"
+
+smartrecruiters:
+  - "BoschGroup"
+  - "IKEA"
+  - "Ubisoft"
+  - "visa"
+
+workable:
+  - "transferwise"
+  - "harness"
+  - "testgorilla"
+  - "farfetch"

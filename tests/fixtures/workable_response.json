@@ -1,0 +1,35 @@
+{
+  "total": 3,
+  "results": [
+    {
+      "id": "workable-001",
+      "shortcode": "WRK001",
+      "title": "Junior Full Stack Developer",
+      "city": "Gurugram",
+      "state": "Haryana",
+      "country": "India",
+      "telecommuting": false,
+      "published": "2026-03-01T08:00:00Z"
+    },
+    {
+      "id": "workable-002",
+      "shortcode": "WRK002",
+      "title": "React Engineer (Remote)",
+      "city": "Austin",
+      "state": "TX",
+      "country": "United States",
+      "telecommuting": true,
+      "published": "2026-03-01T08:00:00Z"
+    },
+    {
+      "id": "workable-003",
+      "shortcode": "WRK003",
+      "title": "Office Operations Specialist",
+      "city": "London",
+      "state": "Greater London",
+      "country": "United Kingdom",
+      "telecommuting": false,
+      "published": "2026-03-01T08:00:00Z"
+    }
+  ]
+}
