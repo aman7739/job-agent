@@ -24,3 +24,11 @@
 - **Status:** Accepted
 - **Decision:** Supabase PostgreSQL using transaction/session pooler connection string (IPv4 compatible).
 - **Rationale:** Free tier, hosted cloud database, reliable access from GitHub Actions runners which often lack IPv6.
+
+## ADR 006: Pipeline Fault Isolation, Rate Limiting & Delivery Resilience (Milestone 1)
+- **Status:** Accepted
+- **Decision:** All 8 sources and both notification channels (Telegram, SMTP Email) operate with full fault isolation:
+  1. Failed sources are captured, logged to `source_runs`, and prominently reported in the digest header notice without halting the pipeline.
+  2. Rate limiting safeguards (e.g. Remotive max 4 fetches/calendar day) prevent quota exhaustion and API bans.
+  3. Notification channels are independent: if Telegram fails, Email still delivers, and vice-versa. Jobs are marked notified only after at least one channel succeeds. If all channels fail, jobs remain unnotified for retry.
+- **Rationale:** Guarantees reliable daily morning deliveries at 08:00 IST without silent dropouts or repeated duplicate spam.
