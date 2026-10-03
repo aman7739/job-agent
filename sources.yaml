@@ -1,0 +1,32 @@
+# Verified company board slugs for Greenhouse and Lever
+version: 1
+
+greenhouse:
+  - "cloudflare"
+  - "stripe"
+  - "hashicorp"
+  - "datadog"
+  - "instacart"
+  - "reddit"
+  - "gitlab"
+  - "automattic"
+  - "elastic"
+  - "affirm"
+  - "gusto"
+  - "pagerduty"
+  - "confluent"
+  - "mongodb"
+  - "cockroachlabs"
+  - "airbnb"
+  - "pinterest"
+  - "dropbox"
+
+lever:
+  - "palantir"
+  - "spotify"
+  - "lever"
+  - "canonical"
+  - "postman"
+  - "linear"
+  - "docker"
+  - "browserstack"
