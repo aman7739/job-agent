@@ -38,3 +38,31 @@ class SourceRunResult(BaseModel):
     jobs_new: int = 0
     is_success: bool = False
     error_message: Optional[str] = None
+
+
+class Job(BaseModel):
+    """Normalized job representation with extracted metadata and parsed fields."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    id: Optional[int] = None
+    fingerprint: Optional[str] = None
+    title: str
+    company: str
+    location: str
+    canonical_url: str
+    description_text: str
+    posted_at: Optional[datetime] = None
+    source: str
+    skills: List[str] = Field(default_factory=list)
+    min_years: Optional[float] = None
+    is_intern: bool = False
+    is_apprentice: bool = False
+    salary_lpa: Optional[float] = None
+    stipend: Optional[float] = None
+    batch_years: List[int] = Field(default_factory=list)
+    raw_data: Dict[str, Any] = Field(default_factory=dict)
+
+    def __repr__(self) -> str:
+        return f"<Job(company='{self.company}', title='{self.title}', location='{self.location}', lpa={self.salary_lpa})>"
+
