@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.5; color: #1e293b; background-color: #f8fafc; padding: 16px; margin: 0; }
+    .container { max-width: 680px; margin: 0 auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 24px; }
+    h1 { font-size: 20px; color: #0f172a; margin-top: 0; margin-bottom: 8px; }
+    .meta { font-size: 13px; color: #64748b; margin-bottom: 20px; border-bottom: 1px solid #e2e8f0; padding-bottom: 12px; }
+    .alert-banner { background-color: #fef2f2; border: 1px solid #fecaca; color: #991b1b; padding: 10px 14px; border-radius: 6px; font-size: 13px; margin-bottom: 18px; }
+    .section-title { font-size: 16px; font-weight: 700; color: #1e3a8a; margin-top: 24px; margin-bottom: 12px; padding-bottom: 4px; border-bottom: 2px solid #3b82f6; }
+    .subsection-title { font-size: 14px; font-weight: 600; color: #475569; margin-top: 14px; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .job-card { border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px 14px; margin-bottom: 12px; background-color: #ffffff; }
+    .job-card.strong { border-left: 4px solid #10b981; }
+    .job-card.maybe { border-left: 4px solid #f59e0b; }
+    .apply-btn { display: inline-block; background-color: #2563eb; color: #ffffff !important; text-decoration: none; font-weight: 600; font-size: 13px; padding: 6px 14px; border-radius: 4px; margin-bottom: 8px; }
+    .job-title { font-size: 15px; font-weight: 600; color: #0f172a; margin-bottom: 4px; }
+    .job-meta { font-size: 13px; color: #475569; margin-bottom: 6px; }
+    .skills-line { font-size: 12px; margin-top: 4px; }
+    .matched { color: #059669; font-weight: 500; }
+    .missing { color: #d97706; }
+    .empty-msg { padding: 20px 0; text-align: center; color: #64748b; font-size: 14px; }
+    .footer { margin-top: 28px; padding-top: 14px; border-top: 1px solid #e2e8f0; font-size: 12px; color: #94a3b8; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Daily Job Digest - {{ date_str }}</h1>
+    <div class="meta">
+      <strong>{{ new_count }}</strong> new jobs found &bull; <strong>{{ seen_count }}</strong> previously tracked &bull; Total selected: {{ total_selected }}
+    </div>
+
+    {% if failed_sources %}
+    <div class="alert-banner">
+      <strong>Notice:</strong> The following sources were unreachable today: {{ failed_sources | join(', ') }}.
+    </div>
+    {% endif %}
+
+    {% if is_empty %}
+    <div class="empty-msg">
+      <p>No new matching jobs found this morning.</p>
+      <p>Checked all sources and company boards at 08:00 IST. We'll check again tomorrow!</p>
+    </div>
+    {% else %}
+
+      <!-- Section 1: Internships & Apprenticeships -->
+      {% if intern_strong or intern_maybe %}
+      <div class="section-title">1. Internships &amp; Apprenticeships (Apply Now)</div>
+        
+        {% if intern_strong %}
+        <div class="subsection-title">Strong Matches (&ge; 7.0)</div>
+        {% for item in intern_strong %}
+        <div class="job-card strong">
+          <a href="{{ item.job.canonical_url }}" class="apply-btn" target="_blank" rel="noopener">Apply &rarr;</a>
+          <div class="job-title">{{ item.job.title }} &bull; {{ item.job.company }}</div>
+          <div class="job-meta">
+            📍 {{ item.job.location }} &bull; 
+            💰 {% if item.job.stipend %}₹{{ "{:,.0f}".format(item.job.stipend) }}/month{% else %}Stipend not listed{% endif %} &bull; 
+            ⭐ Match Score: <strong>{{ item.score }}/10</strong> &bull; 
+            Source: {{ item.job.source }}
+          </div>
+          {% if item.matched_skills %}
+          <div class="skills-line"><span class="matched">Matched skills:</span> {{ item.matched_skills | join(', ') }}</div>
+          {% endif %}
+          {% if item.missing_skills %}
+          <div class="skills-line"><span class="missing">Tracked gaps:</span> {{ item.missing_skills | join(', ') }}</div>
+          {% endif %}
+        </div>
+        {% endfor %}
+        {% endif %}
+
+        {% if intern_maybe %}
+        <div class="subsection-title">Possible Matches (4.0 - 6.9)</div>
+        {% for item in intern_maybe %}
+        <div class="job-card maybe">
+          <a href="{{ item.job.canonical_url }}" class="apply-btn" target="_blank" rel="noopener">Apply &rarr;</a>
+          <div class="job-title">{{ item.job.title }} &bull; {{ item.job.company }}</div>
+          <div class="job-meta">
+            📍 {{ item.job.location }} &bull; 
+            💰 {% if item.job.stipend %}₹{{ "{:,.0f}".format(item.job.stipend) }}/month{% else %}Stipend not listed{% endif %} &bull; 
+            ⭐ Match Score: <strong>{{ item.score }}/10</strong> &bull; 
+            Source: {{ item.job.source }}
+          </div>
+          {% if item.matched_skills %}
+          <div class="skills-line"><span class="matched">Matched skills:</span> {{ item.matched_skills | join(', ') }}</div>
+          {% endif %}
+          {% if item.missing_skills %}
+          <div class="skills-line"><span class="missing">Tracked gaps:</span> {{ item.missing_skills | join(', ') }}</div>
+          {% endif %}
+        </div>
+        {% endfor %}
+        {% endif %}
+
+      {% endif %}
+
+      <!-- Section 2: Full-Time Opportunities -->
+      {% if fulltime_strong or fulltime_maybe %}
+      <div class="section-title">2. Full-Time Roles (Apply Now / Fresher)</div>
+        
+        {% if fulltime_strong %}
+        <div class="subsection-title">Strong Matches (&ge; 7.0)</div>
+        {% for item in fulltime_strong %}
+        <div class="job-card strong">
+          <a href="{{ item.job.canonical_url }}" class="apply-btn" target="_blank" rel="noopener">Apply &rarr;</a>
+          <div class="job-title">{{ item.job.title }} &bull; {{ item.job.company }}</div>
+          <div class="job-meta">
+            📍 {{ item.job.location }} &bull; 
+            💰 {% if item.job.salary_lpa %}{{ item.job.salary_lpa }} LPA{% else %}Salary not listed{% endif %} &bull; 
+            ⭐ Match Score: <strong>{{ item.score }}/10</strong> &bull; 
+            Source: {{ item.job.source }}
+          </div>
+          {% if item.matched_skills %}
+          <div class="skills-line"><span class="matched">Matched skills:</span> {{ item.matched_skills | join(', ') }}</div>
+          {% endif %}
+          {% if item.missing_skills %}
+          <div class="skills-line"><span class="missing">Tracked gaps:</span> {{ item.missing_skills | join(', ') }}</div>
+          {% endif %}
+        </div>
+        {% endfor %}
+        {% endif %}
+
+        {% if fulltime_maybe %}
+        <div class="subsection-title">Possible Matches (4.0 - 6.9)</div>
+        {% for item in fulltime_maybe %}
+        <div class="job-card maybe">
+          <a href="{{ item.job.canonical_url }}" class="apply-btn" target="_blank" rel="noopener">Apply &rarr;</a>
+          <div class="job-title">{{ item.job.title }} &bull; {{ item.job.company }}</div>
+          <div class="job-meta">
+            📍 {{ item.job.location }} &bull; 
+            💰 {% if item.job.salary_lpa %}{{ item.job.salary_lpa }} LPA{% else %}Salary not listed{% endif %} &bull; 
+            ⭐ Match Score: <strong>{{ item.score }}/10</strong> &bull; 
+            Source: {{ item.job.source }}
+          </div>
+          {% if item.matched_skills %}
+          <div class="skills-line"><span class="matched">Matched skills:</span> {{ item.matched_skills | join(', ') }}</div>
+          {% endif %}
+          {% if item.missing_skills %}
+          <div class="skills-line"><span class="missing">Tracked gaps:</span> {{ item.missing_skills | join(', ') }}</div>
+          {% endif %}
+        </div>
+        {% endfor %}
+        {% endif %}
+
+      {% endif %}
+
+    {% endif %}
+
+    <div class="footer">
+      Personal Job Digest Agent &bull; Delivered at 08:00 IST
+      {% if has_remotive %}
+      <br>Remote listings credited to <a href="https://remotive.com" target="_blank" rel="noopener">Remotive</a>.
+      {% endif %}
+    </div>
+  </div>
+</body>
+</html>

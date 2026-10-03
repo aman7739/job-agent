@@ -1,0 +1,85 @@
+==================================================
+DAILY JOB DIGEST - {{ date_str }}
+==================================================
+{{ new_count }} new jobs | {{ seen_count }} previously tracked | Total selected: {{ total_selected }}
+{% if failed_sources %}
+[Notice: The following sources were unreachable today: {{ failed_sources | join(', ') }}]
+{% endif %}
+
+{% if is_empty %}
+No new matching jobs found this morning.
+Checked all configured company boards at 08:00 IST. Next run tomorrow morning!
+{% else %}
+
+{% if intern_strong or intern_maybe %}
+--------------------------------------------------
+1. INTERNSHIPS & APPRENTICESHIPS (APPLY NOW)
+--------------------------------------------------
+
+{% if intern_strong %}
+[STRONG MATCHES (>= 7.0)]
+{% for item in intern_strong %}
+* {{ item.job.title }} - {{ item.job.company }}
+  Apply: {{ item.job.canonical_url }}
+  Location: {{ item.job.location }}
+  Pay: {% if item.job.stipend %}₹{{ "{:,.0f}".format(item.job.stipend) }}/month{% else %}Stipend not listed{% endif %} | Score: {{ item.score }}/10 | Source: {{ item.job.source }}
+  {% if item.matched_skills %}Matched skills: {{ item.matched_skills | join(', ') }}{% endif %}
+  {% if item.missing_skills %}Tracked gaps: {{ item.missing_skills | join(', ') }}{% endif %}
+
+{% endfor %}
+{% endif %}
+
+{% if intern_maybe %}
+[POSSIBLE MATCHES (4.0 - 6.9)]
+{% for item in intern_maybe %}
+* {{ item.job.title }} - {{ item.job.company }}
+  Apply: {{ item.job.canonical_url }}
+  Location: {{ item.job.location }}
+  Pay: {% if item.job.stipend %}₹{{ "{:,.0f}".format(item.job.stipend) }}/month{% else %}Stipend not listed{% endif %} | Score: {{ item.score }}/10 | Source: {{ item.job.source }}
+  {% if item.matched_skills %}Matched skills: {{ item.matched_skills | join(', ') }}{% endif %}
+  {% if item.missing_skills %}Tracked gaps: {{ item.missing_skills | join(', ') }}{% endif %}
+
+{% endfor %}
+{% endif %}
+{% endif %}
+
+{% if fulltime_strong or fulltime_maybe %}
+--------------------------------------------------
+2. FULL-TIME ROLES (APPLY NOW / FRESHER)
+--------------------------------------------------
+
+{% if fulltime_strong %}
+[STRONG MATCHES (>= 7.0)]
+{% for item in fulltime_strong %}
+* {{ item.job.title }} - {{ item.job.company }}
+  Apply: {{ item.job.canonical_url }}
+  Location: {{ item.job.location }}
+  Pay: {% if item.job.salary_lpa %}{{ item.job.salary_lpa }} LPA{% else %}Salary not listed{% endif %} | Score: {{ item.score }}/10 | Source: {{ item.job.source }}
+  {% if item.matched_skills %}Matched skills: {{ item.matched_skills | join(', ') }}{% endif %}
+  {% if item.missing_skills %}Tracked gaps: {{ item.missing_skills | join(', ') }}{% endif %}
+
+{% endfor %}
+{% endif %}
+
+{% if fulltime_maybe %}
+[POSSIBLE MATCHES (4.0 - 6.9)]
+{% for item in fulltime_maybe %}
+* {{ item.job.title }} - {{ item.job.company }}
+  Apply: {{ item.job.canonical_url }}
+  Location: {{ item.job.location }}
+  Pay: {% if item.job.salary_lpa %}{{ item.job.salary_lpa }} LPA{% else %}Salary not listed{% endif %} | Score: {{ item.score }}/10 | Source: {{ item.job.source }}
+  {% if item.matched_skills %}Matched skills: {{ item.matched_skills | join(', ') }}{% endif %}
+  {% if item.missing_skills %}Tracked gaps: {{ item.missing_skills | join(', ') }}{% endif %}
+
+{% endfor %}
+{% endif %}
+{% endif %}
+
+{% endif %}
+
+==================================================
+{% if has_remotive %}
+Remote listings credited to Remotive (https://remotive.com)
+{% endif %}
+Job Digest Agent - Delivered at 08:00 IST
+==================================================
