@@ -61,8 +61,13 @@ class Job(BaseModel):
     salary_lpa: Optional[float] = None
     stipend: Optional[float] = None
     batch_years: List[int] = Field(default_factory=list)
+    status: str = "seen"
+    saved_at: Optional[datetime] = None
+    applied_at: Optional[datetime] = None
+    not_interested_at: Optional[datetime] = None
+    notes: Optional[str] = None
     raw_data: Dict[str, Any] = Field(default_factory=dict)
 
     def __repr__(self) -> str:
-        return f"<Job(company='{self.company}', title='{self.title}', location='{self.location}', lpa={self.salary_lpa})>"
+        return f"<Job(company='{self.company}', title='{self.title}', status='{self.status}', lpa={self.salary_lpa})>"
 

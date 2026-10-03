@@ -93,11 +93,7 @@ async def run_digest_pipeline(
     run_timestamp = now or datetime.now(timezone.utc)
     logger.info(f"Starting Job Digest Pipeline (dry_run={dry_run}) at {run_timestamp.isoformat()}")
 
-    # 1. Load Profile & Sources Config
-    profile = load_profile()
-    sources_cfg = load_sources_config()
-
-    # 2. Database Session (if DATABASE_URL is configured)
+    # 1. Database Session (if DATABASE_URL is configured)
     db_available = bool(get_database_url())
     session_context = get_db_session() if db_available and not dry_run else None
 
@@ -111,6 +107,10 @@ async def run_digest_pipeline(
             session_context = None
 
     try:
+        # 2. Load Profile (from database if available, else local file) & Sources Config
+        profile = load_profile(session=db_session)
+        sources_cfg = load_sources_config()
+
         # 3. Instantiate and run sources
         sources = instantiate_sources(sources_cfg, db_session=db_session, active_sources=active_sources)
         jobs_by_source, run_results = await run_all_sources(sources, session=db_session)

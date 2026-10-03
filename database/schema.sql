@@ -16,10 +16,24 @@ CREATE TABLE IF NOT EXISTS seen_jobs (
     first_seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     last_seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     notified_at TIMESTAMPTZ,
-    status VARCHAR(32) NOT NULL DEFAULT 'seen' -- 'seen', 'saved', 'applied', 'not_interested'
+    status VARCHAR(32) NOT NULL DEFAULT 'seen', -- 'seen', 'saved', 'applied', 'not_interested'
+    saved_at TIMESTAMPTZ,
+    applied_at TIMESTAMPTZ,
+    not_interested_at TIMESTAMPTZ,
+    notes TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_seen_jobs_canonical_url ON seen_jobs(canonical_url);
 CREATE INDEX IF NOT EXISTS idx_seen_jobs_status ON seen_jobs(status);
+
+CREATE TABLE IF NOT EXISTS user_profiles (
+    id SERIAL PRIMARY KEY,
+    version INT NOT NULL,
+    profile_yaml TEXT NOT NULL,
+    profile_data JSONB NOT NULL,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_user_profiles_active ON user_profiles(is_active, version DESC);
 
 CREATE TABLE IF NOT EXISTS jobs (
     id BIGSERIAL PRIMARY KEY,

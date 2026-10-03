@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
+import logging
 import os
 from pathlib import Path
 from typing import Any, List, Optional
 import yaml
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
+
+logger = logging.getLogger(__name__)
 
 
 class StrictBaseModel(BaseModel):
@@ -193,14 +196,36 @@ def load_profile_from_file(file_path: Path | str) -> UserProfile:
         return parse_profile_yaml(f.read())
 
 
-def load_profile(base_dir: Optional[Path | str] = None) -> UserProfile:
+def load_profile(
+    session: Optional[Any] = None,
+    base_dir: Optional[Path | str] = None,
+) -> UserProfile:
     """
     Load active profile following priority:
-    1. Local profile.yaml (gitignored, private)
-    2. PROFILE_YAML environment variable (for CI / GitHub Actions)
-    3. profile.example.yaml (default fallback)
+    1. Database user_profiles table (if session provided and active profile exists)
+    2. Local profile.yaml (gitignored, private)
+    3. PROFILE_YAML environment variable (for CI fallback)
+    4. profile.example.yaml (default fallback)
     """
     root = Path(base_dir) if base_dir else Path.cwd()
+
+    if session is not None:
+        try:
+            from job_digest.profile_service import (
+                get_active_profile_from_db,
+                seed_database_profile_if_empty,
+            )
+            db_profile, warning_msg = get_active_profile_from_db(session)
+            if db_profile:
+                if warning_msg:
+                    logger.warning(warning_msg)
+                return db_profile
+            # If database table is empty, attempt to seed it from file
+            seeded_profile = seed_database_profile_if_empty(session, base_dir=root)
+            if seeded_profile:
+                return seeded_profile
+        except Exception as exc:
+            logger.warning(f"Could not load profile from database ({exc}). Falling back to local file.")
 
     local_profile = root / "profile.yaml"
     if local_profile.is_file():
@@ -214,4 +239,4 @@ def load_profile(base_dir: Optional[Path | str] = None) -> UserProfile:
     if example_profile.is_file():
         return load_profile_from_file(example_profile)
 
-    raise FileNotFoundError("No profile found: checked profile.yaml, PROFILE_YAML, and profile.example.yaml")
+    raise FileNotFoundError("No profile found: checked database, profile.yaml, PROFILE_YAML, and profile.example.yaml")

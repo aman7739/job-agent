@@ -115,6 +115,7 @@
 | **Session 10** | Telegram & Email Delivery | `job_digest/notify.py` (`TelegramNotifier`, `EmailNotifier`, paragraph chunking, fault-isolated delivery) | `day10: delivery via telegram and smtp email with fault isolation` |
 | **Session 11** | Master Runner & Scheduler | `job_digest/run.py` (CLI `--dry-run`, `--schedule`), `.github/workflows/daily-digest.yml` (`30 2 * * *` cron), APScheduler | `day11: master pipeline runner, local apscheduler, and daily digest workflow` |
 | **Session 12** | Tests, Tuning & Reliability | `tests/test_reliability_s12.py` (101 tests green, mocked-network pipeline, rate limits, source failure notices, channel fault isolation), ADR 006 | `day12: end-to-end reliability tests and tuning` |
+| **Session 13** | Profile in DB + Job Status | `job_digest/profile_service.py` (validation, versioning, fallback), `job_digest/status.py` (`saved`, `applied`, `not_interested` with timestamps & notes), `user_profiles` schema, ADR 007 | `day13: profile in database and job status tracking` |
 
 ---
 
@@ -126,6 +127,7 @@
 - **ADR 004 (Dual-Mailbox Separation):** Mailbox A for incoming alert emails (read-only IMAP with App Password); Mailbox B for outgoing digest notifications via SMTP.
 - **ADR 005 (Database Engine):** Supabase PostgreSQL accessed via Transaction/Session pooler string for IPv4 compatibility on GitHub Actions runners.
 - **ADR 006 (Fault Isolation & Delivery Resilience):** Sources run in isolated try-except blocks, recording metrics to `source_runs`. Unreachable sources are highlighted in digest notices. Notifiers run independently; jobs are marked notified if $\ge 1$ channel succeeds.
+- **ADR 007 (Database Profile Versioning & Job Status Tracking):** Monotonic versions stored in `user_profiles` with validation on save. Corrupted configs fall back to last good version. Status (`saved`, `applied`, `not_interested`) tracked with dedicated timestamps.
 
 ---
 

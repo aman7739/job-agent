@@ -38,6 +38,7 @@ def test_schema_sql_contains_all_required_tables():
         "digests",
         "source_runs",
         "email_messages",
+        "user_profiles",
     ]
 
     for table in required_tables:
