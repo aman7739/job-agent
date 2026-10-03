@@ -41,3 +41,12 @@
   3. Corrupted active versions in the database automatically fall back to the most recent valid version in history.
   4. Application statuses (`saved`, `applied`, `not_interested`) and notes are tracked on `seen_jobs` with explicit timestamp columns (`saved_at`, `applied_at`, `not_interested_at`).
 - **Rationale:** Allows dynamic profile updates and application tracking from any device (web dashboard in Phase 2) while safeguarding daily runs against corrupted configurations.
+
+## ADR 008: Single-User Web Dashboard, Argon2 Authentication & Session Protection (Session 14)
+- **Status:** Accepted
+- **Decision:** Private web access is built with FastAPI and Jinja2 templates:
+  1. Single-user master password verified with Argon2id (`argon2-cffi`).
+  2. Tamper-proof session tokens signed with HMAC-SHA256, set as `HttpOnly`, `SameSite=Lax` cookies with 7-day expiration.
+  3. In-memory IP rate limiter restricts failed login attempts (max 5 failures per 5-minute window returning HTTP 429).
+  4. All read pages (`/` for today's digest, `/history` for job history with multi-criteria filters) strictly require an authenticated session; unauthenticated traffic is redirected to `/login`.
+- **Rationale:** Prevents unauthorized external access without overhead of multi-user authentication providers.

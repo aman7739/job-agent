@@ -1,0 +1,45 @@
+{% extends "web/base.html" %}
+
+{% block title %}Login &bull; Job Digest Dashboard{% endblock %}
+
+{% block content %}
+<div style="max-width: 400px; margin: 60px auto;">
+  <div class="card" style="padding: 32px;">
+    <div style="text-align: center; margin-bottom: 24px;">
+      <h1 style="font-size: 22px; font-weight: 700; color: #0f172a; margin-bottom: 6px;">Job Digest Agent</h1>
+      <p style="font-size: 14px; color: #64748b;">Private Single-User Dashboard</p>
+    </div>
+
+    {% if error %}
+    <div style="background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; padding: 10px 14px; border-radius: 6px; font-size: 13px; margin-bottom: 20px;">
+      {{ error }}
+    </div>
+    {% endif %}
+
+    <form method="post" action="/login">
+      {% if next_url %}
+      <input type="hidden" name="next" value="{{ next_url }}">
+      {% endif %}
+
+      <div style="margin-bottom: 20px;">
+        <label for="password" style="display: block; font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 6px;">
+          Master Password
+        </label>
+        <input
+          type="password"
+          id="password"
+          name="password"
+          required
+          autofocus
+          placeholder="Enter your dashboard password"
+          style="width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; outline: none; transition: border-color 0.15s;"
+        >
+      </div>
+
+      <button type="submit" class="btn btn-primary" style="width: 100%; padding: 10px; font-weight: 600;">
+        Sign In &rarr;
+      </button>
+    </form>
+  </div>
+</div>
+{% endblock %}

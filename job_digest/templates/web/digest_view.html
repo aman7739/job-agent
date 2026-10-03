@@ -1,0 +1,60 @@
+{% extends "web/base.html" %}
+
+{% block title %}Today's Digest &bull; Job Digest Agent{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
+  <div>
+    <h1 style="font-size: 24px; font-weight: 700; color: #0f172a;">Daily Job Digest</h1>
+    <p style="font-size: 14px; color: #64748b; margin-top: 2px;">
+      {{ digest_date }} &bull; Checked at 08:00 IST
+    </p>
+  </div>
+  <div style="display: flex; gap: 12px;">
+    <a href="/history" class="btn" style="background: #ffffff; border: 1px solid #cbd5e1; color: #334155;">View All History &rarr;</a>
+  </div>
+</div>
+
+<!-- Header Metrics Card -->
+<div class="card" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; padding: 20px;">
+  <div>
+    <div style="font-size: 13px; color: #64748b; font-weight: 500;">New Roles Found</div>
+    <div style="font-size: 24px; font-weight: 700; color: #2563eb; margin-top: 4px;">{{ new_count }}</div>
+  </div>
+  <div>
+    <div style="font-size: 13px; color: #64748b; font-weight: 500;">Previously Tracked</div>
+    <div style="font-size: 24px; font-weight: 700; color: #475569; margin-top: 4px;">{{ seen_count }}</div>
+  </div>
+  <div>
+    <div style="font-size: 13px; color: #64748b; font-weight: 500;">Internships / Apprenticeships</div>
+    <div style="font-size: 24px; font-weight: 700; color: #059669; margin-top: 4px;">{{ internships_count }}</div>
+  </div>
+  <div>
+    <div style="font-size: 13px; color: #64748b; font-weight: 500;">Full-Time Fresher Roles</div>
+    <div style="font-size: 24px; font-weight: 700; color: #d97706; margin-top: 4px;">{{ fulltime_count }}</div>
+  </div>
+</div>
+
+{% if failed_sources %}
+<div style="background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; padding: 12px 16px; border-radius: 8px; font-size: 13px; margin-bottom: 24px;">
+  <strong>Notice:</strong> The following sources were unreachable during today's run: {{ failed_sources | join(', ') }}.
+</div>
+{% endif %}
+
+{% if is_empty %}
+<div class="card" style="text-align: center; padding: 48px 24px;">
+  <div style="font-size: 36px; margin-bottom: 12px;">☕</div>
+  <h2 style="font-size: 18px; font-weight: 600; color: #1e293b; margin-bottom: 6px;">No new matching jobs found today</h2>
+  <p style="font-size: 14px; color: #64748b; max-width: 480px; margin: 0 auto;">
+    All 8 company boards and search feeds were checked at 08:00 IST. The agent will run again tomorrow morning!
+  </p>
+</div>
+{% else %}
+
+  <!-- Embedded HTML Content of the digest -->
+  <div class="card" style="padding: 28px;">
+    {{ digest_html_body | safe }}
+  </div>
+
+{% endif %}
+{% endblock %}

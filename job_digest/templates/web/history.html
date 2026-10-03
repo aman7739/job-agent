@@ -1,0 +1,139 @@
+{% extends "web/base.html" %}
+
+{% block title %}Job History &bull; Job Digest Agent{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 24px;">
+  <h1 style="font-size: 24px; font-weight: 700; color: #0f172a;">Tracked Job History</h1>
+  <p style="font-size: 14px; color: #64748b; margin-top: 2px;">
+    Search, filter, and track applications across all aggregated listings.
+  </p>
+</div>
+
+<!-- Filter Bar Card -->
+<div class="card" style="padding: 20px; margin-bottom: 24px;">
+  <form method="get" action="/history" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; align-items: end;">
+    <div>
+      <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Section</label>
+      <select name="section" style="width: 100%; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px;">
+        <option value="all" {% if filters.section == 'all' %}selected{% endif %}>All Sections</option>
+        <option value="internships" {% if filters.section == 'internships' %}selected{% endif %}>Internships & Apprenticeships</option>
+        <option value="fulltime" {% if filters.section == 'fulltime' %}selected{% endif %}>Full-Time Fresher Roles</option>
+      </select>
+    </div>
+
+    <div>
+      <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Min Match Score</label>
+      <select name="min_score" style="width: 100%; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px;">
+        <option value="0" {% if filters.min_score == 0 %}selected{% endif %}>Any Score (&ge; 0)</option>
+        <option value="4.0" {% if filters.min_score == 4.0 %}selected{% endif %}>Maybe & Strong (&ge; 4.0)</option>
+        <option value="7.0" {% if filters.min_score == 7.0 %}selected{% endif %}>Strong Only (&ge; 7.0)</option>
+      </select>
+    </div>
+
+    <div>
+      <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Location</label>
+      <input type="text" name="location" value="{{ filters.location or '' }}" placeholder="e.g. Pune, Remote" style="width: 100%; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px;">
+    </div>
+
+    <div>
+      <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Source</label>
+      <select name="source" style="width: 100%; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px;">
+        <option value="all" {% if filters.source == 'all' %}selected{% endif %}>All Sources</option>
+        <option value="greenhouse" {% if filters.source == 'greenhouse' %}selected{% endif %}>Greenhouse</option>
+        <option value="lever" {% if filters.source == 'lever' %}selected{% endif %}>Lever</option>
+        <option value="ashby" {% if filters.source == 'ashby' %}selected{% endif %}>Ashby</option>
+        <option value="smartrecruiters" {% if filters.source == 'smartrecruiters' %}selected{% endif %}>SmartRecruiters</option>
+        <option value="workable" {% if filters.source == 'workable' %}selected{% endif %}>Workable</option>
+        <option value="adzuna" {% if filters.source == 'adzuna' %}selected{% endif %}>Adzuna</option>
+        <option value="remotive" {% if filters.source == 'remotive' %}selected{% endif %}>Remotive</option>
+        <option value="email_alerts" {% if filters.source == 'email_alerts' %}selected{% endif %}>Email Alerts</option>
+      </select>
+    </div>
+
+    <div>
+      <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Status</label>
+      <select name="status" style="width: 100%; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px;">
+        <option value="all" {% if filters.status == 'all' %}selected{% endif %}>All Statuses</option>
+        <option value="seen" {% if filters.status == 'seen' %}selected{% endif %}>Seen</option>
+        <option value="saved" {% if filters.status == 'saved' %}selected{% endif %}>Saved</option>
+        <option value="applied" {% if filters.status == 'applied' %}selected{% endif %}>Applied</option>
+        <option value="not_interested" {% if filters.status == 'not_interested' %}selected{% endif %}>Not Interested</option>
+      </select>
+    </div>
+
+    <div>
+      <button type="submit" class="btn btn-primary" style="width: 100%; padding: 8px 14px; font-size: 13px;">Filter Results</button>
+    </div>
+  </form>
+</div>
+
+<!-- Results Count -->
+<div style="font-size: 13px; color: #64748b; margin-bottom: 16px;">
+  Showing <strong>{{ jobs | length }}</strong> matching jobs
+</div>
+
+{% if jobs %}
+<div style="display: flex; flex-direction: column; gap: 12px;">
+  {% for j in jobs %}
+  <div class="card" style="padding: 16px 20px; margin-bottom: 0;">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap;">
+      <div>
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+          {% if j.is_intern or j.is_apprentice %}
+          <span class="badge badge-intern">Internship</span>
+          {% else %}
+          <span class="badge badge-fulltime">Full-Time</span>
+          {% endif %}
+
+          {% if j.score and j.score >= 7.0 %}
+          <span class="badge badge-strong">Score {{ j.score }}/10</span>
+          {% elif j.score and j.score >= 4.0 %}
+          <span class="badge badge-maybe">Score {{ j.score }}/10</span>
+          {% elif j.score %}
+          <span class="badge" style="background:#f1f5f9; color:#475569;">Score {{ j.score }}/10</span>
+          {% endif %}
+
+          <span class="badge" style="background: #f8fafc; border: 1px solid #e2e8f0; color: #64748b;">
+            {{ j.source }}
+          </span>
+
+          <span class="badge" style="background: #e2e8f0; color: #334155;">
+            Status: {{ j.status }}
+          </span>
+        </div>
+
+        <h3 style="font-size: 16px; font-weight: 600; color: #0f172a; margin-bottom: 4px;">
+          {{ j.title }} &bull; <span style="color: #475569;">{{ j.company }}</span>
+        </h3>
+
+        <div style="font-size: 13px; color: #64748b; display: flex; gap: 16px; flex-wrap: wrap; margin-top: 4px;">
+          <span>📍 {{ j.location }}</span>
+          {% if j.salary_lpa %}
+          <span>💰 {{ j.salary_lpa }} LPA</span>
+          {% elif j.stipend %}
+          <span>💰 ₹{{ "{:,.0f}".format(j.stipend) }}/mo</span>
+          {% else %}
+          <span>💰 Pay not listed</span>
+          {% endif %}
+          {% if j.posted_at %}
+          <span>📅 {{ j.posted_at.strftime('%d %b %Y') if j.posted_at.strftime else j.posted_at }}</span>
+          {% endif %}
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 8px; align-items: center;">
+        <a href="{{ j.canonical_url }}" target="_blank" rel="noopener noreferrer" class="btn btn-primary" style="font-size: 13px; padding: 6px 14px;">
+          Apply &rarr;
+        </a>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="card" style="text-align: center; padding: 48px 20px;">
+  <p style="font-size: 15px; color: #64748b;">No jobs match your filter criteria.</p>
+</div>
+{% endif %}
+{% endblock %}
