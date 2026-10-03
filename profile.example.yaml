@@ -1,0 +1,185 @@
+version: 3
+
+user:
+  name: "Candidate"
+  email: "your_email@example.com"
+
+education:
+  degree: "B.Tech"
+  field: "Computer Science Engineering"
+  batch_year: 2027
+
+experience:
+  level: "fresher"
+  max_years: 2.0
+  allow_internship: true
+  allow_apprenticeship: true
+
+# Target roles (41 roles across software, ML/AI, data, QA, and internships/apprenticeships)
+target_roles:
+  - "Software Engineer"
+  - "Software Developer"
+  - "Junior Software Engineer"
+  - "Associate Software Engineer"
+  - "Graduate Software Engineer"
+  - "Web Developer"
+  - "Frontend Developer"
+  - "Junior Frontend Developer"
+  - "React Developer"
+  - "Backend Developer"
+  - "Junior Backend Developer"
+  - "Python Developer"
+  - "Full Stack Developer"
+  - "Junior Full Stack Developer"
+  - "Machine Learning Engineer"
+  - "Junior Machine Learning Engineer"
+  - "AI Engineer"
+  - "Junior AI Engineer"
+  - "NLP Engineer"
+  - "LLM Engineer"
+  - "Generative AI Engineer"
+  - "Prompt Engineer"
+  - "Data Analyst"
+  - "Junior Data Analyst"
+  - "Business Analyst"
+  - "Junior Business Analyst"
+  - "Data Scientist"
+  - "Junior Data Scientist"
+  - "QA Engineer"
+  - "Quality Assurance Engineer"
+  - "Software Tester"
+  - "SDET"
+  - "Associate SDET"
+  - "Software Engineering Intern"
+  - "Frontend Intern"
+  - "Backend Intern"
+  - "Machine Learning Intern"
+  - "AI Intern"
+  - "Data Science Intern"
+  - "Apprentice"
+  - "Graduate Apprentice"
+  # Commented out per plan: manager is a hard-exclude title word
+  # - "Product Manager"
+  # - "Associate Product Manager"
+
+# Core skills and their aliases (cleaned according to plan)
+skills:
+  - name: "HTML"
+    aliases: ["html5"]
+  - name: "CSS"
+    aliases: ["css3"]
+  - name: "JavaScript"
+    aliases: ["js", "es6"]
+  - name: "C"
+    aliases: []
+  - name: "C++"
+    aliases: ["cpp"]
+  - name: "Python"
+    aliases: ["python3"]
+  - name: "Git"
+    aliases: []
+  - name: "GitHub"
+    aliases: []
+  - name: "React"
+    aliases: ["reactjs", "react.js"]
+  - name: "Machine Learning"
+    aliases: ["ml"]
+  - name: "AI"
+    aliases: ["artificial intelligence"]
+  - name: "Data Structures"
+    aliases: ["dsa", "data structures and algorithms"]
+  - name: "Algorithms"
+    aliases: []
+  - name: "Supabase"
+    aliases: []
+  - name: "FastAPI"
+    aliases: []
+  - name: "NLP"
+    aliases: ["natural language processing"]
+  - name: "LLM"
+    aliases: ["large language models", "large language model"]
+  - name: "SQL"
+    aliases: []
+  - name: "PostgreSQL"
+    aliases: ["postgres"]
+  - name: "REST API"
+    aliases: ["restful", "restful api", "rest apis", "api integration"] # 'rest' removed per plan
+  - name: "Tailwind CSS"
+    aliases: ["tailwind"]
+  - name: "Linux"
+    aliases: []
+  - name: "Azure"
+    aliases: ["microsoft azure"] # 'azure devops' removed per plan
+  - name: "TypeScript"
+    aliases: [] # 'ts' removed per plan
+  - name: "Docker"
+    aliases: [] # 'containers' removed per plan
+  - name: "pandas"
+    aliases: []
+  - name: "NumPy"
+    aliases: ["numpy"]
+
+# Tracked skill gaps (shown in digest 'missing skills' line, never deducted from score)
+tracked_gaps:
+  - "Java"
+  - "Spring Boot"
+  - "Angular"
+  - "Node.js"
+  - "scikit-learn"
+  - "PyTorch"
+
+locations:
+  preferred_cities:
+    - "Noida"
+    - "Delhi"
+    - "Delhi NCR"
+    - "Gurugram"
+    - "Gurgaon"
+    - "Kolkata"
+    - "Mumbai"
+    - "Pune"
+    - "Indore"
+  allow_anywhere_in_india: true
+  allow_remote: true
+  allow_abroad: false
+
+salary:
+  min_fulltime_lpa: 3.5
+  min_internship_stipend: null # null means no minimum filter
+  keep_unlisted: true
+
+hard_filters:
+  exclude_title_words:
+    - "senior"
+    - "lead"
+    - "manager"
+    - "principal"
+    - "director"
+    - "staff"
+    - "architect"
+    - "head"
+    - "vp"
+  company_blocklist: []
+  max_required_experience_years: 2.0
+  allowed_batch_years:
+    - 2027
+
+scoring:
+  weights:
+    skills: 4.0
+    role: 3.0
+    level: 2.0
+    location: 1.0
+  location_scores:
+    preferred: 1.0
+    india_other: 0.5
+    remote: 0.5
+    abroad: 0.0
+  min_score: 4.0
+  strong_threshold: 7.0
+
+digest:
+  max_items: 40
+  channels:
+    - "telegram"
+    - "email"
