@@ -11,6 +11,8 @@ ENV/
 
 # Profile (strictly personal, never commit real profile)
 profile.yaml
+.*_state.json
+*state.json
 
 # Python cache and bytecode
 __pycache__/

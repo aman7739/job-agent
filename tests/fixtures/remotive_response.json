@@ -1,0 +1,42 @@
+{
+  "0-legal-notice": "Remotive API is free to use with proper attribution.",
+  "job-count": 3,
+  "jobs": [
+    {
+      "id": 8001,
+      "url": "https://remotive.com/remote-jobs/software-dev/python-dev-8001",
+      "title": "Junior Python Developer",
+      "company_name": "Distributed Global",
+      "category": "software-dev",
+      "tags": ["python", "fastapi"],
+      "publication_date": "2026-03-01T08:00:00Z",
+      "candidate_required_location": "Worldwide",
+      "salary": "$40,000",
+      "description": "<p>Remote Python Developer</p>"
+    },
+    {
+      "id": 8002,
+      "url": "https://remotive.com/remote-jobs/software-dev/frontend-dev-8002",
+      "title": "React Frontend Intern",
+      "company_name": "Asia Tech",
+      "category": "software-dev",
+      "tags": ["react", "javascript"],
+      "publication_date": "2026-03-01T08:00:00Z",
+      "candidate_required_location": "India",
+      "salary": "",
+      "description": "<p>Internship for React developers</p>"
+    },
+    {
+      "id": 8003,
+      "url": "https://remotive.com/remote-jobs/software-dev/us-only-8003",
+      "title": "Staff Engineer",
+      "company_name": "US Only Corp",
+      "category": "software-dev",
+      "tags": ["aws"],
+      "publication_date": "2026-03-01T08:00:00Z",
+      "candidate_required_location": "USA Only",
+      "salary": "$150,000",
+      "description": "<p>Must be in USA</p>"
+    }
+  ]
+}
