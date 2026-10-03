@@ -1,0 +1,55 @@
+{% extends "web/base.html" %}
+
+{% block title %}Source Health &bull; Job Digest Agent{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 24px;">
+  <h1 style="font-size: 24px; font-weight: 700; color: #0f172a;">Source Health &amp; Execution Metrics</h1>
+  <p style="font-size: 14px; color: #64748b; margin-top: 2px;">
+    Monitoring real-time status, rate limits, and run history across all 8 permitted source adapters.
+  </p>
+</div>
+
+<div class="card" style="padding: 24px;">
+  <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 14px;">
+    <thead>
+      <tr style="border-bottom: 2px solid #e2e8f0; color: #475569;">
+        <th style="padding: 10px 12px;">Source</th>
+        <th style="padding: 10px 12px;">Status</th>
+        <th style="padding: 10px 12px;">Jobs Found</th>
+        <th style="padding: 10px 12px;">Last Run Time</th>
+        <th style="padding: 10px 12px;">Notes / Error Message</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for s in sources %}
+      <tr style="border-bottom: 1px solid #f1f5f9;">
+        <td style="padding: 12px; font-weight: 600; color: #0f172a;">
+          {{ s.name }}
+        </td>
+        <td style="padding: 12px;">
+          {% if s.is_success %}
+          <span class="badge" style="background: #dcfce7; color: #15803d;">Healthy</span>
+          {% elif s.error_message and 'rate' in s.error_message.lower() %}
+          <span class="badge" style="background: #fef9c3; color: #854d0e;">Rate Limited</span>
+          {% elif s.error_message %}
+          <span class="badge" style="background: #fee2e2; color: #991b1b;">Error</span>
+          {% else %}
+          <span class="badge" style="background: #f1f5f9; color: #64748b;">Pending</span>
+          {% endif %}
+        </td>
+        <td style="padding: 12px; font-weight: 500;">
+          {{ s.jobs_found }}
+        </td>
+        <td style="padding: 12px; color: #64748b; font-size: 13px;">
+          {{ s.last_run or 'Never' }}
+        </td>
+        <td style="padding: 12px; color: {% if s.error_message %}#dc2626{% else %}#64748b{% endif %}; font-size: 13px; max-width: 320px;">
+          {{ s.error_message or 'Running smoothly' }}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

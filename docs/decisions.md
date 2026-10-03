@@ -50,3 +50,13 @@
   3. In-memory IP rate limiter restricts failed login attempts (max 5 failures per 5-minute window returning HTTP 429).
   4. All read pages (`/` for today's digest, `/history` for job history with multi-criteria filters) strictly require an authenticated session; unauthenticated traffic is redirected to `/login`.
 - **Rationale:** Prevents unauthorized external access without overhead of multi-user authentication providers.
+
+## ADR 009: Interactive Actions, Settings Editor, Source Health & Manual Entry (Session 15)
+- **Status:** Accepted
+- **Decision:** Provide interactive write actions and settings controls on the web dashboard:
+  1. Quick actions (`POST /jobs/{fingerprint}/status`) allow immediate status transitions (`saved`, `applied`, `not_interested`, `seen`) with automatic return to referer.
+  2. Weekly application progress counter (`get_weekly_applied_count`) queries the last 7 days of `applied_at` timestamps and displays a badge across all navigation views (`🎯 Applied this week: X`).
+  3. Dynamic profile editor (`/settings`) allows updating the company blocklist, roles, scoring thresholds, and notification channels with validation on save (`extra="forbid"`), immediately taking effect on the next autonomous pipeline run.
+  4. Real-time source health monitor (`/sources`) inspects recent `source_runs` across all 8 adapters to provide visual green/yellow/red status indicators, error logs, and freshness tracking.
+  5. Manual job ingestion (`/jobs/add`) allows candidate to enter ad-hoc job listings, automatically computes SHA-256 fingerprint, extracts candidate skills, scores against the active profile, and saves to the database for tracking.
+- **Rationale:** Empowers the candidate to manage daily application workflows and fine-tune filtering parameters from any device (including mobile) while maintaining strict schema integrity.

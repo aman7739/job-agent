@@ -1,6 +1,6 @@
 # Job Digest Agent — Project Memory & Context
 
-> **Last Updated:** Session 12 (Milestone 1 Completed)  
+> **Last Updated:** Session 15 (Actions & Settings Completed)  
 > **Target Audience:** Agent context persistence across sessions and long-term project reference.
 
 ---
@@ -117,6 +117,7 @@
 | **Session 12** | Tests, Tuning & Reliability | `tests/test_reliability_s12.py` (101 tests green, mocked-network pipeline, rate limits, source failure notices, channel fault isolation), ADR 006 | `day12: end-to-end reliability tests and tuning` |
 | **Session 13** | Profile in DB + Job Status | `job_digest/profile_service.py` (validation, versioning, fallback), `job_digest/status.py` (`saved`, `applied`, `not_interested` with timestamps & notes), `user_profiles` schema, ADR 007 | `day13: profile in database and job status tracking` |
 | **Session 14** | App, Login & Read Pages | `job_digest/auth.py` (Argon2, signed session cookie, login rate limit), `job_digest/web.py` (FastAPI app, today's digest, history filters), templates, ADR 008 | `day14: fastapi web app with argon2 login and read pages` |
+| **Session 15** | Actions & Settings | Quick status buttons (`POST /jobs/{fp}/status`), weekly counter (`get_weekly_applied_count`), settings editor (`/settings`), source health (`/sources`), manual job entry (`/jobs/add`), ADR 009 | `day15: interactive status actions, settings editor, source health, and manual job entry` |
 
 ---
 
@@ -130,6 +131,7 @@
 - **ADR 006 (Fault Isolation & Delivery Resilience):** Sources run in isolated try-except blocks, recording metrics to `source_runs`. Unreachable sources are highlighted in digest notices. Notifiers run independently; jobs are marked notified if $\ge 1$ channel succeeds.
 - **ADR 007 (Database Profile Versioning & Job Status Tracking):** Monotonic versions stored in `user_profiles` with validation on save. Corrupted configs fall back to last good version. Status (`saved`, `applied`, `not_interested`) tracked with dedicated timestamps.
 - **ADR 008 (Single-User Web Dashboard, Argon2 & Session Protection):** FastAPI app with Argon2id password hash, HMAC-SHA256 session cookie, login IP rate limiter, protected digest view and filtered job history.
+- **ADR 009 (Interactive Actions, Settings Editor, Source Health & Manual Entry):** One-click status updates, weekly applied counter, web profile & blocklist editor with validation on save (changes apply to next daily run), live source health monitoring, and manual ad-hoc job submission.
 
 ---
 
@@ -140,6 +142,9 @@
 3. **Telegram Message Limits:** Strictly enforced at 4,096 characters per message. `split_telegram_message` partitions messages at a 4,000-character ceiling along paragraph and line boundaries so markdown links are never severed.
 4. **Company Legal Suffix Normalization:** Companies appear as "Stripe", "Stripe, Inc.", "Stripe India Private Limited". `normalize_company` in `job_digest/dedup.py` removes corporate suffixes before computing the SHA-256 fingerprint to prevent duplicate listings.
 5. **Database Pools for Serverless/CLI:** Use `NullPool` in `job_digest/db.py` to prevent hanging connection pools when running ephemeral CLI pipelines or GitHub Actions workflows.
+6. **Starlette / FastAPI TemplateResponse Signature:** Modern Starlette requires keyword arguments: `templates.TemplateResponse(request=request, name="...", context={...})`. Passing positional arguments causes Jinja2 cache `TypeError: unhashable type: 'dict'`.
+7. **SQLite In-Memory Multi-Threading in Tests:** In FastAPI TestClient tests with in-memory SQLite, always configure `engine = create_engine("sqlite:///:memory:", connect_args={"check_same_thread": False}, poolclass=StaticPool)` to prevent thread collision errors.
+8. **FastAPI Parameter Shadowing:** Never name route arguments `status: str` if referencing `from fastapi import status` for HTTP codes (e.g., `status.HTTP_303_SEE_OTHER`); use direct integer codes (`303`) or alias imports.
 
 ---
 

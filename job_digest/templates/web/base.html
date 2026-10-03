@@ -50,6 +50,14 @@
     <nav class="nav-links">
       <a href="/" class="nav-link {% if active_page == 'digest' %}active{% endif %}">Today's Digest</a>
       <a href="/history" class="nav-link {% if active_page == 'history' %}active{% endif %}">Job History</a>
+      <a href="/jobs/add" class="nav-link {% if active_page == 'add_job' %}active{% endif %}">+ Add Job</a>
+      <a href="/settings" class="nav-link {% if active_page == 'settings' %}active{% endif %}">Settings</a>
+      <a href="/sources" class="nav-link {% if active_page == 'sources' %}active{% endif %}">Sources</a>
+      
+      <span class="badge" style="background: #e0e7ff; color: #3730a3; padding: 5px 10px; font-size: 13px;">
+        🎯 Applied this week: <strong>{{ weekly_applied_count if weekly_applied_count is not none else 0 }}</strong>
+      </span>
+
       <form action="/logout" method="post" style="display:inline;">
         <button type="submit" class="btn-logout">Logout</button>
       </form>

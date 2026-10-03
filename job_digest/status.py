@@ -179,3 +179,172 @@ def get_status_summary(session: Session) -> Dict[str, int]:
 
     counts["total"] = total
     return counts
+
+
+def get_weekly_applied_count(session: Session, now: Optional[datetime] = None) -> int:
+    """Get the count of jobs applied to in the last 7 days."""
+    from datetime import timedelta
+    current_ts = now or datetime.now(timezone.utc)
+    cutoff = current_ts - timedelta(days=7)
+    row = session.execute(
+        text(
+            """
+            SELECT COUNT(*) FROM seen_jobs
+            WHERE status = 'applied' AND applied_at >= :cutoff
+            """
+        ),
+        {"cutoff": cutoff},
+    ).fetchone()
+    return int(row[0]) if row and row[0] is not None else 0
+
+
+def add_manual_job(
+    session: Session,
+    profile: Any,
+    title: str,
+    company: str,
+    location: str,
+    canonical_url: str,
+    description_text: str = "",
+    salary_lpa: Optional[float] = None,
+    stipend: Optional[float] = None,
+    is_intern: bool = False,
+    notes: Optional[str] = None,
+    now: Optional[datetime] = None,
+) -> Dict[str, Any]:
+    """
+    Manually add a job listing directly into seen_jobs and jobs tables with 'saved' status.
+    Calculates fingerprint, extracts skills, scores match against active profile.
+    """
+    from job_digest.dedup import calculate_fingerprint
+    from job_digest.match import evaluate_job
+    from job_digest.models import Job
+    from job_digest.normalize import extract_skills
+
+    current_ts = now or datetime.now(timezone.utc)
+    fp = calculate_fingerprint(company, title, location)
+
+    extracted_skills = extract_skills(description_text, profile) if profile else []
+    job = Job(
+        fingerprint=fp,
+        title=title.strip(),
+        company=company.strip(),
+        location=location.strip(),
+        canonical_url=canonical_url.strip(),
+        description_text=description_text.strip(),
+        source="manual",
+        posted_at=current_ts,
+        skills=extracted_skills,
+        salary_lpa=salary_lpa,
+        stipend=stipend,
+        is_intern=is_intern,
+        status="saved",
+        saved_at=current_ts,
+        notes=notes,
+    )
+
+    scored = evaluate_job(job, profile) if profile else None
+    score_val = scored.score if scored else 5.0
+
+    # 1. Upsert into seen_jobs
+    existing_seen = session.execute(
+        text("SELECT status FROM seen_jobs WHERE fingerprint = :fp"),
+        {"fp": fp},
+    ).fetchone()
+
+    if existing_seen:
+        session.execute(
+            text(
+                """
+                UPDATE seen_jobs
+                SET status = 'saved', saved_at = :now, notes = COALESCE(:notes, notes)
+                WHERE fingerprint = :fp
+                """
+            ),
+            {"now": current_ts, "notes": notes, "fp": fp},
+        )
+    else:
+        session.execute(
+            text(
+                """
+                INSERT INTO seen_jobs (
+                    fingerprint, canonical_url, first_seen_at, last_seen_at,
+                    status, saved_at, notes
+                ) VALUES (
+                    :fp, :url, :now, :now, 'saved', :now, :notes
+                )
+                """
+            ),
+            {"fp": fp, "url": canonical_url.strip(), "now": current_ts, "notes": notes},
+        )
+
+    # 2. Upsert into jobs
+    existing_job = session.execute(
+        text("SELECT id FROM jobs WHERE fingerprint = :fp"),
+        {"fp": fp},
+    ).fetchone()
+
+    if existing_job:
+        session.execute(
+            text(
+                """
+                UPDATE jobs
+                SET title = :title, company = :company, location = :location,
+                    canonical_url = :url, description_text = :desc,
+                    salary_lpa = :lpa, stipend = :stipend, is_intern = :intern,
+                    score = :score
+                WHERE fingerprint = :fp
+                """
+            ),
+            {
+                "title": job.title,
+                "company": job.company,
+                "location": job.location,
+                "url": job.canonical_url,
+                "desc": job.description_text,
+                "lpa": job.salary_lpa,
+                "stipend": job.stipend,
+                "intern": 1 if is_intern else 0,
+                "score": score_val,
+                "fp": fp,
+            },
+        )
+    else:
+        session.execute(
+            text(
+                """
+                INSERT INTO jobs (
+                    fingerprint, title, company, location, canonical_url,
+                    description_text, source, posted_at, is_intern,
+                    salary_lpa, stipend, score
+                ) VALUES (
+                    :fp, :title, :company, :location, :url,
+                    :desc, 'manual', :now, :intern,
+                    :lpa, :stipend, :score
+                )
+                """
+            ),
+            {
+                "fp": fp,
+                "title": job.title,
+                "company": job.company,
+                "location": job.location,
+                "url": job.canonical_url,
+                "desc": job.description_text,
+                "now": current_ts,
+                "intern": 1 if is_intern else 0,
+                "lpa": job.salary_lpa,
+                "stipend": job.stipend,
+                "score": score_val,
+            },
+        )
+
+    session.commit()
+    logger.info(f"Added manual job '{title}' at '{company}' (fp: {fp[:8]}).")
+    return {
+        "fingerprint": fp,
+        "title": job.title,
+        "company": job.company,
+        "score": score_val,
+        "status": "saved",
+    }
