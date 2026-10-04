@@ -179,6 +179,9 @@ def build_site(dist_dir: Optional[Path] = None, base_url: Optional[str] = None) 
     """
     output_dir = dist_dir or DIST_DIR
     target_base = (base_url or DEFAULT_BASE_URL).rstrip("/")
+    from urllib.parse import urlparse
+    parsed = urlparse(target_base)
+    site_root = parsed.path.rstrip("/")
 
     # 1. Clean and re-create dist/ directory
     if output_dir.exists():
@@ -216,6 +219,7 @@ def build_site(dist_dir: Optional[Path] = None, base_url: Optional[str] = None) 
             "breadcrumbs": cfg["breadcrumbs"],
             "active_page": cfg["active_page"],
             "base_url": target_base,
+            "site_root": site_root,
         }
 
         rendered_html = template.render(**context)

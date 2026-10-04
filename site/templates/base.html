@@ -6,8 +6,8 @@
   <title>{{ page_title }} &bull; Job Digest Agent</title>
   <meta name="description" content="{{ meta_description }}">
   <link rel="canonical" href="{{ canonical_url }}">
-  <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
-  <link rel="stylesheet" href="/static/css/style.css">
+  <link rel="icon" type="image/svg+xml" href="{{ site_root }}/static/favicon.svg">
+  <link rel="stylesheet" href="{{ site_root }}/static/css/style.css">
 
   <!-- Open Graph / Social Sharing -->
   <meta property="og:type" content="website">
@@ -95,7 +95,7 @@
   <!-- Site Navigation -->
   <header class="site-header">
     <div class="header-container">
-      <a href="/" class="brand">
+      <a href="{{ site_root }}/" class="brand">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <polyline points="4 17 10 11 4 5"></polyline>
           <line x1="12" y1="19" x2="20" y2="19"></line>
@@ -104,11 +104,11 @@
       </a>
       <nav>
         <ul class="nav-links">
-          <li><a href="/" class="nav-link {% if active_page == 'home' %}active{% endif %}">Home</a></li>
-          <li><a href="/how-it-works/" class="nav-link {% if active_page == 'how-it-works' %}active{% endif %}">How It Works</a></li>
-          <li><a href="/sources/" class="nav-link {% if active_page == 'sources' %}active{% endif %}">Sources &amp; Compliance</a></li>
-          <li><a href="/privacy/" class="nav-link {% if active_page == 'privacy' %}active{% endif %}">Privacy</a></li>
-          <li><a href="/terms/" class="nav-link {% if active_page == 'terms' %}active{% endif %}">Terms</a></li>
+          <li><a href="{{ site_root }}/" class="nav-link {% if active_page == 'home' %}active{% endif %}">Home</a></li>
+          <li><a href="{{ site_root }}/how-it-works/" class="nav-link {% if active_page == 'how-it-works' %}active{% endif %}">How It Works</a></li>
+          <li><a href="{{ site_root }}/sources/" class="nav-link {% if active_page == 'sources' %}active{% endif %}">Sources &amp; Compliance</a></li>
+          <li><a href="{{ site_root }}/privacy/" class="nav-link {% if active_page == 'privacy' %}active{% endif %}">Privacy</a></li>
+          <li><a href="{{ site_root }}/terms/" class="nav-link {% if active_page == 'terms' %}active{% endif %}">Terms</a></li>
         </ul>
       </nav>
     </div>
@@ -118,13 +118,13 @@
   <main class="container">
     {% if breadcrumbs %}
     <nav class="breadcrumbs" aria-label="Breadcrumb">
-      <a href="/">Home</a>
+      <a href="{{ site_root }}/">Home</a>
       {% for crumb in breadcrumbs %}
         <span>&rsaquo;</span>
         {% if loop.last %}
           <span class="current">{{ crumb.label }}</span>
         {% else %}
-          <a href="{{ crumb.url }}">{{ crumb.label }}</a>
+          <a href="{{ site_root }}{{ crumb.url }}">{{ crumb.label }}</a>
         {% endif %}
       {% endfor %}
     </nav>
@@ -140,12 +140,12 @@
         &copy; 2026 Job Digest Agent &bull; Autonomous Career Intelligence Pipeline
       </div>
       <ul class="footer-links">
-        <li><a href="/">Home</a></li>
-        <li><a href="/how-it-works/">Architecture</a></li>
-        <li><a href="/sources/">API Limits</a></li>
-        <li><a href="/privacy/">Privacy Policy</a></li>
-        <li><a href="/terms/">Terms of Use</a></li>
-        <li><a href="https://github.com/KRAMA/AI-AGENT" target="_blank" rel="noopener noreferrer">Source on GitHub</a></li>
+        <li><a href="{{ site_root }}/">Home</a></li>
+        <li><a href="{{ site_root }}/how-it-works/">Architecture</a></li>
+        <li><a href="{{ site_root }}/sources/">API Limits</a></li>
+        <li><a href="{{ site_root }}/privacy/">Privacy Policy</a></li>
+        <li><a href="{{ site_root }}/terms/">Terms of Use</a></li>
+        <li><a href="https://github.com/aman7739/job-agent" target="_blank" rel="noopener noreferrer">Source on GitHub</a></li>
       </ul>
     </div>
   </footer>

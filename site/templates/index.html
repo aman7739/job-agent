@@ -12,7 +12,7 @@
 <!-- Visual Showcase: System Architecture -->
 <div class="media-container">
   <figure>
-    <img src="/static/images/architecture.svg" alt="Architectural diagram of Job Digest Agent: 8 ATS sources, fault isolation, normalization, SHA-256 deduplication, 10-point scoring matrix, and dual Telegram/Email delivery" width="1000" height="580" loading="eager">
+    <img src="{{ site_root }}/static/images/architecture.svg" alt="Architectural diagram of Job Digest Agent: 8 ATS sources, fault isolation, normalization, SHA-256 deduplication, 10-point scoring matrix, and dual Telegram/Email delivery" width="1000" height="580" loading="eager">
     <figcaption><strong>Figure 1.1:</strong> Complete 5-stage autonomous processing pipeline with multi-source fault isolation and instant deadline alerts.</figcaption>
   </figure>
 </div>
@@ -24,7 +24,7 @@
     <p>
       Direct integration with modern company ATS APIs (Greenhouse, Lever, Ashby, SmartRecruiters, Workable), public job feeds (Adzuna, Remotive), and personal email alerts over SSL IMAP.
     </p>
-    <p><a href="/sources/">Explore API limits &amp; adapters &rarr;</a></p>
+    <p><a href="{{ site_root }}/sources/">Explore API limits &amp; adapters &rarr;</a></p>
   </div>
 
   <div class="card">
@@ -33,7 +33,7 @@
     <p>
       Hard filters eliminate senior/lead traps and experience bloat. Eligible jobs are scored across skills overlap (4.0 pts), target roles (3.0 pts), level (2.0 pts), and preferred cities (1.0 pt).
     </p>
-    <p><a href="/how-it-works/">Read the scoring breakdown &rarr;</a></p>
+    <p><a href="{{ site_root }}/how-it-works/">Read the scoring breakdown &rarr;</a></p>
   </div>
 
   <div class="card">
@@ -42,7 +42,7 @@
     <p>
       Digests arrive on Telegram and Email at 08:00 AM &amp; 07:00 PM IST. Jobs expiring in less than 4 hours trigger instant high-priority alerts so no opportunity is missed.
     </p>
-    <p><a href="/how-it-works/#delivery">View delivery architecture &rarr;</a></p>
+    <p><a href="{{ site_root }}/how-it-works/#delivery">View delivery architecture &rarr;</a></p>
   </div>
 </div>
 
@@ -50,7 +50,7 @@
 <div class="grid-2" style="align-items: start;">
   <div class="media-container" style="margin-top: 0;">
     <figure>
-      <img src="/static/images/telegram-mockup.svg" alt="Redacted Telegram job digest notification preview showing morning header, 10-point match scores, urgent 4-hour deadline alert, and direct apply links" width="680" height="720" loading="lazy">
+      <img src="{{ site_root }}/static/images/telegram-mockup.svg" alt="Redacted Telegram job digest notification preview showing morning header, 10-point match scores, urgent 4-hour deadline alert, and direct apply links" width="680" height="720" loading="lazy">
       <figcaption><strong>Figure 1.2:</strong> Authentic Telegram digest delivery format illustrating dual active tracks (Internships and Full-Time) and an urgent deadline notification.</figcaption>
     </figure>
   </div>
