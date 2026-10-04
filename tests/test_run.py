@@ -68,4 +68,6 @@ def test_workflow_yaml_syntax_and_cron():
     assert "workflow_dispatch" in on_trigger
 
     schedules = on_trigger["schedule"]
-    assert any(s.get("cron") == "30 2 * * *" for s in schedules), "Expected cron '30 2 * * *' (08:00 IST)"
+    assert any(
+        s.get("cron") in ("30 2 * * *", "30 2,13 * * *") for s in schedules
+    ), "Expected cron '30 2,13 * * *' (08:00 AM & 07:00 PM IST)"

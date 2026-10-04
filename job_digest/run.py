@@ -25,8 +25,10 @@ from job_digest.notify import (
     Notifier,
     TelegramNotifier,
     deliver_digest,
+    deliver_urgent_alert,
     filter_unnotified_jobs,
 )
+from job_digest.urgency import detect_job_urgency
 from job_digest.profile import UserProfile, load_profile
 from job_digest.sources.adzuna import AdzunaSource
 from job_digest.sources.ashby import AshbySource
@@ -166,8 +168,31 @@ async def run_digest_pipeline(
 
         # 9. Deliver and Persist
         delivered_channels: List[str] = []
+        urgent_delivered_count = 0
         if not dry_run:
             notifiers = instantiate_notifiers(profile)
+
+            # Check for any urgent jobs (< 4 hours left) and deliver immediate high-priority alerts
+            for scored in scored_jobs:
+                urgency = detect_job_urgency(
+                    job_title=scored.job.title,
+                    job_description=scored.job.description_text,
+                    raw_data=scored.job.raw_data,
+                    now=run_timestamp,
+                )
+                if urgency.is_urgent:
+                    logger.warning(
+                        f"🚨 Urgent job closing soon (< 4 hours left): {scored.job.title} at {scored.job.company}. Dispatching immediate alert!"
+                    )
+                    await deliver_urgent_alert(
+                        job=scored.job,
+                        score=scored.score,
+                        urgency_reason=urgency.urgency_reason or "Closing within 4 hours",
+                        notifiers=notifiers,
+                        session=db_session,
+                    )
+                    urgent_delivered_count += 1
+
             fps_to_mark = [s.job.fingerprint for s in scored_jobs if s.job.fingerprint]
             delivered_channels = await deliver_digest(
                 digest=digest,
@@ -190,6 +215,7 @@ async def run_digest_pipeline(
             "total_in_digest": digest.total_jobs,
             "internships_count": digest.internships_count,
             "fulltime_count": digest.fulltime_count,
+            "urgent_alerts_sent": urgent_delivered_count,
             "delivered_channels": delivered_channels,
             "failed_sources": failed_sources,
             "digest_text": digest.content_text,
@@ -201,7 +227,7 @@ async def run_digest_pipeline(
 
 
 def start_local_scheduler():
-    """Start local APScheduler running every day at 08:00 IST (02:30 UTC)."""
+    """Start local APScheduler running twice daily at 08:00 AM & 07:00 PM IST (02:30 & 13:30 UTC)."""
     try:
         from apscheduler.schedulers.blocking import BlockingScheduler
         from apscheduler.triggers.cron import CronTrigger
@@ -210,15 +236,15 @@ def start_local_scheduler():
         return
 
     scheduler = BlockingScheduler()
-    # 08:00 IST = 02:30 UTC
-    trigger = CronTrigger(hour=2, minute=30, timezone="UTC")
+    # 08:00 AM IST = 02:30 UTC, 07:00 PM IST = 13:30 UTC
+    trigger = CronTrigger(hour="2,13", minute="30", timezone="UTC")
 
     def scheduled_job():
-        logger.info("APScheduler triggered daily digest run...")
+        logger.info("APScheduler triggered scheduled digest run (08:00 AM / 07:00 PM IST)...")
         asyncio.run(run_digest_pipeline(dry_run=False))
 
-    scheduler.add_job(scheduled_job, trigger=trigger, name="Daily Job Digest")
-    logger.info("Local APScheduler started. Scheduled daily at 08:00 IST (02:30 UTC). Press Ctrl+C to stop.")
+    scheduler.add_job(scheduled_job, trigger=trigger, name="Daily Job Digest (8 AM & 7 PM IST)")
+    logger.info("Local APScheduler started. Scheduled daily at 08:00 AM and 07:00 PM IST (02:30 & 13:30 UTC). Press Ctrl+C to stop.")
     try:
         scheduler.start()
     except (KeyboardInterrupt, SystemExit):

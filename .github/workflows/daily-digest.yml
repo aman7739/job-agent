@@ -2,8 +2,8 @@ name: Daily Job Digest
 
 "on":
   schedule:
-    # 02:30 UTC = 08:00 IST every day
-    - cron: '30 2 * * *'
+    # 02:30 UTC = 08:00 AM IST, 13:30 UTC = 07:00 PM IST every day
+    - cron: '30 2,13 * * *'
   workflow_dispatch:
     inputs:
       dry_run:

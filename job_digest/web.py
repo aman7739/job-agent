@@ -165,6 +165,8 @@ async def logout_action():
 @app.get("/", response_class=HTMLResponse)
 async def today_digest_page(
     request: Request,
+    notice: Optional[str] = None,
+    notice_type: Optional[str] = None,
     user: str = Depends(require_auth),
     session: Optional[Session] = Depends(get_db),
 ):
@@ -224,8 +226,47 @@ async def today_digest_page(
             "is_empty": is_empty,
             "digest_html_body": digest_html_body,
             "weekly_applied_count": weekly_cnt,
+            "notice": notice,
+            "notice_type": notice_type,
         },
     )
+
+
+@app.post("/jobs/run-now")
+async def trigger_run_now_route(
+    request: Request,
+    user: str = Depends(require_auth),
+):
+    """
+    On-demand crawler & notification trigger:
+    Immediately runs all 8 sources, scores new jobs, delivers digest & urgent alerts,
+    and returns to dashboard with fresh results.
+    """
+    from urllib.parse import quote
+    try:
+        from job_digest.run import run_digest_pipeline
+        result = await run_digest_pipeline(dry_run=False)
+        total = result.get("total_in_digest", 0)
+        new_jobs = result.get("new_jobs", 0)
+        channels = result.get("delivered_channels", [])
+        channels_str = ", ".join(channels) if channels else "database"
+        urgent_count = result.get("urgent_alerts_sent", 0)
+
+        msg = f"Check completed! Found {new_jobs} new roles ({total} total in digest). Delivered via {channels_str}."
+        if urgent_count > 0:
+            msg += f" Sent {urgent_count} urgent closing alerts (< 4h left)!"
+
+        return RedirectResponse(
+            url=f"/?notice={quote(msg)}&notice_type=success",
+            status_code=303,
+        )
+    except Exception as exc:
+        logger.exception("Error executing on-demand pipeline")
+        from urllib.parse import quote
+        return RedirectResponse(
+            url=f"/?notice={quote(f'Pipeline error: {exc}')}&notice_type=error",
+            status_code=303,
+        )
 
 
 @app.get("/history", response_class=HTMLResponse)

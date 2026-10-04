@@ -87,14 +87,14 @@ class TelegramNotifier:
     def channel_name(self) -> str:
         return "telegram"
 
-    async def send(self, digest: DigestOutput, client: Optional[httpx.AsyncClient] = None) -> bool:
-        """Send digest text split into chunks if necessary."""
+    async def send_message(self, text_content: str, client: Optional[httpx.AsyncClient] = None) -> bool:
+        """Send custom text message split into chunks if necessary."""
         if not self.bot_token or not self.chat_id:
             logger.info("Telegram credentials (TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID) not configured. Skipping.")
             return False
 
         url = f"https://api.telegram.org/bot{self.bot_token}/sendMessage"
-        chunks = split_telegram_message(digest.content_text)
+        chunks = split_telegram_message(text_content)
 
         async def _send_with_client(c: httpx.AsyncClient) -> bool:
             for idx, chunk in enumerate(chunks):
@@ -126,6 +126,10 @@ class TelegramNotifier:
             logger.info(f"Telegram delivery succeeded ({len(chunks)} chunks).")
         return ok
 
+    async def send(self, digest: DigestOutput, client: Optional[httpx.AsyncClient] = None) -> bool:
+        """Send digest text split into chunks if necessary."""
+        return await self.send_message(digest.content_text, client=client)
+
 
 class EmailNotifier:
     """Delivers multipart HTML and plain-text digest via SMTP to Mailbox B."""
@@ -151,26 +155,37 @@ class EmailNotifier:
     def channel_name(self) -> str:
         return "email"
 
-    async def send(self, digest: DigestOutput) -> bool:
-        """Send email asynchronously using a worker thread to avoid blocking."""
+    async def send_message(
+        self,
+        subject: str,
+        text_content: str,
+        html_content: Optional[str] = None,
+    ) -> bool:
+        """Send custom email asynchronously."""
         if not self.smtp_host or not self.smtp_user or not self.smtp_password or not self.to_email:
             logger.info("SMTP email credentials not fully configured. Skipping email delivery.")
             return False
 
-        return await asyncio.to_thread(self._send_sync, digest)
+        return await asyncio.to_thread(self._send_sync, subject, text_content, html_content)
 
-    def _send_sync(self, digest: DigestOutput) -> bool:
+    async def send(self, digest: DigestOutput) -> bool:
+        """Send digest email asynchronously."""
+        subject = f"Daily Job Digest - {digest.new_count} New Roles"
+        return await self.send_message(subject, digest.content_text, digest.content_html)
+
+    def _send_sync(self, subject: str, text_content: str, html_content: Optional[str] = None) -> bool:
         try:
             msg = MIMEMultipart("alternative")
-            msg["Subject"] = f"Daily Job Digest - {digest.new_count} New Roles"
+            msg["Subject"] = subject
             msg["From"] = self.smtp_user
             msg["To"] = self.to_email
 
-            part_plain = MIMEText(digest.content_text, "plain", "utf-8")
-            part_html = MIMEText(digest.content_html, "html", "utf-8")
-
+            part_plain = MIMEText(text_content, "plain", "utf-8")
             msg.attach(part_plain)
-            msg.attach(part_html)
+
+            if html_content:
+                part_html = MIMEText(html_content, "html", "utf-8")
+                msg.attach(part_html)
 
             with smtplib.SMTP(self.smtp_host, self.smtp_port, timeout=self.timeout_seconds) as server:
                 server.ehlo()
@@ -264,3 +279,66 @@ async def deliver_digest(
         mark_jobs_as_notified(session, fingerprints_to_mark)
 
     return successful_channels
+
+
+async def deliver_urgent_alert(
+    job: Job,
+    score: float,
+    urgency_reason: str,
+    notifiers: List[Notifier],
+    session: Optional[Session] = None,
+) -> List[str]:
+    """
+    Deliver an immediate high-priority alert for a job that closes within <= 4 hours.
+    Sends immediately to configured notifiers without waiting for the scheduled digest.
+    """
+    successful_channels: List[str] = []
+
+    plain_text = (
+        f"🚨 URGENT JOB ALERT (Closing Soon: ≤ 4 Hours Left!)\n\n"
+        f"🏢 Company: {job.company}\n"
+        f"💼 Role: {job.title}\n"
+        f"📍 Location: {job.location}\n"
+        f"🎯 Match Score: {score:.1f}/10\n"
+        f"⏳ Urgency: {urgency_reason}\n\n"
+        f"👉 Apply immediately: {job.canonical_url}\n"
+    )
+
+    html_content = f"""
+    <div style="font-family: -apple-system, BlinkMacSystemFont, sans-serif; max-width: 600px; padding: 24px; border: 2px solid #ef4444; border-radius: 8px; background: #fffaf0;">
+      <h2 style="color: #b91c1c; margin-top: 0; font-size: 20px;">🚨 Urgent Job Alert: Closing Soon (&le; 4 Hours Left)</h2>
+      <p style="font-size: 15px; margin: 8px 0;"><strong>Company:</strong> {job.company}</p>
+      <p style="font-size: 15px; margin: 8px 0;"><strong>Role:</strong> {job.title}</p>
+      <p style="font-size: 15px; margin: 8px 0;"><strong>Location:</strong> {job.location}</p>
+      <p style="font-size: 15px; margin: 8px 0;"><strong>Match Score:</strong> <span style="color: #166534; font-weight: bold;">{score:.1f} / 10</span></p>
+      <div style="background: #fee2e2; border-left: 4px solid #ef4444; padding: 10px 14px; margin: 16px 0; color: #991b1b; font-weight: 600; font-size: 14px;">
+        ⏳ {urgency_reason}
+      </div>
+      <div style="margin-top: 24px;">
+        <a href="{job.canonical_url}" style="display: inline-block; background: #dc2626; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 700; font-size: 15px;">
+          Apply Immediately &rarr;
+        </a>
+      </div>
+    </div>
+    """
+
+    for notifier in notifiers:
+        try:
+            if hasattr(notifier, "send_message"):
+                if notifier.channel_name == "telegram":
+                    ok = await notifier.send_message(plain_text)
+                elif notifier.channel_name == "email":
+                    subject = f"🚨 URGENT: {job.title} at {job.company} Closing Soon!"
+                    ok = await notifier.send_message(subject, plain_text, html_content)
+                else:
+                    ok = False
+                if ok:
+                    successful_channels.append(notifier.channel_name)
+        except Exception as exc:
+            logger.error(f"Urgent alert delivery to channel '{notifier.channel_name}' failed: {exc}")
+
+    if successful_channels and job.fingerprint:
+        mark_jobs_as_notified(session, [job.fingerprint])
+
+    return successful_channels
+
