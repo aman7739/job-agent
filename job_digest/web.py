@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hmac
 import logging
 import os
 from datetime import datetime, timezone
@@ -46,6 +47,26 @@ app = FastAPI(
     docs_url=None,  # Disabled for privacy
     redoc_url=None,
 )
+
+TRIGGER_TOKEN = os.getenv("TRIGGER_TOKEN", os.getenv("SESSION_SECRET", "job-digest-secret-trigger-token"))
+
+
+@app.middleware("http")
+async def security_headers_middleware(request: Request, call_next):
+    """Attach enterprise security headers to every HTTP response."""
+    response = await call_next(request)
+    headers = response.headers
+    headers["X-Content-Type-Options"] = "nosniff"
+    headers["X-Frame-Options"] = "DENY"
+    headers["X-XSS-Protection"] = "1; mode=block"
+    headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+    headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    headers["Content-Security-Policy"] = (
+        "default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self';"
+    )
+    headers["X-Robots-Tag"] = "noindex, nofollow, noarchive, nosnippet"
+    return response
 
 
 def get_db():
@@ -114,6 +135,64 @@ async def health_check(response: Response, session: Optional[Session] = Depends(
         response.status_code = status.HTTP_200_OK
 
     return payload
+
+
+@app.get("/robots.txt", response_class=Response)
+async def robots_txt():
+    """Search engine crawler disallow directive (Disallow: /)."""
+    content = "User-agent: *\nDisallow: /\n"
+    return Response(content=content, media_type="text/plain")
+
+
+@app.get("/manifest.json")
+async def manifest_json():
+    """PWA Web App Manifest for mobile install-to-home-screen."""
+    return {
+        "name": "Job Digest Agent",
+        "short_name": "Job Digest",
+        "description": "Personal AI Job Digest & Application Tracker",
+        "start_url": "/",
+        "display": "standalone",
+        "background_color": "#f8fafc",
+        "theme_color": "#2563eb",
+        "icons": [
+            {
+                "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚀</text></svg>",
+                "sizes": "192x192 512x512",
+                "type": "image/svg+xml"
+            }
+        ]
+    }
+
+
+@app.post("/api/trigger")
+async def api_trigger_workflow(
+    request: Request,
+    token: Optional[str] = None,
+):
+    """
+    Dedicated webhook trigger protected by secret token.
+    Allows external triggers (iOS Shortcuts, Android Automate, Cron-Job) to trigger a crawl.
+    """
+    header_token = request.headers.get("X-Trigger-Token") or request.headers.get("Authorization", "").replace("Bearer ", "").strip()
+    supplied = token or header_token
+
+    if not supplied or not hmac.compare_digest(supplied, TRIGGER_TOKEN):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or missing trigger token",
+        )
+
+    from job_digest.run import run_digest_pipeline
+    result = await run_digest_pipeline(dry_run=False)
+    return {
+        "status": "triggered",
+        "new_jobs": result.get("new_jobs", 0),
+        "total_in_digest": result.get("total_in_digest", 0),
+        "delivered_channels": result.get("delivered_channels", []),
+        "urgent_alerts_sent": result.get("urgent_alerts_sent", 0),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
 
 
 # ==============================================================================

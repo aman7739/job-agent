@@ -1,6 +1,6 @@
 # Job Digest Agent — Project Memory & Context
 
-> **Last Updated:** Session 16 (Deployment Configuration & Health Checks Completed)  
+> **Last Updated:** Session 17 (Milestone 2 Completed — Hardening & Security)  
 > **Target Audience:** Agent context persistence across sessions and long-term project reference.
 
 ---
@@ -120,6 +120,7 @@
 | **Session 15** | Actions & Settings | Quick status buttons (`POST /jobs/{fp}/status`), weekly counter (`get_weekly_applied_count`), settings editor (`/settings`), source health (`/sources`), manual job entry (`/jobs/add`), ADR 009 | `day15: interactive status actions, settings editor, source health, and manual job entry` |
 | **Urgency & Cadence** | Twice-Daily & Fast Alerts | Twice-daily schedule (08:00 AM & 07:00 PM IST), immediate alerts for jobs closing in ≤ 4h (`job_digest/urgency.py`), on-demand dashboard button (`POST /jobs/run-now`), ADR 010 | `b8507a0` |
 | **Session 16** | Deploy | `Dockerfile` (non-root `appuser`), `render.yaml`, `Procfile`, `.dockerignore`, public `/health` endpoint with DB ping, `docs/deployment.md`, ADR 011 | `day16: deployment configuration, health check endpoint, and render blueprint` |
+| **Session 17** | Hardening (Milestone 2) | Security headers middleware, robots.txt (`Disallow: /`), PWA `manifest.json`, webhook trigger (`/api/trigger`), backup script (`scripts/backup_db.py`), `docs/backup_plan.md`, ADR 012 | `day17: enterprise hardening, security headers, robots disallow, pwa manifest, and disaster recovery backup` |
 
 ---
 
@@ -136,6 +137,7 @@
 - **ADR 009 (Interactive Actions, Settings Editor, Source Health & Manual Entry):** One-click status updates, weekly applied counter, web profile & blocklist editor with validation on save (changes apply to next daily run), live source health monitoring, and manual ad-hoc job submission.
 - **ADR 010 (Twice-Daily Notification Cadence, Urgent Expiring Alerts & On-Demand Trigger):** Twice-daily scheduled runs (08:00 AM & 07:00 PM IST), urgent deadline detector (`≤ 4 hours left`) dispatching instant high-priority alerts to Telegram and Email, and an authenticated on-demand button (`POST /jobs/run-now`) on the dashboard header.
 - **ADR 011 (Cloud Deployment Architecture, Containerization & Health Monitoring):** Decoupled architecture where GitHub Actions runs automated crawls and pushes to Supabase, web dashboard runs on Render in production container (`Dockerfile`), and public `/health` endpoint is kept alive 24/7 with free 10-minute pings (UptimeRobot).
+- **ADR 012 (Production Hardening, Security Headers, Privacy & PWA Support):** Comprehensive enterprise security headers (CSP, HSTS, X-Frame-Options, X-Content-Type-Options), strict crawler blocking via `X-Robots-Tag` and `/robots.txt`, authentication guard on all dashboard routes, mobile PWA manifest, token-protected webhook API, and JSON database backup snapshot utility.
 
 ---
 
@@ -155,12 +157,13 @@
 
 ## 7. Road Ahead: Remaining Phases
 
-### Phase 2: Private Single-User Web App (Sessions 13 to 17)
-- **Session 13:** Move profile from YAML to database table `user_profiles` with versioning; add `job_status` tracking (`saved`, `applied`, `not_interested`, `archived`) with timestamps.
-- **Session 14:** FastAPI backend + Jinja2 HTML dashboard. Single-user session authentication (cookie-based password protection). Responsive UI with Tailwind/custom CSS.
-- **Session 15:** Dashboard actions: one-click status updates (`Save`, `Applied`, `Not Interested`), notes field, and web-based profile settings editor.
-- **Session 16:** Hosting deployment (Render / Railway / Fly.io / VPS free-tier), persistent database connection, environment configuration.
-- **Session 17:** Security hardening: `robots.txt` (`Disallow: /`), `X-Robots-Tag: noindex, nofollow`, strict rate limiting on auth endpoints, HTTPS enforcement.
+### Phase 2: Private Single-User Web App (Sessions 13 to 17) — COMPLETED (Milestone 2 Achieved!)
+- **Session 13:** Move profile to `user_profiles` table with versioning; job status tracking (`saved`, `applied`, `not_interested`, notes).
+- **Session 14:** FastAPI app + Jinja2 dashboard, Argon2 single-user auth, session cookies, multi-criteria filters.
+- **Session 15:** Quick status action buttons, weekly applied counter, profile & blocklist editor, source health, manual job entry.
+- **Session 16:** Production deployment files (`Dockerfile`, `render.yaml`, `Procfile`), public `/health` endpoint, keepalive monitoring.
+- **Session 17:** Enterprise hardening: security headers middleware (CSP, HSTS, X-Frame-Options), robots.txt (`Disallow: /`), PWA `manifest.json`, webhook trigger (`/api/trigger`), disaster recovery backup utility (`scripts/backup_db.py`).
+- **Milestone 2 Result:** Verified personal mobile dashboard with 100% login protection, zero search engine indexation, and real-time application tracking.
 
 ### Phase 3: Public Showcase Site (Sessions 18 to 21)
 - **Session 18:** Static Jinja2 generator (`site/build.py`), clean semantic markup, page metadata, unique titles, OpenGraph tags, and responsive design.

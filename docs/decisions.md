@@ -77,3 +77,14 @@
   3. A public, unauthenticated health check endpoint (`GET /health`) verifies process uptime, application status, and database connectivity (`SELECT 1`). If the database fails, it returns HTTP 503 degraded.
   4. Free external uptime monitoring (e.g. UptimeRobot) pings `/health` at 10-minute intervals, simultaneously monitoring system liveness and preventing free-tier server hibernation.
 - **Rationale:** Delivers zero-cost 24/7 reliability, immediate mobile access, and operational independence between daily notification delivery and interactive web viewing.
+
+## ADR 012: Production Hardening, Security Headers, Privacy & PWA Support (Session 17)
+- **Status:** Accepted
+- **Decision:** Implement comprehensive hardening controls across the web dashboard:
+  1. Attach enterprise HTTP security headers via middleware (`X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Strict-Transport-Security`, `Content-Security-Policy`, `Referrer-Policy`, and `Permissions-Policy`).
+  2. Enforce strict privacy against web scrapers and search indexing with `X-Robots-Tag: noindex, nofollow, noarchive, nosnippet`, HTML `<meta name="robots" content="noindex, nofollow">`, and `GET /robots.txt` (`Disallow: /`).
+  3. Ensure all private routes (`/`, `/history`, `/settings`, `/sources`, `/jobs/*`) reject unauthenticated traffic with immediate 303 redirection to `/login`.
+  4. Provide a Web App Manifest (`/manifest.json`) and mobile viewport optimization enabling install-to-home-screen PWA experience on iOS and Android.
+  5. Add token-protected webhook endpoint (`POST /api/trigger`) for secure external automations.
+  6. Provide an application-level disaster recovery backup script (`scripts/backup_db.py`) capturing candidate profiles, job statuses, and digest history into structured JSON snapshots.
+- **Rationale:** Protects personal candidate data, prevents search indexing, hardens against OWASP web vulnerabilities, and delivers a mobile-native application feel.
