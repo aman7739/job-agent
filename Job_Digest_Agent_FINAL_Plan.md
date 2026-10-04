@@ -353,26 +353,26 @@ A static project page: what it does, how it works, its sources, limits and real 
 
 | Item | Built in session | Done |
 |---|---|---|
-| Custom domain, HTTPS | 20 | [ ] |
-| Clean URL slugs | 18 | [ ] |
-| Custom 404 page | 20 | [ ] |
-| Unique page titles | 18 | [ ] |
-| Meta descriptions | 18 | [ ] |
-| Canonical tags | 18 | [ ] |
-| One H1 per page | 18 | [ ] |
-| sitemap.xml, robots.txt, llms.txt | 20 | [ ] |
-| Favicon, custom tab title | 18 | [ ] |
-| Internal links, breadcrumbs | 18 | [ ] |
-| Structured data (schema) | 19 | [ ] |
-| Social-share images | 19 | [ ] |
-| Alt text on images | 19 | [ ] |
-| Privacy Policy, Terms | 19 | [ ] |
-| No placeholder content | 19 | [ ] |
-| Zero console errors | 21 | [ ] |
-| No source maps in production | 21 | [ ] |
-| Small JS bundles | 21 | [ ] |
-| Anti-slop rules applied | 21 | [ ] |
-| Private app noindex, behind login | 17 | [ ] |
+| Custom domain, HTTPS | 20 | [x] |
+| Clean URL slugs | 18 | [x] |
+| Custom 404 page | 20 | [x] |
+| Unique page titles | 18 | [x] |
+| Meta descriptions | 18 | [x] |
+| Canonical tags | 18 | [x] |
+| One H1 per page | 18 | [x] |
+| sitemap.xml, robots.txt, llms.txt | 20 | [x] |
+| Favicon, custom tab title | 18 | [x] |
+| Internal links, breadcrumbs | 18 | [x] |
+| Structured data (schema) | 19 | [x] |
+| Social-share images | 19 | [x] |
+| Alt text on images | 19 | [x] |
+| Privacy Policy, Terms | 19 | [x] |
+| No placeholder content | 19 | [x] |
+| Zero console errors | 21 | [x] |
+| No source maps in production | 21 | [x] |
+| Small JS bundles | 21 | [x] |
+| Anti-slop rules applied | 21 | [x] |
+| Private app noindex, behind login | 17 | [x] |
 
 ## Risks and fallbacks
 

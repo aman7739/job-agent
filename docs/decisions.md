@@ -115,3 +115,12 @@
   4. Provide a GitHub Actions deployment workflow (`.github/workflows/pages.yml`) deploying compiled `dist/` directly to GitHub Pages on push to `main` with proper deployment permissions (`pages: write`, `id-token: write`).
   5. Provide complete custom domain DNS instructions (`docs/domain_setup.md`) covering apex domain `A` records (185.199.108.153 series), subdomain `CNAME`, automatic Let's Encrypt TLS provisioning, and HTTPS enforcement.
 - **Rationale:** Delivers automated zero-cost hosting, rapid deployment turnaround, rich indexing across search engines and AI assistants, and complete SSL protection.
+
+## ADR 016: Production Pre-Launch Audit, Anti-Slop Enforcement & Release Baseline (Session 21)
+- **Status:** Accepted
+- **Decision:** Execute a comprehensive pre-launch audit across the entire codebase and portfolio showcase:
+  1. Audit distribution hygiene: verify zero `.map` source-map files ship in production, asset bundle sizes remain tiny (0 bytes JS, ~6 KB unminified CSS), and zero console errors or warnings occur.
+  2. Enforce strict anti-slop rules: single primary blue accent on neutral slate background, zero generic purple gradients, normal rounded rectangular badges (`4px` radius, no ubiquitous pills), zero raw emoji as icons (all replaced with semantic, accessible inline SVGs), zero animations or cursor effects, and zero "Made with AI" branding.
+  3. Publish a comprehensive production `README.md` documenting architecture, 8 permitted sources, 10-point scoring matrix, twice-daily cadence + urgent alerts, step-by-step local setup, line-by-line `.env.example` reference, cloud deployment topology, and operational boundaries.
+  4. Tag production release `v1.0.0` confirming all 20 pre-launch audit checklist items are green and verified by automated tests.
+- **Rationale:** Ensures long-term maintainability, professional polish for technical interviews, and production-grade software delivery.
