@@ -101,6 +101,18 @@ def build_site(dist_dir: Optional[Path] = None, base_url: Optional[str] = None) 
         autoescape=True,
     )
 
+    # 2.5 Ensure social share assets exist
+    og_image_file = STATIC_DIR / "images" / "og-image.png"
+    if not og_image_file.exists():
+        import importlib.util
+        gen_path = SITE_DIR / "generate_og_images.py"
+        if gen_path.exists():
+            spec = importlib.util.spec_from_file_location("gen_og", gen_path)
+            if spec and spec.loader:
+                mod = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(mod)
+                mod.create_og_image()
+
     generated_files: List[Path] = []
 
     # 3. Render each page

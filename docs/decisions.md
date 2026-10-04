@@ -96,3 +96,12 @@
   2. Enforce strict semantic SEO constraints across all pages: exactly one `<h1>` per page, unique title per page, unique meta description per page, and explicit canonical `<link rel="canonical">` tags.
   3. Clean directory-based slug structure (`/how-it-works/index.html`, `/sources/index.html`, `/privacy/index.html`, `/terms/index.html`) with breadcrumb navigation.
 - **Rationale:** Provides an impressive public showcase for portfolio review and technical interviews while keeping personal job searches and candidate data 100% private.
+
+## ADR 014: Structured Data (JSON-LD), Social Graph & Accessible Visual Assets (Session 19)
+- **Status:** Accepted
+- **Decision:** Enhance the public portfolio showcase with authentic technical content, structured metadata, and accessible visual assets:
+  1. Embed Schema.org JSON-LD graph structures across all rendered pages: `WebSite` describing site hierarchy, `SoftwareApplication` declaring application categorization, operating system, zero cost, and developer attribution, and `BreadcrumbList` providing search-engine-readable navigational context on all subpages.
+  2. Implement complete Open Graph and Twitter Card tags (`og:title`, `og:description`, `og:image`, `og:url`, `og:type`, `twitter:card`, `twitter:title`, `twitter:description`, `twitter:image`) backed by a high-resolution 1200x630 social share preview card (`site/static/images/og-image.png`).
+  3. Author hand-crafted vector visual assets (`architecture.svg` and `telegram-mockup.svg`) providing crisp, zoomable, dark-mode-styled illustrations with accessible `<title>`, `<desc>`, and descriptive `alt` tags.
+  4. Enforce strict content integrity: zero placeholder tokens (`lorem`, `TODO`, `placeholder`), explicit candidate context (final-year B.Tech CSE Batch 2027 targeting both Internships and Full-Time fresher roles immediately), and transparent Privacy/Terms guaranteeing zero publication of personal candidate data.
+- **Rationale:** Establishes professional technical portfolio credibility, rich search engine snippet readiness, and social share polish while respecting privacy and accessibility standards.

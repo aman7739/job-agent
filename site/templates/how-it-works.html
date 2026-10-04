@@ -4,16 +4,27 @@
 <div class="page-header">
   <h1>System Architecture &amp; Processing Pipeline</h1>
   <p>
-    An end-to-end overview of how the Job Digest Agent collects, normalizes, evaluates, and delivers verified tech opportunities twice daily.
+    An end-to-end technical overview of how the Job Digest Agent collects, normalizes, evaluates, and delivers verified tech opportunities twice daily for a final-year B.Tech CSE (Batch 2027) graduate.
   </p>
+</div>
+
+<!-- Architecture Diagram Visual -->
+<div class="media-container">
+  <figure>
+    <img src="/static/images/architecture.svg" alt="Detailed system architecture flow diagram illustrating the 5 sequential stages from 8 ATS sources to dual Telegram and Email delivery" width="1000" height="580" loading="eager">
+    <figcaption><strong>Figure 2.1:</strong> Sequential pipeline: 8 Sources &rarr; Normalization &rarr; SHA-256 Deduplication &rarr; 10-Point Scoring &rarr; Dual-Channel Delivery.</figcaption>
+  </figure>
 </div>
 
 <div class="step-card">
   <div class="step-number">1</div>
   <div class="step-content">
-    <h3>Multi-Source Ingestion with Fault Isolation</h3>
+    <h3>Stage 1: Multi-Source Ingestion with Fault Isolation</h3>
     <p>
-      The runner executes concurrent asynchronous requests across 8 source adapters. Each source runs within an isolated fault boundary. If a single ATS API experiences downtime or network timeout, the failure is recorded to <code>source_runs</code> while all other sources continue normally without crashing the pipeline.
+      The runner executes concurrent asynchronous requests across 8 permitted source adapters: Greenhouse, Lever, Ashby, SmartRecruiters, Workable, Adzuna, Remotive, and SSL IMAP Email alerts. Each source executes within an isolated try-except fault boundary.
+    </p>
+    <p style="margin-top: 8px;">
+      If an individual ATS API experiences rate limits, network timeouts, or schema variations, the failure is recorded to the <code>source_runs</code> database table while all other sources continue uninterrupted. Unreachable sources are explicitly named in the digest header so the candidate always knows pipeline health.
     </p>
   </div>
 </div>
@@ -21,19 +32,31 @@
 <div class="step-card">
   <div class="step-number">2</div>
   <div class="step-content">
-    <h3>Text Normalization, Location Cleaning &amp; Anti-Traps</h3>
+    <h3>Stage 2: Text Normalization, Location Cleaning &amp; Anti-Traps</h3>
     <p>
-      Raw HTML postings are stripped of tracking tokens (UTMs, ref codes) and HTML tags. Locations are mapped to canonical metros (e.g., <em>Gurgaon &rarr; Gurugram</em>, <em>Calcutta &rarr; Kolkata</em>). Anti-trap regex extractors ensure single-letter languages like <strong>C</strong> and <strong>Go</strong> are not falsely matched inside ordinary words like <em>CSS</em> or <em>Google</em>.
+      Raw job postings contain erratic formatting, tracking parameters, and HTML artifacts. The normalization engine cleans every record:
     </p>
+    <ul style="margin-left: 20px; color: var(--text-muted); font-size: 14px; line-height: 1.8; margin-top: 8px;">
+      <li><strong>Sanitization:</strong> Strips HTML tags, decodes character entities, and removes marketing trackers (UTM parameters, ref tokens).</li>
+      <li><strong>Location Canonicalization:</strong> Resolves alternate metro spellings (e.g., <em>Gurgaon &rarr; Gurugram</em>, <em>Calcutta &rarr; Kolkata</em>, <em>Bangalore &rarr; Bengaluru</em>).</li>
+      <li><strong>Salary &amp; Stipend Extraction:</strong> Parses LPA ranges, annual CTC figures, and monthly internship stipends into normalized INR amounts.</li>
+      <li><strong>Anti-Trap Regex:</strong> Word-boundary regex matching ensures single-letter technologies like <strong>C</strong> and short tokens like <strong>Go</strong> are never mistakenly matched inside ordinary English words like <em>CSS</em>, <em>Google</em>, or <em>Ongoing</em>.</li>
+    </ul>
   </div>
 </div>
 
 <div class="step-card">
   <div class="step-number">3</div>
   <div class="step-content">
-    <h3>Deduplication &amp; 48-Hour Freshness Cutoff</h3>
+    <h3>Stage 3: SHA-256 Deduplication &amp; 48-Hour Freshness Cutoff</h3>
     <p>
-      Company legal suffixes (<em>Inc.</em>, <em>Pvt. Ltd.</em>, <em>Corporation</em>) are stripped to create canonical company names. A deterministic SHA-256 fingerprint is computed from <code>sha256(company | title | location)</code>. Postings older than 48 hours or previously notified fingerprints are dropped to prevent duplicate alerts.
+      Job aggregators and corporate ATS platforms frequently repost the same opening under slight name variations (e.g., <em>"Stripe"</em> vs <em>"Stripe India Private Limited"</em>). The agent strips legal suffixes (<em>Inc.</em>, <em>Ltd.</em>, <em>Pvt Ltd</em>) to form a canonical corporate brand before computing a deterministic fingerprint:
+    </p>
+    <p style="margin: 8px 0; font-family: monospace; background: var(--bg); padding: 8px 12px; border-radius: 4px; font-size: 13px;">
+      fingerprint = sha256(canonical_company | normalized_title | canonical_location)
+    </p>
+    <p>
+      Any posting published more than 48 hours prior to the run is discarded to guarantee only fresh listings are delivered. Postings previously recorded in the database are filtered out to eliminate duplicate alerts.
     </p>
   </div>
 </div>
@@ -41,11 +64,11 @@
 <div class="step-card">
   <div class="step-number">4</div>
   <div class="step-content">
-    <h3>Hard Filters &amp; 10-Point Scoring Algorithm</h3>
+    <h3>Stage 4: Hard Filters &amp; Deterministic 10-Point Scoring</h3>
     <p>
-      Every fresh job passes through rigorous filters: senior, staff, lead, and manager roles are excluded; required experience cannot exceed 2 years; and named batch years must match 2027. Surviving postings are scored on a 10-point scale:
+      Before scoring, every opportunity passes through strict eligibility filters: Senior, Staff, Lead, Architect, and Manager roles are discarded; postings demanding &gt; 2 years of professional experience are excluded; and candidate batch restrictions ensure alignment with 2027 graduation. Surviving jobs are evaluated against a transparent 10-point scoring algorithm:
     </p>
-    <div class="table-wrapper">
+    <div class="table-wrapper" style="margin-top: 14px;">
       <table>
         <thead>
           <tr>
@@ -58,22 +81,22 @@
           <tr>
             <td><strong>Skills Overlap</strong></td>
             <td>4.0 pts</td>
-            <td>Matched against candidate tech stack (Python, FastAPI, SQL, React, etc.). 4+ skills = 4.0 pts.</td>
+            <td>Matches candidate stack (Python, FastAPI, PostgreSQL, React, Linux, Docker, REST APIs). 4+ matches receive full 4.0 pts; 3 matches receive 3.0 pts; 2 matches receive 2.0 pts; 1 match receives 1.0 pt.</td>
           </tr>
           <tr>
             <td><strong>Role Match</strong></td>
             <td>3.0 pts</td>
-            <td>Exact or semantic match against target engineering roles.</td>
+            <td>Software Engineer, Backend Developer, Full Stack Engineer, or Systems Engineer titles receive 3.0 pts.</td>
           </tr>
           <tr>
             <td><strong>Experience Level</strong></td>
             <td>2.0 pts</td>
-            <td>Internships and 0-year fresher roles receive full 2.0 pts.</td>
+            <td>Internships, Apprenticeships, Graduate Engineer Trainee, or 0-year Fresher roles receive full 2.0 pts.</td>
           </tr>
           <tr>
             <td><strong>Location Match</strong></td>
             <td>1.0 pt</td>
-            <td>Preferred cities (Delhi NCR, Bengaluru, Mumbai, Pune, Kolkata, Remote) receive 1.0 pt.</td>
+            <td>Roles based in Delhi NCR, Bengaluru, Mumbai, Pune, Kolkata, Indore, or Remote receive 1.0 pt.</td>
           </tr>
         </tbody>
       </table>
@@ -84,10 +107,24 @@
 <div class="step-card" id="delivery">
   <div class="step-number">5</div>
   <div class="step-content">
-    <h3>Dual-Channel Delivery &amp; Fast-Track Urgency Alerts</h3>
+    <h3>Stage 5: Dual-Channel Delivery &amp; Fast-Track Urgency Alerts</h3>
     <p>
-      Ranked jobs meeting the threshold are formatted into dual "Apply Now" sections (Internships/Apprenticeships and Full-Time Roles). Digests are dispatched twice daily at 08:00 AM &amp; 07:00 PM IST via Telegram and SMTP Email. Jobs with deadlines closing in &le; 4 hours bypass batching and dispatch an immediate high-priority alert.
+      Digests are formatted into dual active sections: <strong>Internships &amp; Apprenticeships</strong> and <strong>Full-Time Fresher Roles</strong>. Opportunities meeting the minimum score threshold (7.0 / 10) are delivered on a scheduled cadence and expedited when closing soon:
     </p>
+    <ul style="margin-left: 20px; color: var(--text-muted); font-size: 14px; line-height: 1.8; margin-top: 8px;">
+      <li><strong>Twice-Daily Cadence:</strong> Automated scheduled runs at 08:00 AM IST and 07:00 PM IST ensure the candidate reviews fresh openings before business hours and at the close of the workday.</li>
+      <li><strong>Immediate Urgent Alerts:</strong> Listings with stated deadlines closing in &le; 4 hours bypass the batch schedule and dispatch an immediate high-priority alert to Telegram and Email.</li>
+      <li><strong>On-Demand Execution:</strong> The private web dashboard includes a <em>⚡ Check &amp; Notify Now</em> button allowing the candidate to trigger an immediate crawl and delivery on demand.</li>
+      <li><strong>Message Integrity:</strong> Telegram payloads exceeding 4,096 characters are cleanly partitioned along paragraph and line breaks so markdown links are never truncated.</li>
+    </ul>
+
+    <!-- Embedded Telegram Mockup in Delivery Section -->
+    <div class="media-container" style="max-width: 600px; margin: 24px auto 8px auto;">
+      <figure>
+        <img src="/static/images/telegram-mockup.svg" alt="Preview of Telegram notification showing urgent job deadline alert and morning digest with internships and full-time fresher opportunities" width="680" height="720" loading="lazy">
+        <figcaption><strong>Figure 2.2:</strong> Real Telegram delivery preview showing urgent alert banner and dual internship/fresher sections.</figcaption>
+      </figure>
+    </div>
   </div>
 </div>
 {% endblock %}

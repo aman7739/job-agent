@@ -346,3 +346,30 @@ tr:last-child td {
     flex-direction: column;
   }
 }
+
+.media-container {
+  margin: 32px 0;
+  border-radius: var(--radius);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.media-container figure {
+  margin: 0;
+}
+
+.media-container img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.media-container figcaption {
+  padding: 12px 20px;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  font-size: 13px;
+  color: var(--text-muted);
+}

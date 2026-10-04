@@ -5,9 +5,17 @@
   <div class="badge badge-success">Milestone 2 Verified &bull; Autonomous Production System</div>
   <h1>Autonomous Career Intelligence for Fresher &amp; Internship Discovery</h1>
   <p>
-    A high-reliability personal agent that continuously aggregates opportunities across 8 verified ATS boards and APIs, evaluates eligibility via a 10-point scoring matrix, and delivers actionable morning and evening digests directly to Telegram and Email.
+    An autonomous engineering pipeline built for a final-year B.Tech CSE (Batch 2027) graduate actively targeting both <strong>Internships/Apprenticeships</strong> and <strong>Full-Time fresher engineering roles</strong> immediately. It monitors 8 permitted ATS feeds, enforces anti-scraping compliance, filters out senior traps, scores opportunities using a deterministic 10-point rubric, and delivers actionable morning and evening digests directly to Telegram and Email.
   </p>
 </section>
+
+<!-- Visual Showcase: System Architecture -->
+<div class="media-container">
+  <figure>
+    <img src="/static/images/architecture.svg" alt="Architectural diagram of Job Digest Agent: 8 ATS sources, fault isolation, normalization, SHA-256 deduplication, 10-point scoring matrix, and dual Telegram/Email delivery" width="1000" height="580" loading="eager">
+    <figcaption><strong>Figure 1.1:</strong> Complete 5-stage autonomous processing pipeline with multi-source fault isolation and instant deadline alerts.</figcaption>
+  </figure>
+</div>
 
 <div class="grid-3">
   <div class="card">
@@ -38,25 +46,49 @@
   </div>
 </div>
 
-<div class="grid-2">
-  <div class="card">
-    <h2>Ethical Boundaries &amp; Zero Scraping</h2>
-    <p>
-      Built in compliance with industry guidelines. The agent strictly uses authorized public endpoints and SSL IMAP forwarded alerts. It never performs HTML scraping of LinkedIn, Naukri, or Indeed.
-    </p>
-    <p>
-      The candidate always clicks the direct application link to review and submit applications themselves—no automated bot submissions.
-    </p>
+<!-- Telegram Mockup & Application Target Section -->
+<div class="grid-2" style="align-items: start;">
+  <div class="media-container" style="margin-top: 0;">
+    <figure>
+      <img src="/static/images/telegram-mockup.svg" alt="Redacted Telegram job digest notification preview showing morning header, 10-point match scores, urgent 4-hour deadline alert, and direct apply links" width="680" height="720" loading="lazy">
+      <figcaption><strong>Figure 1.2:</strong> Authentic Telegram digest delivery format illustrating dual active tracks (Internships and Full-Time) and an urgent deadline notification.</figcaption>
+    </figure>
   </div>
 
-  <div class="card">
-    <h2>Private Single-User Dashboard</h2>
-    <p>
-      Supported by a private FastAPI web app with Argon2 authentication. The candidate can mark applications as Saved or Applied, fine-tune the company blocklist, and trigger on-demand scans.
-    </p>
-    <p>
-      Hardened with enterprise security headers, noindex directives, and mobile PWA support.
-    </p>
+  <div>
+    <div class="card" style="margin-bottom: 24px;">
+      <h2>Dual Priority Application Targets</h2>
+      <p>
+        Unlike tools that pigeonhole candidates into a single tier, this agent explicitly tracks two parallel career tracks for Batch 2027 graduates:
+      </p>
+      <ul style="margin-left: 20px; color: var(--text-muted); font-size: 14px; line-height: 1.8; margin-top: 12px;">
+        <li><strong>Track A — Internships &amp; Apprenticeships:</strong> 3 to 6-month engineering internships with stipends, offering immediate industry immersion.</li>
+        <li><strong>Track B — Full-Time Fresher Roles:</strong> Graduate Engineer Trainee (GET), Associate Software Engineer, and Junior Backend roles requiring 0 to 1 years experience.</li>
+      </ul>
+      <p style="margin-top: 12px;">
+        Both categories are evaluated simultaneously and presented as primary "Apply Now" sections in every digest.
+      </p>
+    </div>
+
+    <div class="card">
+      <h2>Private Single-User Dashboard</h2>
+      <p>
+        Supported by a private FastAPI web app with Argon2id authentication. The candidate can mark applications as Saved or Applied, fine-tune the company blocklist, and trigger on-demand scans via the <strong>⚡ Check &amp; Notify Now</strong> button.
+      </p>
+      <p style="margin-top: 8px;">
+        Hardened with strict CSP, HSTS, X-Frame-Options headers, search engine noindex directives, and mobile PWA support.
+      </p>
+    </div>
   </div>
+</div>
+
+<div class="card">
+  <h2>Ethical Boundaries &amp; Zero Scraping Charter</h2>
+  <p>
+    Built in strict compliance with platform terms and ethical standards. The agent strictly queries authorized public endpoints and SSL IMAP forwarded alerts. It never performs HTML scraping of LinkedIn, Naukri, or Indeed.
+  </p>
+  <p style="margin-top: 8px;">
+    The candidate always reviews and submits applications themselves directly on the verified employer's careers page—no automated bot submissions or captcha circumvention.
+  </p>
 </div>
 {% endblock %}

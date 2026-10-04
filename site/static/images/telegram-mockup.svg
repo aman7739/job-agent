@@ -1,0 +1,94 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 720" width="100%" height="100%" role="img" aria-labelledby="tg-title tg-desc">
+  <title id="tg-title">Job Digest Agent Telegram Notification Mockup</title>
+  <desc id="tg-desc">Realistic mockup of Telegram notification showing urgent job deadline alert and morning digest with internships and full-time fresher opportunities.</desc>
+  <defs>
+    <style>
+      .app-bg { fill: #0e1621; }
+      .header-bg { fill: #17212b; }
+      .msg-bg { fill: #182533; stroke: #242f3d; stroke-width: 1; rx: 10px; }
+      .urgent-msg-bg { fill: #201f2d; stroke: #f59e0b; stroke-width: 1.5; rx: 10px; }
+      .btn-bg { fill: #2b5278; rx: 6px; }
+      .btn-urgent-bg { fill: #d97706; rx: 6px; }
+      .text-title { fill: #f5f5f5; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 15px; font-weight: 600; }
+      .text-status { fill: #708499; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 12px; }
+      .text-msg { fill: #e1e3e6; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 13px; line-height: 1.5; }
+      .text-bold { fill: #ffffff; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 13px; font-weight: 700; }
+      .text-accent { fill: #5288c1; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 13px; font-weight: 600; }
+      .text-urgent { fill: #fbbf24; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 13px; font-weight: 700; }
+      .text-meta { fill: #7e8b99; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 11px; }
+      .text-btn { fill: #ffffff; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 12px; font-weight: 600; }
+    </style>
+  </defs>
+
+  <!-- Telegram Window Background -->
+  <rect width="680" height="720" class="app-bg" rx="12" />
+
+  <!-- Top Navigation Bar -->
+  <rect width="680" height="65" class="header-bg" rx="12" />
+  <!-- Avatar Circle -->
+  <circle cx="45" cy="32" r="18" fill="#2481cc" />
+  <text x="45" y="37" text-anchor="middle" fill="#ffffff" font-family="sans-serif" font-size="14" font-weight="bold">JD</text>
+  <!-- Channel Title & Subtitle -->
+  <text x="75" y="28" class="text-title">Job Digest Agent &bull; Telegram Bot</text>
+  <text x="75" y="46" class="text-status">bot &bull; autonomous alerts channel</text>
+
+  <!-- Date Chip -->
+  <rect x="280" y="80" width="120" height="24" fill="#182533" rx="12" />
+  <text x="340" y="96" text-anchor="middle" class="text-meta">TODAY &bull; 08:00 AM</text>
+
+  <!-- Message 1: Urgent Deadline Alert -->
+  <g transform="translate(30, 115)">
+    <rect width="620" height="150" class="urgent-msg-bg" />
+    <text x="18" y="28" class="text-urgent">🚨 URGENT APPLICATION ALERT &bull; CLOSING IN 3H 15M</text>
+    <text x="18" y="52" class="text-bold">Software Engineering Intern &bull; TechCorp India</text>
+    <text x="18" y="74" class="text-msg">📍 Bengaluru (Hybrid) &bull; 💰 ₹50,000/month &bull; 🎯 Match Score: 9.5 / 10</text>
+    <text x="18" y="96" class="text-meta">Matched Skills: Python, FastAPI, PostgreSQL, Linux | Deadline: 11:15 AM IST</text>
+
+    <!-- Urgent Action Buttons -->
+    <g transform="translate(18, 110)">
+      <rect width="280" height="28" class="btn-urgent-bg" />
+      <text x="140" y="19" text-anchor="middle" class="text-btn">⚡ Apply Now Before Expiry</text>
+    </g>
+    <g transform="translate(310, 110)">
+      <rect width="180" height="28" class="btn-bg" />
+      <text x="90" y="19" text-anchor="middle" class="text-btn">View in Web App</text>
+    </g>
+    <text x="595" y="138" class="text-meta">08:00 AM</text>
+  </g>
+
+  <!-- Message 2: Regular Scheduled Digest -->
+  <g transform="translate(30, 280)">
+    <rect width="620" height="410" class="msg-bg" />
+    <text x="18" y="28" class="text-bold" font-size="14">☀️ Morning Job Digest &bull; 04 Oct 2026</text>
+    <text x="18" y="48" class="text-meta">8 Sources Scanned &bull; 48 Postings Evaluated &bull; 14 Matches Found</text>
+
+    <!-- Category 1: Internships & Apprenticeships -->
+    <text x="18" y="78" class="text-accent">🎓 INTERNSHIPS &amp; APPRENTICESHIPS (Top Priority)</text>
+    
+    <text x="18" y="102" class="text-bold">1. [9.5/10] Backend Engineering Intern &bull; Stripe India</text>
+    <text x="28" y="120" class="text-msg">📍 Bengaluru / Remote &bull; 💰 ₹60,000/mo &bull; Batch 2027 Eligible</text>
+    <text x="28" y="138" class="text-meta">Tech: Python, FastAPI, PostgreSQL, Distributed Systems</text>
+
+    <text x="18" y="165" class="text-bold">2. [9.0/10] Software Development Intern &bull; Razorpay</text>
+    <text x="28" y="183" class="text-msg">📍 Gurugram (Delhi NCR) &bull; 💰 ₹45,000/mo &bull; Final Year CSE</text>
+    <text x="28" y="201" class="text-meta">Tech: Python, REST APIs, Git, Linux Foundations</text>
+
+    <!-- Category 2: Full-Time Fresher Roles -->
+    <text x="18" y="235" class="text-accent">🚀 FULL-TIME FRESHER ROLES (Batch 2027 Target)</text>
+
+    <text x="18" y="260" class="text-bold">3. [9.2/10] Associate Software Engineer &bull; Atlassian</text>
+    <text x="28" y="278" class="text-msg">📍 Bengaluru &bull; 💰 ₹18 - 24 LPA &bull; 0 Years Exp Required</text>
+    <text x="28" y="296" class="text-meta">Tech: Python, Data Structures, Modern Cloud Services</text>
+
+    <text x="18" y="322" class="text-bold">4. [8.8/10] Graduate Engineer Trainee &bull; Zomato</text>
+    <text x="28" y="340" class="text-msg">📍 Gurugram (Delhi NCR) &bull; 💰 ₹14 - 18 LPA</text>
+    <text x="28" y="358" class="text-meta">Tech: Python, React, Database Indexing, Linux</text>
+
+    <!-- Message Footer & Actions -->
+    <g transform="translate(18, 370)">
+      <rect width="280" height="28" class="btn-bg" />
+      <text x="140" y="19" text-anchor="middle" class="text-btn">🌐 Open Private Web Dashboard</text>
+    </g>
+    <text x="595" y="398" class="text-meta">08:01 AM</text>
+  </g>
+</svg>

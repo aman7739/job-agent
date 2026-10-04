@@ -1,6 +1,6 @@
 # Job Digest Agent — Project Memory & Context
 
-> **Last Updated:** Session 18 (Public Showcase Site Foundation Completed)  
+> **Last Updated:** Session 19 (Real Content & Structured Data Completed)  
 > **Target Audience:** Agent context persistence across sessions and long-term project reference.
 
 ---
@@ -122,6 +122,7 @@
 | **Session 16** | Deploy | `Dockerfile` (non-root `appuser`), `render.yaml`, `Procfile`, `.dockerignore`, public `/health` endpoint with DB ping, `docs/deployment.md`, ADR 011 | `day16: deployment configuration, health check endpoint, and render blueprint` |
 | **Session 17** | Hardening (Milestone 2) | Security headers middleware, robots.txt (`Disallow: /`), PWA `manifest.json`, webhook trigger (`/api/trigger`), backup script (`scripts/backup_db.py`), `docs/backup_plan.md`, ADR 012 | `day17: enterprise hardening, security headers, robots disallow, pwa manifest, and disaster recovery backup` |
 | **Session 18** | Site Foundation | Static generator (`site/build.py`), clean semantic templates (index, how-it-works, sources, privacy, terms, 404), SEO validation, ADR 013 | `day18: static portfolio site builder, semantic templates, and seo validation` |
+| **Session 19** | Content & Structured Data | Schema.org JSON-LD (`SoftwareApplication`, `WebSite`, `BreadcrumbList`), OpenGraph/Twitter cards (1200x630 OG image), vector assets (`architecture.svg`, `telegram-mockup.svg`), zero-placeholder audit, ADR 014 | `day19: real content, json-ld structured data, social graph, and accessible visual assets` |
 
 ---
 
@@ -140,6 +141,7 @@
 - **ADR 011 (Cloud Deployment Architecture, Containerization & Health Monitoring):** Decoupled architecture where GitHub Actions runs automated crawls and pushes to Supabase, web dashboard runs on Render in production container (`Dockerfile`), and public `/health` endpoint is kept alive 24/7 with free 10-minute pings (UptimeRobot).
 - **ADR 012 (Production Hardening, Security Headers, Privacy & PWA Support):** Comprehensive enterprise security headers (CSP, HSTS, X-Frame-Options, X-Content-Type-Options), strict crawler blocking via `X-Robots-Tag` and `/robots.txt`, authentication guard on all dashboard routes, mobile PWA manifest, token-protected webhook API, and JSON database backup snapshot utility.
 - **ADR 013 (Static Showcase Site Generator & Semantic SEO Architecture):** Custom Jinja2 static site compiler (`site/build.py`) outputting cleanly formatted, pre-rendered HTML to `dist/` with directory-based clean URLs, strict semantic SEO constraints (exactly one H1, unique title, unique description, self-referential canonical, breadcrumb trails), and zero personal candidate data leakage.
+- **ADR 014 (Structured Data, Social Meta Graph & Accessible Visual Asset Architecture):** Schema.org JSON-LD graph (`SoftwareApplication`, `WebSite`, `BreadcrumbList`), complete OpenGraph and Twitter card metadata (1200x630 social share preview card), accessible hand-crafted vector visual assets (`architecture.svg`, `telegram-mockup.svg`), and zero-placeholder content audit across all public pages.
 
 ---
 
@@ -170,7 +172,7 @@
 
 ### Phase 3: Public Showcase Site (Sessions 18 to 21)
 - **Session 18 (Completed):** Static Jinja2 generator (`site/build.py`), clean semantic templates (index, how-it-works, sources, privacy, terms, 404), SEO validation tests (1 H1, unique title/description/canonical).
-- **Session 19:** Schema.org JSON-LD structured data (`SoftwareApplication`, `WebSite`), social preview assets (1200x630 OG image), architecture diagram SVG, real Telegram mockup, zero placeholder audit.
+- **Session 19 (Completed):** Schema.org JSON-LD structured data (`SoftwareApplication`, `WebSite`, `BreadcrumbList`), social preview assets (1200x630 OG image), architecture diagram SVG, real Telegram mockup, zero placeholder audit.
 - **Session 20:** GitHub Pages deployment, custom domain setup, `sitemap.xml`, `robots.txt`, `llms.txt`.
 - **Session 21:** Anti-slop content audit, performance optimization (zero console errors, small CSS/JS bundles), pre-launch checklist verification.
 
