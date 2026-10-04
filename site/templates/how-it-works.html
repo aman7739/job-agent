@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-header">
+  <h1>System Architecture &amp; Processing Pipeline</h1>
+  <p>
+    An end-to-end overview of how the Job Digest Agent collects, normalizes, evaluates, and delivers verified tech opportunities twice daily.
+  </p>
+</div>
+
+<div class="step-card">
+  <div class="step-number">1</div>
+  <div class="step-content">
+    <h3>Multi-Source Ingestion with Fault Isolation</h3>
+    <p>
+      The runner executes concurrent asynchronous requests across 8 source adapters. Each source runs within an isolated fault boundary. If a single ATS API experiences downtime or network timeout, the failure is recorded to <code>source_runs</code> while all other sources continue normally without crashing the pipeline.
+    </p>
+  </div>
+</div>
+
+<div class="step-card">
+  <div class="step-number">2</div>
+  <div class="step-content">
+    <h3>Text Normalization, Location Cleaning &amp; Anti-Traps</h3>
+    <p>
+      Raw HTML postings are stripped of tracking tokens (UTMs, ref codes) and HTML tags. Locations are mapped to canonical metros (e.g., <em>Gurgaon &rarr; Gurugram</em>, <em>Calcutta &rarr; Kolkata</em>). Anti-trap regex extractors ensure single-letter languages like <strong>C</strong> and <strong>Go</strong> are not falsely matched inside ordinary words like <em>CSS</em> or <em>Google</em>.
+    </p>
+  </div>
+</div>
+
+<div class="step-card">
+  <div class="step-number">3</div>
+  <div class="step-content">
+    <h3>Deduplication &amp; 48-Hour Freshness Cutoff</h3>
+    <p>
+      Company legal suffixes (<em>Inc.</em>, <em>Pvt. Ltd.</em>, <em>Corporation</em>) are stripped to create canonical company names. A deterministic SHA-256 fingerprint is computed from <code>sha256(company | title | location)</code>. Postings older than 48 hours or previously notified fingerprints are dropped to prevent duplicate alerts.
+    </p>
+  </div>
+</div>
+
+<div class="step-card">
+  <div class="step-number">4</div>
+  <div class="step-content">
+    <h3>Hard Filters &amp; 10-Point Scoring Algorithm</h3>
+    <p>
+      Every fresh job passes through rigorous filters: senior, staff, lead, and manager roles are excluded; required experience cannot exceed 2 years; and named batch years must match 2027. Surviving postings are scored on a 10-point scale:
+    </p>
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Category</th>
+            <th>Max Points</th>
+            <th>Scoring Criteria</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Skills Overlap</strong></td>
+            <td>4.0 pts</td>
+            <td>Matched against candidate tech stack (Python, FastAPI, SQL, React, etc.). 4+ skills = 4.0 pts.</td>
+          </tr>
+          <tr>
+            <td><strong>Role Match</strong></td>
+            <td>3.0 pts</td>
+            <td>Exact or semantic match against target engineering roles.</td>
+          </tr>
+          <tr>
+            <td><strong>Experience Level</strong></td>
+            <td>2.0 pts</td>
+            <td>Internships and 0-year fresher roles receive full 2.0 pts.</td>
+          </tr>
+          <tr>
+            <td><strong>Location Match</strong></td>
+            <td>1.0 pt</td>
+            <td>Preferred cities (Delhi NCR, Bengaluru, Mumbai, Pune, Kolkata, Remote) receive 1.0 pt.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="step-card" id="delivery">
+  <div class="step-number">5</div>
+  <div class="step-content">
+    <h3>Dual-Channel Delivery &amp; Fast-Track Urgency Alerts</h3>
+    <p>
+      Ranked jobs meeting the threshold are formatted into dual "Apply Now" sections (Internships/Apprenticeships and Full-Time Roles). Digests are dispatched twice daily at 08:00 AM &amp; 07:00 PM IST via Telegram and SMTP Email. Jobs with deadlines closing in &le; 4 hours bypass batching and dispatch an immediate high-priority alert.
+    </p>
+  </div>
+</div>
+{% endblock %}

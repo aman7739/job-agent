@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-header">
+  <h1>Privacy Policy</h1>
+  <p>Last updated: October 2026 &bull; Single-User Personal Application</p>
+</div>
+
+<div class="card">
+  <h2>1. Personal Single-User Scope</h2>
+  <p>
+    The Job Digest Agent is an autonomous, private software application developed and operated strictly for personal use by a single candidate. It does not provide public registration, multi-user accounts, or software-as-a-service offerings to third parties.
+  </p>
+
+  <h2>2. Data Collection &amp; Processing</h2>
+  <p>The system processes only two categories of information:</p>
+  <ul style="margin-left: 20px; color: var(--text-muted); font-size: 14px; line-height: 1.8; margin-bottom: 16px;">
+    <li><strong>Candidate Profile:</strong> Technical skills, educational graduating batch year (2027), target roles, preferred work locations, and personal notification addresses. This data is stored securely in an isolated database and is never shared or exported publicly.</li>
+    <li><strong>Public Job Postings:</strong> Publicly accessible job listings obtained via official ATS endpoints, search APIs, and forwarded alert emails.</li>
+  </ul>
+
+  <h2>3. Cookies &amp; Tracking</h2>
+  <p>
+    This public project website does not use cookies, local storage trackers, or third-party web analytics. The private administrative dashboard uses a single HTTP-only, cryptographically signed session cookie exclusively for authentication.
+  </p>
+
+  <h2>4. Third-Party Integrations</h2>
+  <p>
+    Notification delivery relies on official Telegram Bot APIs and standard SMTP email infrastructure. No candidate application data is sold, monetized, or shared with external advertising networks.
+  </p>
+
+  <h2>5. Data Retention &amp; Erasure</h2>
+  <p>
+    All job index data, seen fingerprints, and digest logs are retained strictly in the candidate's private database. The candidate retains full authority to wipe or export records via provided backup utilities at any time.
+  </p>
+</div>
+{% endblock %}

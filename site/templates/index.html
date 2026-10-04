@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="hero">
+  <div class="badge badge-success">Milestone 2 Verified &bull; Autonomous Production System</div>
+  <h1>Autonomous Career Intelligence for Fresher &amp; Internship Discovery</h1>
+  <p>
+    A high-reliability personal agent that continuously aggregates opportunities across 8 verified ATS boards and APIs, evaluates eligibility via a 10-point scoring matrix, and delivers actionable morning and evening digests directly to Telegram and Email.
+  </p>
+</section>
+
+<div class="grid-3">
+  <div class="card">
+    <div class="badge">01 &bull; Discovery</div>
+    <h2>8 Permitted Sources</h2>
+    <p>
+      Direct integration with modern company ATS APIs (Greenhouse, Lever, Ashby, SmartRecruiters, Workable), public job feeds (Adzuna, Remotive), and personal email alerts over SSL IMAP.
+    </p>
+    <p><a href="/sources/">Explore API limits &amp; adapters &rarr;</a></p>
+  </div>
+
+  <div class="card">
+    <div class="badge">02 &bull; Intelligence</div>
+    <h2>10-Point Scoring Engine</h2>
+    <p>
+      Hard filters eliminate senior/lead traps and experience bloat. Eligible jobs are scored across skills overlap (4.0 pts), target roles (3.0 pts), level (2.0 pts), and preferred cities (1.0 pt).
+    </p>
+    <p><a href="/how-it-works/">Read the scoring breakdown &rarr;</a></p>
+  </div>
+
+  <div class="card">
+    <div class="badge">03 &bull; Actionable Delivery</div>
+    <h2>Autonomous Delivery</h2>
+    <p>
+      Digests arrive on Telegram and Email at 08:00 AM &amp; 07:00 PM IST. Jobs expiring in less than 4 hours trigger instant high-priority alerts so no opportunity is missed.
+    </p>
+    <p><a href="/how-it-works/#delivery">View delivery architecture &rarr;</a></p>
+  </div>
+</div>
+
+<div class="grid-2">
+  <div class="card">
+    <h2>Ethical Boundaries &amp; Zero Scraping</h2>
+    <p>
+      Built in compliance with industry guidelines. The agent strictly uses authorized public endpoints and SSL IMAP forwarded alerts. It never performs HTML scraping of LinkedIn, Naukri, or Indeed.
+    </p>
+    <p>
+      The candidate always clicks the direct application link to review and submit applications themselves—no automated bot submissions.
+    </p>
+  </div>
+
+  <div class="card">
+    <h2>Private Single-User Dashboard</h2>
+    <p>
+      Supported by a private FastAPI web app with Argon2 authentication. The candidate can mark applications as Saved or Applied, fine-tune the company blocklist, and trigger on-demand scans.
+    </p>
+    <p>
+      Hardened with enterprise security headers, noindex directives, and mobile PWA support.
+    </p>
+  </div>
+</div>
+{% endblock %}

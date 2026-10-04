@@ -88,3 +88,11 @@
   5. Add token-protected webhook endpoint (`POST /api/trigger`) for secure external automations.
   6. Provide an application-level disaster recovery backup script (`scripts/backup_db.py`) capturing candidate profiles, job statuses, and digest history into structured JSON snapshots.
 - **Rationale:** Protects personal candidate data, prevents search indexing, hardens against OWASP web vulnerabilities, and delivers a mobile-native application feel.
+
+## ADR 013: Static Showcase Site Generator & Semantic SEO Architecture (Session 18)
+- **Status:** Accepted
+- **Decision:** Build a dedicated static portfolio site generator (`site/build.py`) compiling Jinja2 templates into static HTML in `dist/`:
+  1. The public site operates under strict air-gap separation from the private application: it describes the architecture, permitted sources, and technical safeguards without ever revealing the candidate's personal profile, job notes, or actual digest opportunities.
+  2. Enforce strict semantic SEO constraints across all pages: exactly one `<h1>` per page, unique title per page, unique meta description per page, and explicit canonical `<link rel="canonical">` tags.
+  3. Clean directory-based slug structure (`/how-it-works/index.html`, `/sources/index.html`, `/privacy/index.html`, `/terms/index.html`) with breadcrumb navigation.
+- **Rationale:** Provides an impressive public showcase for portfolio review and technical interviews while keeping personal job searches and candidate data 100% private.

@@ -1,6 +1,6 @@
 # Job Digest Agent — Project Memory & Context
 
-> **Last Updated:** Session 17 (Milestone 2 Completed — Hardening & Security)  
+> **Last Updated:** Session 18 (Public Showcase Site Foundation Completed)  
 > **Target Audience:** Agent context persistence across sessions and long-term project reference.
 
 ---
@@ -121,6 +121,7 @@
 | **Urgency & Cadence** | Twice-Daily & Fast Alerts | Twice-daily schedule (08:00 AM & 07:00 PM IST), immediate alerts for jobs closing in ≤ 4h (`job_digest/urgency.py`), on-demand dashboard button (`POST /jobs/run-now`), ADR 010 | `b8507a0` |
 | **Session 16** | Deploy | `Dockerfile` (non-root `appuser`), `render.yaml`, `Procfile`, `.dockerignore`, public `/health` endpoint with DB ping, `docs/deployment.md`, ADR 011 | `day16: deployment configuration, health check endpoint, and render blueprint` |
 | **Session 17** | Hardening (Milestone 2) | Security headers middleware, robots.txt (`Disallow: /`), PWA `manifest.json`, webhook trigger (`/api/trigger`), backup script (`scripts/backup_db.py`), `docs/backup_plan.md`, ADR 012 | `day17: enterprise hardening, security headers, robots disallow, pwa manifest, and disaster recovery backup` |
+| **Session 18** | Site Foundation | Static generator (`site/build.py`), clean semantic templates (index, how-it-works, sources, privacy, terms, 404), SEO validation, ADR 013 | `day18: static portfolio site builder, semantic templates, and seo validation` |
 
 ---
 
@@ -138,6 +139,7 @@
 - **ADR 010 (Twice-Daily Notification Cadence, Urgent Expiring Alerts & On-Demand Trigger):** Twice-daily scheduled runs (08:00 AM & 07:00 PM IST), urgent deadline detector (`≤ 4 hours left`) dispatching instant high-priority alerts to Telegram and Email, and an authenticated on-demand button (`POST /jobs/run-now`) on the dashboard header.
 - **ADR 011 (Cloud Deployment Architecture, Containerization & Health Monitoring):** Decoupled architecture where GitHub Actions runs automated crawls and pushes to Supabase, web dashboard runs on Render in production container (`Dockerfile`), and public `/health` endpoint is kept alive 24/7 with free 10-minute pings (UptimeRobot).
 - **ADR 012 (Production Hardening, Security Headers, Privacy & PWA Support):** Comprehensive enterprise security headers (CSP, HSTS, X-Frame-Options, X-Content-Type-Options), strict crawler blocking via `X-Robots-Tag` and `/robots.txt`, authentication guard on all dashboard routes, mobile PWA manifest, token-protected webhook API, and JSON database backup snapshot utility.
+- **ADR 013 (Static Showcase Site Generator & Semantic SEO Architecture):** Custom Jinja2 static site compiler (`site/build.py`) outputting cleanly formatted, pre-rendered HTML to `dist/` with directory-based clean URLs, strict semantic SEO constraints (exactly one H1, unique title, unique description, self-referential canonical, breadcrumb trails), and zero personal candidate data leakage.
 
 ---
 
@@ -152,6 +154,7 @@
 7. **SQLite In-Memory Multi-Threading in Tests:** In FastAPI TestClient tests with in-memory SQLite, always configure `engine = create_engine("sqlite:///:memory:", connect_args={"check_same_thread": False}, poolclass=StaticPool)` to prevent thread collision errors.
 8. **FastAPI Parameter Shadowing:** Never name route arguments `status: str` if referencing `from fastapi import status` for HTTP codes (e.g., `status.HTTP_303_SEE_OTHER`); use direct integer codes (`303`) or alias imports.
 9. **Free Cloud Host Sleep Prevention:** Free PaaS hosts (Render) hibernate after 15 minutes of inactivity. Set up an external ping monitor (UptimeRobot) to query `/health` every 10 minutes to maintain 24/7 responsiveness. Autonomous crawler runs (GitHub Actions) remain completely unaffected by web host state.
+10. **Python stdlib `site` Module Namespace Collision:** Python's standard library includes `site.py`. Avoid `import site.build` directly; invoke `python site/build.py` or use dynamic path imports via `importlib.util.spec_from_file_location` in tests and build tools.
 
 ---
 
@@ -166,8 +169,8 @@
 - **Milestone 2 Result:** Verified personal mobile dashboard with 100% login protection, zero search engine indexation, and real-time application tracking.
 
 ### Phase 3: Public Showcase Site (Sessions 18 to 21)
-- **Session 18:** Static Jinja2 generator (`site/build.py`), clean semantic markup, page metadata, unique titles, OpenGraph tags, and responsive design.
-- **Session 19:** Schema.org JSON-LD structured data (`SoftwareSourceCode`, `Project`), social preview assets, privacy & terms pages.
+- **Session 18 (Completed):** Static Jinja2 generator (`site/build.py`), clean semantic templates (index, how-it-works, sources, privacy, terms, 404), SEO validation tests (1 H1, unique title/description/canonical).
+- **Session 19:** Schema.org JSON-LD structured data (`SoftwareApplication`, `WebSite`), social preview assets (1200x630 OG image), architecture diagram SVG, real Telegram mockup, zero placeholder audit.
 - **Session 20:** GitHub Pages deployment, custom domain setup, `sitemap.xml`, `robots.txt`, `llms.txt`.
 - **Session 21:** Anti-slop content audit, performance optimization (zero console errors, small CSS/JS bundles), pre-launch checklist verification.
 

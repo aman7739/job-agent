@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ page_title }} &bull; Job Digest Agent</title>
+  <meta name="description" content="{{ meta_description }}">
+  <link rel="canonical" href="{{ canonical_url }}">
+  <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+  <link rel="stylesheet" href="/static/css/style.css">
+  {% block head_extra %}{% endblock %}
+</head>
+<body>
+
+  <!-- Site Navigation -->
+  <header class="site-header">
+    <div class="header-container">
+      <a href="/" class="brand">
+        <span>🚀</span>
+        <span>Job Digest Agent</span>
+      </a>
+      <nav>
+        <ul class="nav-links">
+          <li><a href="/" class="nav-link {% if active_page == 'home' %}active{% endif %}">Home</a></li>
+          <li><a href="/how-it-works/" class="nav-link {% if active_page == 'how-it-works' %}active{% endif %}">How It Works</a></li>
+          <li><a href="/sources/" class="nav-link {% if active_page == 'sources' %}active{% endif %}">Sources &amp; Compliance</a></li>
+          <li><a href="/privacy/" class="nav-link {% if active_page == 'privacy' %}active{% endif %}">Privacy</a></li>
+          <li><a href="/terms/" class="nav-link {% if active_page == 'terms' %}active{% endif %}">Terms</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="container">
+    {% if breadcrumbs %}
+    <nav class="breadcrumbs" aria-label="Breadcrumb">
+      <a href="/">Home</a>
+      {% for crumb in breadcrumbs %}
+        <span>&rsaquo;</span>
+        {% if loop.last %}
+          <span class="current">{{ crumb.label }}</span>
+        {% else %}
+          <a href="{{ crumb.url }}">{{ crumb.label }}</a>
+        {% endif %}
+      {% endfor %}
+    </nav>
+    {% endif %}
+
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- Site Footer -->
+  <footer class="site-footer">
+    <div class="footer-container">
+      <div class="footer-copy">
+        &copy; 2026 Job Digest Agent &bull; Autonomous Career Intelligence Pipeline
+      </div>
+      <ul class="footer-links">
+        <li><a href="/">Home</a></li>
+        <li><a href="/how-it-works/">Architecture</a></li>
+        <li><a href="/sources/">API Limits</a></li>
+        <li><a href="/privacy/">Privacy Policy</a></li>
+        <li><a href="/terms/">Terms of Use</a></li>
+      </ul>
+    </div>
+  </footer>
+
+</body>
+</html>
