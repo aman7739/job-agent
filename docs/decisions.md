@@ -124,3 +124,11 @@
   3. Publish a comprehensive production `README.md` documenting architecture, 8 permitted sources, 10-point scoring matrix, twice-daily cadence + urgent alerts, step-by-step local setup, line-by-line `.env.example` reference, cloud deployment topology, and operational boundaries.
   4. Tag production release `v1.0.0` confirming all 20 pre-launch audit checklist items are green and verified by automated tests.
 - **Rationale:** Ensures long-term maintainability, professional polish for technical interviews, and production-grade software delivery.
+
+## ADR 017: Project Wrap-Up, Operational Runbook & Final Production Handoff (Session 22)
+- **Status:** Accepted
+- **Decision:** Formally complete the 22-session build plan with comprehensive operational documentation and system verification:
+  1. Author a comprehensive Operational Runbook (`docs/runbook.md`) detailing candidate daily routine (08:00 AM & 07:00 PM IST digests), handling urgent <= 4h alerts, using the on-demand web trigger, updating candidate skills and blocklists in `/settings`, inspecting adapter health in `/sources`, manual ad-hoc job logging, disaster recovery backup procedures, and troubleshooting steps.
+  2. Create a Portfolio Technical Briefing (`docs/portfolio_summary.md`) tailored for engineering managers and recruiters, articulating architecture highlights, trade-offs, technology stack, and candidate alignment (final-year B.Tech CSE Batch 2027 graduate targeting both Internships and Full-Time fresher roles immediately).
+  3. Validate end-to-end system cohesion across all four milestones (166 automated unit/integration tests, 100% green).
+- **Rationale:** Guarantees long-term operational autonomy for the candidate and provides interview-ready technical documentation demonstrating end-to-end software engineering excellence.
