@@ -97,6 +97,13 @@ async def run_digest_pipeline(
 
     # 1. Database Session (if DATABASE_URL is configured)
     db_available = bool(get_database_url())
+    if db_available and not dry_run:
+        try:
+            from job_digest.db import run_schema_migration
+            run_schema_migration()
+        except Exception as exc:
+            logger.warning(f"Could not auto-run schema migration: {exc}")
+
     session_context = get_db_session() if db_available and not dry_run else None
 
     # Handle optional DB session safely
