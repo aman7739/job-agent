@@ -231,7 +231,11 @@ class EmailAlertSource:
         session: Optional[Session] = None,
     ):
         self.imap_host = imap_host or os.getenv("IMAP_HOST")
-        self.imap_port = int(os.getenv("IMAP_PORT", str(imap_port)))
+        raw_port = os.getenv("IMAP_PORT")
+        if raw_port and raw_port.strip():
+            self.imap_port = int(raw_port.strip())
+        else:
+            self.imap_port = imap_port
         self.imap_user = imap_user or os.getenv("IMAP_USER")
         self.imap_password = imap_password or os.getenv("IMAP_PASSWORD")
         self.allowed_senders = allowed_senders or DEFAULT_ALLOWED_SENDERS

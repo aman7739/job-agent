@@ -144,8 +144,11 @@ class EmailNotifier:
         timeout_seconds: float = 20.0,
     ):
         self.smtp_host = smtp_host or os.getenv("SMTP_HOST")
-        port_env = os.getenv("SMTP_PORT", "587")
-        self.smtp_port = smtp_port or int(port_env)
+        port_env = os.getenv("SMTP_PORT")
+        if port_env and port_env.strip():
+            self.smtp_port = int(port_env.strip())
+        else:
+            self.smtp_port = smtp_port or 587
         self.smtp_user = smtp_user or os.getenv("SMTP_USER")
         self.smtp_password = smtp_password or os.getenv("SMTP_PASSWORD")
         self.to_email = to_email or os.getenv("NOTIFICATION_EMAIL")
