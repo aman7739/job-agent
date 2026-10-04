@@ -4,11 +4,19 @@
 <div class="card" style="text-align: center; padding: 60px 24px; max-width: 600px; margin: 40px auto;">
   <div style="font-size: 48px; margin-bottom: 16px;">🔍</div>
   <h1>Page Not Found</h1>
-  <p style="margin: 16px 0 24px;">
-    The requested resource could not be found. It may have moved or been archived.
+  <p style="margin: 16px 0 24px; color: var(--text-muted);">
+    The requested resource could not be found. It may have moved or been updated.
   </p>
-  <a href="/" class="btn btn-primary" style="display: inline-block; padding: 10px 24px; border-radius: 6px; font-weight: 600; text-decoration: none;">
-    Return to Home &rarr;
-  </a>
+  <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+    <a href="/" class="btn btn-primary" style="display: inline-block; padding: 10px 20px; border-radius: 6px; font-weight: 600; text-decoration: none;">
+      Return to Home &rarr;
+    </a>
+    <a href="/how-it-works/" style="display: inline-block; padding: 10px 20px; border-radius: 6px; font-weight: 500; border: 1px solid var(--border); text-decoration: none; color: var(--text);">
+      How It Works
+    </a>
+    <a href="/sources/" style="display: inline-block; padding: 10px 20px; border-radius: 6px; font-weight: 500; border: 1px solid var(--border); text-decoration: none; color: var(--text);">
+      Sources &amp; Compliance
+    </a>
+  </div>
 </div>
 {% endblock %}

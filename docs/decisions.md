@@ -105,3 +105,13 @@
   3. Author hand-crafted vector visual assets (`architecture.svg` and `telegram-mockup.svg`) providing crisp, zoomable, dark-mode-styled illustrations with accessible `<title>`, `<desc>`, and descriptive `alt` tags.
   4. Enforce strict content integrity: zero placeholder tokens (`lorem`, `TODO`, `placeholder`), explicit candidate context (final-year B.Tech CSE Batch 2027 targeting both Internships and Full-Time fresher roles immediately), and transparent Privacy/Terms guaranteeing zero publication of personal candidate data.
 - **Rationale:** Establishes professional technical portfolio credibility, rich search engine snippet readiness, and social share polish while respecting privacy and accessibility standards.
+
+## ADR 015: Domain Deployment, Crawl Files (Sitemap, Robots, LLMs.txt) & GitHub Pages Automation (Session 20)
+- **Status:** Accepted
+- **Decision:** Automate static deployment and web crawler discovery files:
+  1. Generate `sitemap.xml` at build time adhering to the Sitemaps 0.9 protocol, listing all indexable canonical pages (`/`, `/how-it-works/`, `/sources/`, `/privacy/`, `/terms/`) with `<lastmod>`, `<changefreq>`, and `<priority>`, while strictly excluding error pages like `/404.html`.
+  2. Generate a permissive public `robots.txt` allowing search crawlers (`Allow: /`, `Disallow: /404.html`) and referencing the sitemap index.
+  3. Generate `llms.txt` adhering to the llmstxt.org standard to provide markdown summaries and structured documentation links for AI search crawlers and LLM agents.
+  4. Provide a GitHub Actions deployment workflow (`.github/workflows/pages.yml`) deploying compiled `dist/` directly to GitHub Pages on push to `main` with proper deployment permissions (`pages: write`, `id-token: write`).
+  5. Provide complete custom domain DNS instructions (`docs/domain_setup.md`) covering apex domain `A` records (185.199.108.153 series), subdomain `CNAME`, automatic Let's Encrypt TLS provisioning, and HTTPS enforcement.
+- **Rationale:** Delivers automated zero-cost hosting, rapid deployment turnaround, rich indexing across search engines and AI assistants, and complete SSL protection.
