@@ -1,13 +1,13 @@
 # Job Digest Agent — Project Memory & Context
 
-> **Last Updated:** Session 15 (Actions & Settings Completed)  
+> **Last Updated:** Twice-Daily Cadence, Urgent Alerts & Web Trigger (Pre-Deploy)  
 > **Target Audience:** Agent context persistence across sessions and long-term project reference.
 
 ---
 
 ## 1. Project Vision & User Profile
 
-- **Project Purpose:** A private, autonomous, high-reliability personal Job Digest Agent running daily at 08:00 IST. It aggregates postings from 8 permitted sources, normalizes and deduplicates them, scores eligibility against a personal profile, and delivers formatted morning digests via Telegram and SMTP Email.
+- **Project Purpose:** A private, autonomous, high-reliability personal Job Digest Agent running twice daily at 08:00 AM & 07:00 PM IST (and on-demand via the dashboard). It aggregates postings from 8 permitted sources, normalizes and deduplicates them, scores eligibility against a personal profile, delivers formatted digests via Telegram and SMTP Email, and dispatches immediate high-priority alerts for urgent jobs closing in ≤ 4 hours.
 - **Candidate Context:**
   - **Degree & Branch:** B.Tech Computer Science and Engineering (CSE).
   - **Graduating Batch:** 2027.
@@ -118,6 +118,7 @@
 | **Session 13** | Profile in DB + Job Status | `job_digest/profile_service.py` (validation, versioning, fallback), `job_digest/status.py` (`saved`, `applied`, `not_interested` with timestamps & notes), `user_profiles` schema, ADR 007 | `day13: profile in database and job status tracking` |
 | **Session 14** | App, Login & Read Pages | `job_digest/auth.py` (Argon2, signed session cookie, login rate limit), `job_digest/web.py` (FastAPI app, today's digest, history filters), templates, ADR 008 | `day14: fastapi web app with argon2 login and read pages` |
 | **Session 15** | Actions & Settings | Quick status buttons (`POST /jobs/{fp}/status`), weekly counter (`get_weekly_applied_count`), settings editor (`/settings`), source health (`/sources`), manual job entry (`/jobs/add`), ADR 009 | `day15: interactive status actions, settings editor, source health, and manual job entry` |
+| **Urgency & Cadence** | Twice-Daily & Fast Alerts | Twice-daily schedule (08:00 AM & 07:00 PM IST), immediate alerts for jobs closing in ≤ 4h (`job_digest/urgency.py`), on-demand dashboard button (`POST /jobs/run-now`), ADR 010 | `b8507a0` |
 
 ---
 
@@ -132,6 +133,7 @@
 - **ADR 007 (Database Profile Versioning & Job Status Tracking):** Monotonic versions stored in `user_profiles` with validation on save. Corrupted configs fall back to last good version. Status (`saved`, `applied`, `not_interested`) tracked with dedicated timestamps.
 - **ADR 008 (Single-User Web Dashboard, Argon2 & Session Protection):** FastAPI app with Argon2id password hash, HMAC-SHA256 session cookie, login IP rate limiter, protected digest view and filtered job history.
 - **ADR 009 (Interactive Actions, Settings Editor, Source Health & Manual Entry):** One-click status updates, weekly applied counter, web profile & blocklist editor with validation on save (changes apply to next daily run), live source health monitoring, and manual ad-hoc job submission.
+- **ADR 010 (Twice-Daily Notification Cadence, Urgent Expiring Alerts & On-Demand Trigger):** Twice-daily scheduled runs (08:00 AM & 07:00 PM IST), urgent deadline detector (`≤ 4 hours left`) dispatching instant high-priority alerts to Telegram and Email, and an authenticated on-demand button (`POST /jobs/run-now`) on the dashboard header.
 
 ---
 

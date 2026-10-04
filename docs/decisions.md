@@ -60,3 +60,11 @@
   4. Real-time source health monitor (`/sources`) inspects recent `source_runs` across all 8 adapters to provide visual green/yellow/red status indicators, error logs, and freshness tracking.
   5. Manual job ingestion (`/jobs/add`) allows candidate to enter ad-hoc job listings, automatically computes SHA-256 fingerprint, extracts candidate skills, scores against the active profile, and saves to the database for tracking.
 - **Rationale:** Empowers the candidate to manage daily application workflows and fine-tune filtering parameters from any device (including mobile) while maintaining strict schema integrity.
+
+## ADR 010: Twice-Daily Notification Cadence, Urgent Expiring Alerts & On-Demand Trigger
+- **Status:** Accepted
+- **Decision:** Enhance pipeline notification triggers:
+  1. Increase automated execution frequency to twice daily at 08:00 AM IST (02:30 UTC) and 07:00 PM IST (13:30 UTC) in GitHub Actions (`.github/workflows/daily-digest.yml`) and local APScheduler.
+  2. Implement an urgent deadline detector (`job_digest/urgency.py`) to catch postings closing within <= 4 hours. Deliver immediate high-priority alerts (`deliver_urgent_alert` in `job_digest/notify.py`) via Telegram and Email without waiting for the scheduled digest window.
+  3. Provide an authenticated on-demand button (`POST /jobs/run-now`) in the web dashboard header allowing the candidate to scan all sources, score new roles, and receive an instant delivery update anytime from browser.
+- **Rationale:** Prevents missing rapid-closing tech opportunities (e.g. 24-hour flash application windows) while giving candidate instant manual control from mobile or desktop.
