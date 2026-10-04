@@ -67,6 +67,55 @@ def get_client_ip(request: Request) -> str:
     return request.client.host if request.client else "127.0.0.1"
 
 
+SERVER_START_TIME = datetime.now(timezone.utc)
+
+
+# ==============================================================================
+# Health Check Endpoint (For Cloud Monitoring & Uptime Keepalive)
+# ==============================================================================
+
+@app.get("/health")
+async def health_check(response: Response, session: Optional[Session] = Depends(get_db)):
+    """
+    Public health check endpoint for cloud uptime monitoring (Render, UptimeRobot).
+    Verifies server uptime and database ping without requiring authentication.
+    """
+    uptime_seconds = int((datetime.now(timezone.utc) - SERVER_START_TIME).total_seconds())
+    db_status = "unconfigured"
+    is_healthy = True
+    error_msg = None
+
+    if session:
+        try:
+            session.execute(text("SELECT 1"))
+            db_status = "connected"
+        except Exception as exc:
+            db_status = "error"
+            error_msg = str(exc)
+            is_healthy = False
+    elif get_database_url():
+        db_status = "disconnected"
+        is_healthy = False
+
+    payload = {
+        "status": "healthy" if is_healthy else "degraded",
+        "app": "job-digest-agent",
+        "version": "1.0.0",
+        "uptime_seconds": uptime_seconds,
+        "database": db_status,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
+
+    if not is_healthy:
+        if error_msg:
+            payload["error"] = error_msg
+        response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+    else:
+        response.status_code = status.HTTP_200_OK
+
+    return payload
+
+
 # ==============================================================================
 # Authentication Routes
 # ==============================================================================

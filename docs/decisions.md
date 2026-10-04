@@ -68,3 +68,12 @@
   2. Implement an urgent deadline detector (`job_digest/urgency.py`) to catch postings closing within <= 4 hours. Deliver immediate high-priority alerts (`deliver_urgent_alert` in `job_digest/notify.py`) via Telegram and Email without waiting for the scheduled digest window.
   3. Provide an authenticated on-demand button (`POST /jobs/run-now`) in the web dashboard header allowing the candidate to scan all sources, score new roles, and receive an instant delivery update anytime from browser.
 - **Rationale:** Prevents missing rapid-closing tech opportunities (e.g. 24-hour flash application windows) while giving candidate instant manual control from mobile or desktop.
+
+## ADR 011: Cloud Deployment Architecture, Containerization & Health Monitoring (Session 16)
+- **Status:** Accepted
+- **Decision:** Deploy the personal system using a decoupled cloud topology:
+  1. The automated job pipeline runs via GitHub Actions cron twice daily (08:00 AM & 07:00 PM IST) and pushes to Supabase PostgreSQL, remaining completely independent of web server state.
+  2. The web dashboard is packaged as a secure production container (`Dockerfile` running as non-root `appuser`) and deployed to a free cloud host (Render / Railway / Fly.io) with Infrastructure-as-Code definitions (`render.yaml`, `Procfile`).
+  3. A public, unauthenticated health check endpoint (`GET /health`) verifies process uptime, application status, and database connectivity (`SELECT 1`). If the database fails, it returns HTTP 503 degraded.
+  4. Free external uptime monitoring (e.g. UptimeRobot) pings `/health` at 10-minute intervals, simultaneously monitoring system liveness and preventing free-tier server hibernation.
+- **Rationale:** Delivers zero-cost 24/7 reliability, immediate mobile access, and operational independence between daily notification delivery and interactive web viewing.
