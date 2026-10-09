@@ -197,12 +197,17 @@
   - Zero-JS static site with dynamic repository subpath (`site_root = "/job-agent"`) prefixing all CSS, SVGs, and navigation links.
 - **Production Cloud Database:** Neon serverless PostgreSQL (AWS Singapore `ap-southeast-1`) hosting tables:
   - `job_sources`, `seen_jobs`, `user_profiles`, `jobs`, `digests`, `source_runs`, `email_messages`.
+- **Live Private Web Dashboard:** [https://job-agent-sg20.onrender.com](https://job-agent-sg20.onrender.com)
+  - Hosted on Render Free-Tier (Singapore region) running production Docker container.
+  - Argon2id password-protected single-user authentication, job status controls (`Save`, `Applied`, `Ignore`), profile settings, and on-demand crawler trigger.
+  - Public `/health` endpoint verified: `status: healthy`, `database: connected`, HTTP 200 OK.
+  - Kept awake 24/7 with zero cold starts via 10-minute automated GitHub Actions keepalive cron (`.github/workflows/keepalive.yml`).
 - **Telegram Notification Bot:**
   - Registered via `@BotFather` with private chat notifications via `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID`.
 - **Automated Crawl Schedule:**
   - Automated twice-daily runs via GitHub Actions (`.github/workflows/daily-digest.yml`) scheduled at **08:00 AM IST & 07:00 PM IST** (`cron: '30 2,13 * * *'`).
   - Successfully verified live run: fetched 1,399 real jobs from ATS platforms, deduplicated and scored for B.Tech 2027 CSE (Internships + Full-Time), persisted to Neon, and delivered live digest to Telegram.
-- **Test Suite Status:** 166 passing unit and integration tests (100% green).
+- **Test Suite Status:** 172 passing unit and integration tests (100% green).
 
 ---
 
