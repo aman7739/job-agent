@@ -186,3 +186,29 @@
 ### Phase 4: Project Wrap-Up — COMPLETED (Milestone 4 Achieved — All 22 Sessions Done!)
 - **Session 22 (Completed):** Operational runbook (`docs/runbook.md`), portfolio briefing (`docs/portfolio_summary.md`), all 17 ADRs recorded, 166 tests passing, production handoff, ADR 017.
 - **Milestone 4 Result:** Complete, autonomous personal career intelligence platform running in production with complete documentation, rock-solid tests, and an interview-ready public portfolio showcase.
+
+---
+
+## 8. Live Production Deployment & Verification (Active & Verified)
+
+- **GitHub Repository:** [https://github.com/aman7739/job-agent](https://github.com/aman7739/job-agent) (`main` branch tracked, tagged `v1.0.0`).
+- **Live Public Showcase Site:** [https://aman7739.github.io/job-agent/](https://aman7739.github.io/job-agent/)
+  - Deployed via `.github/workflows/pages.yml`.
+  - Zero-JS static site with dynamic repository subpath (`site_root = "/job-agent"`) prefixing all CSS, SVGs, and navigation links.
+- **Production Cloud Database:** Neon serverless PostgreSQL (AWS Singapore `ap-southeast-1`) hosting tables:
+  - `job_sources`, `seen_jobs`, `user_profiles`, `jobs`, `digests`, `source_runs`, `email_messages`.
+- **Telegram Notification Bot:**
+  - Registered via `@BotFather` with private chat notifications via `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID`.
+- **Automated Crawl Schedule:**
+  - Automated twice-daily runs via GitHub Actions (`.github/workflows/daily-digest.yml`) scheduled at **08:00 AM IST & 07:00 PM IST** (`cron: '30 2,13 * * *'`).
+  - Successfully verified live run: fetched 1,399 real jobs from ATS platforms, deduplicated and scored for B.Tech 2027 CSE (Internships + Full-Time), persisted to Neon, and delivered live digest to Telegram.
+- **Test Suite Status:** 166 passing unit and integration tests (100% green).
+
+---
+
+## 9. Additional Production Gotchas & Fixes Learned
+
+11. **GitHub Actions Empty String Secrets:** When optional secrets (like `IMAP_PORT` or `SMTP_PORT`) are not configured in GitHub Secrets, GitHub Actions exports them as empty strings (`""`). Direct conversion via `int(os.getenv("IMAP_PORT", ...))` throws `ValueError: invalid literal for int() with base 10: ''`. Always validate `val and val.strip()` before converting to integers.
+12. **GitHub Pages Repository Subpath (`/repo-name/`):** GitHub project pages are hosted at `username.github.io/repo/` rather than the domain root. Absolute root paths (`/static/...`, `/how-it-works/`) fail with 404s. `site/build.py` dynamically extracts `site_root` from the configured base URL, prefixing all asset and navigation links.
+13. **GitHub Pages Workflow Step Ordering:** In `pages.yml`, `actions/configure-pages@v5` must execute *before* the site build step so that `steps.pages.outputs.base_url` is available to set `SITE_BASE_URL`.
+14. **Database Auto-Migration on Pipeline Startup:** `job_digest/run.py` automatically runs `run_schema_migration()` on startup when `DATABASE_URL` is configured, ensuring tables and indexes are created idempotently without manual SQL execution.
