@@ -197,7 +197,7 @@
     <g transform="translate(10, 185)">
       <rect width="135" height="85" class="box-amber" rx="6" />
       <text x="10" y="22" class="title-text" font-size="12" fill="#fbbf24">Urgent Alerts</text>
-      <text x="10" y="40" class="sub-header">&le; 4 hours deadline</text>
+      <text x="10" y="40" class="sub-header">&#8804; 4 hours deadline</text>
       <text x="10" y="58" class="sub-header">Instant notification</text>
     </g>
     <g transform="translate(10, 280)">
