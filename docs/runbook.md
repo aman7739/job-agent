@@ -15,14 +15,14 @@ The Job Digest Agent operates across three distinct, decoupled execution environ
 |   - Executes fault-isolated crawl across 8 permitted sources            |
 |   - Normalizes, deduplicates (SHA-256), and scores (10-pt algorithm)    |
 |   - Dispatches Telegram & SMTP Email digests                            |
-|   - Writes jobs & metrics directly to Supabase PostgreSQL               |
+|   - Writes jobs & metrics directly to Neon Serverless PostgreSQL        |
 +-------------------------------------------------------------------------+
                                      │
                                      ▼
 +-------------------------------------------------------------------------+
-|                        Supabase PostgreSQL (Database)                   |
-|   - Connection pooler on port 6543 (IPv4 compatible)                    |
-|   - Tables: raw_jobs, seen_jobs, source_runs, user_profiles             |
+|                        Neon PostgreSQL (Database)                       |
+|   - Serverless PostgreSQL 16 hosted in AWS Singapore (ap-southeast-1)   |
+|   - Tables: jobs, seen_jobs, digests, source_runs, user_profiles        |
 +-------------------------------------------------------------------------+
                                      │
                                      ▼

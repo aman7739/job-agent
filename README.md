@@ -1,7 +1,7 @@
 # Job Digest Agent &bull; Autonomous Career Intelligence Pipeline
 
 [![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/downloads/)
-[![Tests Passing](https://img.shields.io/badge/tests-158%20passing-success.svg)](https://pytest.org/)
+[![Tests Passing](https://img.shields.io/badge/tests-181%20passing-success.svg)](https://pytest.org/)
 [![Status](https://img.shields.io/badge/status-production--v1.0.0-emerald.svg)]()
 [![Compliance](https://img.shields.io/badge/compliance-zero--scraping%20charter-blue.svg)]()
 
@@ -105,7 +105,7 @@ The candidate sets a minimum score threshold (default: $\ge 7.0 / 10$) to receiv
 
 ### 1. Prerequisites
 - Python 3.12+
-- PostgreSQL or Supabase account
+- PostgreSQL or Neon Serverless account
 - Git
 
 ### 2. Environment Installation
@@ -136,7 +136,7 @@ cp .env.example .env
 
 | Variable | Description |
 |---|---|
-| `DATABASE_URL` | Supabase / PostgreSQL connection pooler string (Port 6543 for IPv4 compatibility). |
+| `DATABASE_URL` | Neon Serverless / PostgreSQL connection string with `sslmode=require`. |
 | `TELEGRAM_BOT_TOKEN` | Telegram Bot token from @BotFather. |
 | `TELEGRAM_CHAT_ID` | Telegram chat ID for delivery alerts. |
 | `SMTP_HOST` | Outgoing SMTP host (e.g. `smtp.gmail.com`). |
@@ -187,8 +187,8 @@ Compiled HTML, CSS, visual assets, `sitemap.xml`, `robots.txt`, and `llms.txt` w
 
 ## Cloud Deployment Architecture
 
-- **Autonomous Crawler:** GitHub Actions cron (`.github/workflows/daily-digest.yml`) triggers twice daily (`30 2,13 * * *` UTC) on GitHub's infrastructure and pushes to Supabase PostgreSQL.
-- **Private Web Dashboard:** Deployed as a secure container (`Dockerfile`, non-root `appuser`) on a free host (Render Blueprint: `render.yaml`). A 10-minute external ping (UptimeRobot) to `GET /health` prevents sleep mode.
+- **Autonomous Crawler:** In-app APScheduler on Render triggers twice daily (08:00 AM & 07:00 PM IST) with misfire grace protection and startup catch-up, writing directly to Neon Serverless PostgreSQL. A backup GitHub Actions workflow (`.github/workflows/daily-digest.yml`) is also maintained.
+- **Private Web Dashboard:** Deployed as a secure container (`Dockerfile`, non-root `appuser`) on a free host (Render Blueprint: `render.yaml`). A 10-minute external ping (keepalive workflow) to `GET /health` prevents sleep mode.
 - **Public Showcase Site:** Compiled and deployed to GitHub Pages via `.github/workflows/pages.yml` on push to `main`. Custom domain DNS setup is documented in `docs/domain_setup.md`.
 
 ---

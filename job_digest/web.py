@@ -75,9 +75,35 @@ async def lifespan(app: FastAPI):
                 id="daily_digest_job",
                 name="Daily Job Digest (8 AM & 7 PM IST)",
                 replace_existing=True,
+                misfire_grace_time=3600,  # 1 hour grace window so restarts never drop a run
             )
             app_scheduler.start()
             logger.info("[Scheduler] Live AsyncIOScheduler started inside Web Service (08:00 AM & 07:00 PM IST).")
+
+            # 14-Hour Startup Catch-Up Safety Net:
+            # If the web service was offline or restarting during a scheduled window,
+            # detect if > 14 hours elapsed since the last digest and catch up immediately.
+            async def startup_catchup():
+                try:
+                    await asyncio.sleep(15)  # Allow container and DB connection to settle
+                    session_ctx = get_db_session()
+                    last_sent = None
+                    with session_ctx as session:
+                        row = session.execute(text("SELECT sent_at FROM digests ORDER BY sent_at DESC LIMIT 1")).fetchone()
+                        if row and row[0]:
+                            last_sent = row[0]
+                    if last_sent:
+                        if getattr(last_sent, "tzinfo", None) is None:
+                            last_sent = last_sent.replace(tzinfo=timezone.utc)
+                        hours_ago = (datetime.now(timezone.utc) - last_sent).total_seconds() / 3600.0
+                        if hours_ago > 14.0:
+                            logger.info(f"[Scheduler] Last digest was {hours_ago:.1f}h ago (>14h). Triggering startup catch-up...")
+                            from job_digest.run import run_digest_pipeline
+                            await run_digest_pipeline(dry_run=False)
+                except Exception as exc:
+                    logger.debug(f"[Scheduler] Startup catch-up check skipped: {exc}")
+
+            asyncio.create_task(startup_catchup())
         except Exception as e:
             logger.warning(f"[Scheduler] Failed to initialize in-app scheduler: {e}")
 

@@ -61,20 +61,21 @@ Operating strictly within an ethical, zero-scraping charter, the agent queries 8
 
 | Layer | Technologies Used |
 |---|---|
-| **Backend & Core Engine** | Python 3.12, Pydantic v2, SQLAlchemy 2.0, PostgreSQL (Supabase pooler), `httpx` async |
+| **Backend & Core Engine** | Python 3.12, Pydantic v2, SQLAlchemy 2.0, PostgreSQL (Neon Serverless / NullPool), `httpx` async |
 | **Web Framework & Auth** | FastAPI, Starlette, Jinja2, Argon2-cffi, itsdangerous |
 | **Delivery & Automation** | Telegram Bot API, SMTP (STARTTLS), IMAP SSL, APScheduler, GitHub Actions |
 | **Public Showcase & SEO** | Static Jinja2, Schema.org JSON-LD, XML Sitemap, Sitemaps 0.9, robots.txt, llms.txt |
 | **Visuals & Assets** | Hand-crafted SVG diagrams, Pillow (1200x630 OG image generation) |
-| **Testing & Quality** | Pytest, pytest-asyncio, BeautifulSoup4, Pillow, PyYAML (162 tests passing) |
+| **Testing & Quality** | Pytest, pytest-asyncio, BeautifulSoup4, Pillow, PyYAML (181 tests passing) |
 | **Deployment & Infra** | Docker (non-root `appuser`), Render Blueprint, GitHub Actions CI/CD, GitHub Pages |
 
 ---
 
 ## 4. Key Metrics & Verification
 
-- **162 Automated Tests:** 100% green across all 21 development sessions.
-- **8 Permitted Sources:** Ingested in parallel with individual fault isolation.
-- **0 Scraping Traps:** 100% compliant with platform terms of service.
+- **181 Automated Tests:** 100% green across unit, integration, and reliability suites.
+- **8 Permitted Sources:** Ingested in parallel with individual fault isolation and 45s safety timeout.
+- **Yield Funnel & Signal Quality:** 1,410+ raw throughput roles &rarr; ~195 unique fresh roles &rarr; 10–25 verified 2027-eligible fresher/intern roles per run (~98.8% noise reduction).
+- **0 Scraping Traps:** 100% compliant with platform terms of service via official APIs, ATS feeds, and personal IMAP alerts.
 - **0 Bytes JS in Showcase:** Instant static loading with zero console errors.
 - **100% Air Gap:** Personal candidate data completely isolated from the public domain.

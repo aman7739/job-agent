@@ -159,8 +159,8 @@ The Job Digest Agent is a high-reliability personal career intelligence pipeline
 
 ## Technical Specifications
 
-- Technology Stack: Python 3.12, FastAPI, SQLAlchemy 2.0, PostgreSQL (Supabase), Jinja2, Argon2id, Pillow.
-- Autonomous Cadence: Twice-daily scheduled runs at 08:00 AM and 07:00 PM IST via GitHub Actions and APScheduler.
+- Technology Stack: Python 3.12, FastAPI, SQLAlchemy 2.0, PostgreSQL (Neon Serverless), Jinja2, Argon2id, Pillow.
+- Autonomous Cadence: Twice-daily scheduled runs at 08:00 AM and 07:00 PM IST via in-app APScheduler and GitHub Actions.
 - Instant Fast-Track: Emergency alert dispatcher for postings expiring in <= 4 hours.
 - Scoring Rubric: 10-point scale evaluating Skills Overlap (4.0 pts), Role Match (3.0 pts), Level (2.0 pts), and Location (1.0 pt).
 - Candidate Context: Final-year B.Tech CSE (Batch 2027) graduate actively targeting internships and entry-level engineering positions.

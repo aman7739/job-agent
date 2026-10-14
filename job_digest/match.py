@@ -41,12 +41,34 @@ def check_eligibility(job: Job, profile: UserProfile) -> Tuple[bool, Optional[st
     company_lower = job.company.lower()
 
     # 1. Whole-word exclude title words (e.g. senior, leadership, manager, principal, director, staff, architect)
-    builtin_senior_words = {
-        "senior", "sr", "sr.", "lead", "leader", "leadership", "leading",
-        "manager", "management", "principal", "director", "staff",
-        "architect", "head", "vp", "chief", "expert", "experienced",
+    # False-positive guard: If title explicitly indicates an intern, trainee, or apprentice,
+    # do NOT drop on role-level words like "manager" (e.g. Product Manager Intern) or "lead" (e.g. Lead Generation Trainee).
+    fresher_indicators = {
+        "intern", "internship", "apprentice", "apprenticeship",
+        "trainee", "graduate trainee", "co-op", "fresher",
     }
-    exclude_words = set(w.lower() for w in profile.hard_filters.exclude_title_words) | builtin_senior_words
+    is_explicit_fresher_title = any(
+        re.search(rf"\b{re.escape(term)}\b", title_lower, re.I) for term in fresher_indicators
+    )
+
+    hard_senior_words = {
+        "senior", "sr", "sr.", "principal", "director", "architect",
+        "vp", "chief", "head", "expert",
+    }
+    role_level_words = {
+        "lead", "leader", "leadership", "leading", "manager",
+        "management", "staff", "experienced",
+    }
+
+    # Combine configured exclude words and built-in terms
+    all_configured_exclude = set(w.lower() for w in profile.hard_filters.exclude_title_words) | hard_senior_words | role_level_words
+
+    if is_explicit_fresher_title:
+        # If this is an explicit intern/trainee/apprentice role, do not drop on manager/lead/staff
+        exclude_words = all_configured_exclude - role_level_words
+    else:
+        exclude_words = all_configured_exclude
+
     for word in exclude_words:
         if re.search(rf"\b{re.escape(word)}\b", title_lower, re.I):
             return False, f"Title contains excluded word: '{word}'"

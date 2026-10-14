@@ -1,6 +1,6 @@
 # Cloud Deployment Guide — Job Digest Agent
 
-> **Target:** Render Free-Tier Web Service + GitHub Actions Automated Cron + Supabase PostgreSQL  
+> **Target:** Render Free-Tier Web Service + In-App APScheduler / GitHub Actions Cron + Neon Serverless PostgreSQL  
 > **Cost:** $0 / month  
 > **Uptime:** Kept awake 24/7 via free health check keepalive pings.
 
@@ -8,9 +8,10 @@
 
 ## 1. Overview: The 2-Component Cloud Architecture
 
-1. **Scheduled Autonomous Runner (GitHub Actions):**
-   - Runs on GitHub's cloud twice daily at **08:00 AM & 07:00 PM IST** (and on-demand).
+1. **Scheduled Autonomous Runner (In-App APScheduler on Render + GitHub Actions Backup):**
+   - In-app APScheduler executes inside the warm Render container twice daily at **08:00 AM & 07:00 PM IST** with `misfire_grace_time=3600` and automatic startup catch-up.
    - Ingests from 8 job sources, deduplicates, runs 10-point scoring against your candidate profile (Batch 2027 CSE), delivers to Telegram & Email, and sends instant alerts for jobs closing in ≤ 4 hours.
+   - GitHub Actions (`.github/workflows/daily-digest.yml`) acts as an automated secondary backup.
    - **Never sleeps** — operates independently of whether your web dashboard is open.
 
 2. **Private Web Dashboard (Render Free Web Service):**
@@ -55,7 +56,7 @@ Under the **Environment** tab in your Render Web Service dashboard, add the foll
 
 | Environment Variable | Value | Description |
 |---|---|---|
-| `DATABASE_URL` | `postgresql://postgres.xxxx:pass@aws-0-ap-south-1.pooler.supabase.com:6543/postgres` | Your Supabase Transaction Pooler URL |
+| `DATABASE_URL` | `postgresql://user:password@ep-xyz.ap-southeast-1.aws.neon.tech/neondb?sslmode=require` | Your Neon Serverless PostgreSQL connection URL |
 | `DASHBOARD_PASSWORD` | `your_secret_master_password` | Master password to log into your dashboard |
 | `SESSION_SECRET` | *(click 'Generate' or random 32 chars)* | HMAC session signing key |
 | `TELEGRAM_BOT_TOKEN` | `123456789:ABCdefGh...` | Telegram BotFather token |

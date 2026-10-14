@@ -41,6 +41,35 @@ def test_senior_and_manager_titles_excluded():
     assert "manager" in reason.lower()
 
 
+def test_fresher_roles_with_manager_or_lead_words_not_excluded():
+    """Verify that intern, trainee, or apprentice titles with words like manager or lead are NOT dropped."""
+    pm_intern = Job(
+        title="Product Manager Intern",
+        company="Flipkart",
+        location="Bengaluru",
+        canonical_url="https://example.com/pm-intern",
+        description_text="PM internship for students",
+        source="adzuna",
+        is_intern=True,
+    )
+    eligible, reason = check_eligibility(pm_intern, PROFILE)
+    assert eligible is True
+    assert reason is None
+
+    lead_gen_trainee = Job(
+        title="Lead Generation Trainee",
+        company="Zomato",
+        location="Gurugram",
+        canonical_url="https://example.com/lead-gen",
+        description_text="Trainee position",
+        source="adzuna",
+        is_intern=False,
+    )
+    eligible, reason = check_eligibility(lead_gen_trainee, PROFILE)
+    assert eligible is True
+    assert reason is None
+
+
 def test_2025_batch_only_listing_excluded():
     """Verify that a listing specifying a batch year other than 2027 is excluded."""
     batch_2025_job = Job(

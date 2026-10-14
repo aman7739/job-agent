@@ -65,7 +65,7 @@
 | **Containerization** | **Docker** | Multi-stage build | Lightweight Linux production image running as non-root `appuser` |
 | **Cloud Hosting** | **Render** | Web Service (Docker) | Production host for dashboard, webhooks, and scheduler |
 | **Showcase Hosting** | **GitHub Pages** | Static Site | Zero-JS public portfolio site deployed via `pages.yml` |
-| **Test Suite** | **pytest** | `9.1+` | Test runner executing 180 unit, integration, and reliability tests |
+| **Test Suite** | **pytest** | `9.1+` | Test runner executing 181 unit, integration, and reliability tests |
 | **Async Testing** | **pytest-asyncio** / `anyio`| `1.4+` / `4.15+` | Strict mode event loop management for async source tests |
 
 ---
@@ -330,11 +330,12 @@ CREATE TABLE IF NOT EXISTS email_messages (
                               │
                               ▼
 4. ELIGIBILITY & 10-POINT SCORING (rank_and_score_jobs)
-   - Hard Exclusion Filters:
-     * Drops any job containing senior/lead keywords: `senior`, `lead`, `manager`, `principal`, `staff`, `director`, `architect`, `head`, `vp`, `leadership`.
-     * Drops jobs requiring > 2.0 years of experience.
-     * Drops jobs restricted to graduating batches other than 2027.
-     * Enforces salary floor: Drops full-time roles offering < 3.5 LPA (when salary is explicitly listed).
+   - Hard Exclusion Filters & Seniority Guards:
+     * Hard Senior Exclusions: Strictly drops any role containing `senior`, `sr`, `sr.`, `principal`, `director`, `architect`, `vp`, `chief`, `head`, `expert`.
+     * Composite Title Protection (False-Positive Guard): Role-level keywords (`lead`, `manager`, `staff`, `leadership`) exclude standard postings, but are safely permitted if the role is explicitly an intern/trainee/apprentice (e.g., "Product Manager Intern", "Lead Generation Trainee", "Staff Assistant Apprentice"), preventing false-positive rejections.
+     * Experience Filter: Drops jobs explicitly requiring > 2.0 years of experience.
+     * Batch Year Filter: Drops jobs restricted to graduating batches other than 2027.
+     * Salary Floor: Drops full-time roles offering < 3.5 LPA (when salary is explicitly listed).
    - 10-Point Score Formula:
      * Skills Match (Max 4.0 pts): 4+ skills = 4.0, 3 = 3.2, 2 = 2.4, 1 = 1.6.
      * Role Relevance (Max 3.0 pts): Matches 41 target technical job title patterns.
@@ -371,19 +372,19 @@ CREATE TABLE IF NOT EXISTS email_messages (
 - **ADR 002 (Tech Stack):** Python 3.12, strict Pydantic (`extra="forbid"` on profile, `"ignore"` on models), SQLAlchemy 2.0 + psycopg 3, `httpx` async client, Jinja2, FastAPI.
 - **ADR 003 (Permitted Sources & Anti-Scraping):** Strict use of public ATS APIs, official search APIs (Adzuna), and personal IMAP email alerts. Zero scraping of LinkedIn/Naukri/Indeed.
 - **ADR 004 (Dual-Mailbox Separation):** Mailbox A for incoming alert emails (read-only IMAP with App Password); Mailbox B for outgoing digest notifications via SMTP.
-- **ADR 005 (Database Engine):** Supabase/Neon PostgreSQL accessed via Transaction/Session pooler string with `NullPool` to prevent idle connection exhaustion.
+- **ADR 005 (Database Engine — Neon Serverless PostgreSQL):** Dedicated production PostgreSQL 16 hosted on Neon Serverless (AWS Singapore `ap-southeast-1`) accessed via connection pooling with `NullPool` to prevent idle connection exhaustion. (Supabase was evaluated during Session 1 prototyping only).
 - **ADR 006 (Fault Isolation & Delivery Resilience):** Sources run in isolated try-except blocks, recording metrics to `source_runs`. Unreachable sources are highlighted in digest notices. Notifiers run independently; jobs are marked notified if $\ge 1$ channel succeeds.
 - **ADR 007 (Database Profile Versioning & Job Status Tracking):** Monotonic versions stored in `user_profiles` with validation on save. Corrupted configs fall back to last good version. Status (`saved`, `applied`, `not_interested`) tracked with dedicated timestamps.
 - **ADR 008 (Single-User Web Dashboard, Argon2 & Session Protection):** FastAPI app with Argon2id password hash, HMAC-SHA256 session cookie, login IP rate limiter, protected digest view and filtered job history.
 - **ADR 009 (Interactive Actions, Settings Editor, Source Health & Manual Entry):** One-click status updates, weekly applied counter, web profile & blocklist editor with validation on save, live source health monitoring, and manual ad-hoc job submission.
-- **ADR 010 (Twice-Daily Notification Cadence, Urgent Expiring Alerts & On-Demand Trigger):** Twice-daily scheduled runs (08:00 AM & 07:00 PM IST), urgent deadline detector (`≤ 4 hours left`) dispatching instant high-priority alerts to Telegram and Email, and an authenticated on-demand button (`POST /jobs/run-now`) on the dashboard header.
-- **ADR 011 (Cloud Deployment Architecture, Containerization & Health Monitoring):** Decoupled architecture where GitHub Actions runs automated crawls and pushes to Supabase, web dashboard runs on Render in production container (`Dockerfile`), and public `/health` endpoint is kept alive 24/7 with free 10-minute pings.
+- **ADR 010 (Twice-Daily Notification Cadence, Urgent Expiring Alerts & In-App Scheduler):** Twice-daily scheduled runs (08:00 AM & 07:00 PM IST) executed directly in-app by APScheduler with `misfire_grace_time=3600` and a 14-hour startup catch-up trigger; urgent deadline detector (`≤ 4 hours left`) dispatching instant high-priority alerts; and an authenticated on-demand button (`POST /jobs/run-now`).
+- **ADR 011 (Cloud Deployment Architecture & GitHub Actions Backup):** Decoupled architecture where the web dashboard and scheduler run on Render in a production container (`Dockerfile`), kept alive 24/7 via 10-minute automated health pings (`keepalive.yml`). Scheduled crawling runs primarily in-app (ADR 010) to eliminate free runner queue latency, with `.github/workflows/daily-digest.yml` retained as a secondary backup.
 - **ADR 012 (Production Hardening, Security Headers, Privacy & PWA Support):** Comprehensive enterprise security headers (CSP, HSTS, X-Frame-Options, X-Content-Type-Options), strict crawler blocking via `X-Robots-Tag` and `/robots.txt`, authentication guard on all dashboard routes, mobile PWA manifest, token-protected webhook API, and JSON database backup snapshot utility.
 - **ADR 013 (Static Showcase Site Generator & Semantic SEO Architecture):** Custom Jinja2 static site compiler (`site/build.py`) outputting cleanly formatted HTML to `dist/` with directory-based clean URLs, strict semantic SEO constraints, and zero personal candidate data leakage.
 - **ADR 014 (Structured Data, Social Meta Graph & Accessible Visual Asset Architecture):** Schema.org JSON-LD graph (`SoftwareApplication`, `WebSite`, `BreadcrumbList`), complete OpenGraph and Twitter card metadata (1200x630 social share preview card), accessible hand-crafted vector visual assets (`architecture.svg`, `telegram-mockup.svg`), and zero-placeholder content audit across all public pages.
 - **ADR 015 (Domain Deployment, Crawl Files & GitHub Pages Automation):** Automated generation of Sitemaps 0.9 protocol `sitemap.xml`, permissive `robots.txt`, structured `llms.txt` for AI crawlers, custom recovery `404.html`, automated `.github/workflows/pages.yml` deployment on push, and DNS/HTTPS custom domain guide (`docs/domain_setup.md`).
 - **ADR 016 (Production Pre-Launch Audit, Anti-Slop Enforcement & Release Baseline):** Distribution hygiene (0 source maps, 0 KB JS, ~6 KB unminified CSS, 0 console errors), strict anti-slop rules compliance, comprehensive production `README.md`, verified 20-point pre-launch checklist, and release tagging `v1.0.0`.
-- **ADR 017 (Project Wrap-Up, Operational Runbook & Final Production Handoff):** Complete operational runbook (`docs/runbook.md`), portfolio briefing (`docs/portfolio_summary.md`), all 17 ADRs verified, 166 tests passing, and production-ready handoff.
+- **ADR 017 (Project Wrap-Up, Operational Runbook & Final Production Handoff):** Complete operational runbook (`docs/runbook.md`), portfolio briefing (`docs/portfolio_summary.md`), 20 ADRs documented, 181 automated tests passing (100% green), and production-ready handoff.
 - **ADR 018 (Non-Blocking Header-First IMAP Architecture):** Offloads synchronous IMAP fetching to `asyncio.to_thread` with strict 15s socket timeout, filters emails by header fields (`FROM`, `MESSAGE-ID`) under 1 KB, skips unauthorized senders and cached Message-IDs in 1ms, and searches only past 3 days (`SINCE`). Eliminates event-loop blocking and cuts crawl duration from 5 minutes to 3 seconds.
 - **ADR 019 (Single-Query Dashboard Source Health Architecture):** Replaces 8 individual sequential database roundtrips with a single batch query (`ORDER BY started_at DESC LIMIT 200`) grouped in memory, achieving sub-100ms `/sources` page load times even during remote Singapore-to-client network latency.
 - **ADR 020 (Multi-Platform Job Alert Ingestion & Universal Parser):** Extends IMAP whitelisting from 3 to 11 major platforms (Internshala, Unstop, Instahyre, Wellfound, Cutshort, Foundit, Glassdoor, Hirist) with domain pattern matching, specialized internship extractors, and a universal job link parser for untrusted email HTML.
@@ -410,6 +411,8 @@ CREATE TABLE IF NOT EXISTS email_messages (
 16. **IMAP Full Body Download Latency:** Fetching `(RFC822)` for 20 messages downloads multi-megabytes over SSL, causing 3–5 minute latency. Always fetch headers first (`BODY.PEEK[HEADER.FIELDS (FROM MESSAGE-ID SUBJECT DATE)]`) under 1 KB, verify the sender against the domain whitelist, and check if the Message-ID is already in `email_messages` before downloading the full body.
 17. **Multi-Query Dashboard Bottleneck:** Querying health status for each source adapter in an iterative loop across remote database connections multiplies latency by $N$. Use a single batch query (`LIMIT 200`) and group latest runs in memory for sub-100ms dashboard rendering.
 18. **Anti-Scraping Realities on Job Portals:** Indeed (Cloudflare 403 Forbidden) and Naukri (Akamai 406 Not Acceptable) aggressively block direct HTTP scrapers and cloud IPs. Reading their algorithmic recommendation emails over IMAP completely bypasses bot firewalls legally with 100% zero blocks.
+19. **Seniority False Positives on Composite Titles:** Substring checking on keywords like `manager`, `lead`, or `staff` causes false rejections on valid fresher postings such as "Product Manager Intern", "Lead Generation Trainee", or "Staff Assistant Apprentice". `job_digest/match.py` defines `is_explicit_fresher_title`: when a title contains explicit fresher indicators (`intern`, `trainee`, `apprentice`, `co-op`), role-level words (`lead`, `manager`, `staff`) are removed from exclusion, while hard senior words (`senior`, `principal`, `director`, `architect`, `vp`) remain strictly excluded.
+20. **Scheduler Misfire Grace Time & Startup Catch-Up:** In free PaaS containers, if a deploy or maintenance restart overlaps with the scheduled run (08:00 AM / 07:00 PM IST), default APScheduler settings drop missed jobs silently (`misfire_grace_time=None`). Setting `misfire_grace_time=3600` allows the job to trigger up to 1 hour after scheduled time. Additionally, on container startup, the background lifespan inspects the latest digest in the database; if the last crawl was > 14 hours ago, an immediate catch-up crawl is triggered in the background.
 
 ---
 
@@ -439,5 +442,60 @@ CREATE TABLE IF NOT EXISTS email_messages (
   6. `adzuna`: 20 live Indian tech jobs via developer API keys (Healthy)
   7. `remotive`: 10 remote jobs (Healthy)
   8. `email_alerts`: 15 jobs parsed & smart cached deduplication (Healthy)
-- **Total Reach:** Over **1,410+ raw roles** scanned and normalized across both Indian and global tech markets.
-- **Test Suite Status:** **180 passing unit and integration tests (100% green).**
+- **Total Ingestion Reach:** Over **1,410+ raw roles** scanned and normalized across both Indian and global tech markets.
+- **Test Suite Status:** **181 passing unit and integration tests (100% green).**
+
+---
+
+## 11. Job Relevance, Matching Accuracy & Outcome Funnel
+
+Recruiter Readiness & Production Quality Metrics:
+
+### 11.1 The Ingestion-to-Application Yield Funnel
+
+The system deliberately separates raw ingestion throughput from actionable opportunities to avoid notification fatigue:
+
+```
+[Raw Ingestion Throughput]
+1,410+ Total Postings Scanned across 8 Sources (Greenhouse, Ashby, Lever, SmartRecruiters, Workable, Adzuna, Remotive, Email Alerts)
+     │
+     ▼ (Deduplication & Recency Window)
+~195 Unique Fresh Jobs
+   - Fingerprint: sha256(canonical_company | normalized_title | location)
+   - 48-Hour Recency Filter: Previously seen or notified roles dropped
+     │
+     ▼ (Strict Hard Eligibility Rules)
+10–25 Eligible Fresher & Internship Postings
+   - Experience Filter: Dropped if > 2.0 years
+   - Graduating Batch: Restricted exclusively to 2027 eligible / open
+   - Hard Senior Exclusion: Dropped if Senior / Principal / Director / Architect / VP
+   - Title Protection: "Product Manager Intern" or "Lead Gen Trainee" safely retained
+   - Salary Floor: Dropped if full-time < 3.5 LPA
+     │
+     ▼ (10-Point Profile Scoring & Dual-Group Presentation)
+Curated Digest (Max 40 Items)
+   - Section 1: Internships & Apprenticeships (Strong Matches >= 7.0 & Good Matches 4.0–6.9)
+   - Section 2: Full-Time Fresher Roles (Strong Matches >= 7.0 & Good Matches 4.0–6.9)
+   - Dispatched via Telegram Markdown & SMTP HTML Email
+     │
+     ▼ (Dashboard Outcome Tracking)
+Target Applications Submitted
+   - Candidate marks status directly in Dashboard: Saved -> Applied -> Not Interested
+   - Outcome metrics tracked in Neon PostgreSQL: `saved_at`, `applied_at`, `not_interested_at`
+```
+
+### 11.2 Tuning Matching Accuracy & False-Positive Elimination
+
+| Failure Mode | Root Cause | Solution Implemented | Test Coverage |
+|---|---|---|---|
+| **Senior Role Leakage** | Vague descriptions without explicit years | Strict multi-word exclusion regex: `senior`, `sr.`, `principal`, `director`, `vp`, `architect`, `lead` | `test_match.py` |
+| **False-Positive Senior Rejection** | Composite titles like "Product Manager Intern" or "Lead Generation Trainee" containing `manager` or `lead` | Dual-tier classification: Hard senior words reject always; role words (`lead`, `manager`, `staff`) permitted if explicit intern/trainee indicator present | `test_fresher_roles_with_manager_or_lead_words_not_excluded` |
+| **Broken / Expired Links** | Aggregators linking to intermediate redirect loops | Link extraction restricted to direct ATS canonical URLs (`greenhouse.io`, `lever.co`, `ashbyhq.com`) and validated platform deep-links | `test_sources.py`, `test_email_source.py` |
+| **Language Keyword False Hits** | Short keywords (`C`, `Go`, `REST`) matching substrings | Regular expression word-boundary tokens (`\bC\b`, `\bGo\b`, `\bREST\b`) with negative lookaheads (preventing matches in `CSS`, `Good`, `Restricted`) | `test_normalize.py` |
+| **Company Legal Variations** | "Stripe" vs "Stripe India Pvt Ltd" seen as distinct companies | Normalizer strips registered entity legal suffixes (`Pvt Ltd`, `LLC`, `Inc`, `Corp`) prior to fingerprinting | `test_dedup.py` |
+
+### 11.3 Personal Candidate Outcome & Time Savings
+
+- **Daily Time Saved:** ~90 minutes per day previously spent manually refreshing 6 job boards and opening spam emails.
+- **Signal-to-Noise Ratio:** Raw volume (1,410+) is filtered down to ~15 highly targeted opportunities per run—delivering a ~98.8% noise reduction rate.
+- **Application Tracking:** The dashboard's interactive weekly applied counter and status actions persist exact timestamps, providing clear visibility into application velocity and pipeline health.

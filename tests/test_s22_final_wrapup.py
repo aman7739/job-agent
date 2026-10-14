@@ -131,8 +131,8 @@ def test_milestone_4_documentation_and_adr_completeness():
     for doc in doc_files:
         assert doc.exists(), f"Documentation file {doc.name} missing"
 
-    # All ADRs from 001 to 017 must be recorded in docs/decisions.md
+    # All ADRs from 001 to 020 must be recorded in docs/decisions.md
     decisions_content = (PROJECT_ROOT / "docs" / "decisions.md").read_text(encoding="utf-8")
-    for i in range(1, 18):
+    for i in range(1, 21):
         adr_id = f"ADR {i:03d}"
         assert adr_id in decisions_content, f"Missing {adr_id} in docs/decisions.md"
