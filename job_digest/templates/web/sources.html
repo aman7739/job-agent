@@ -52,4 +52,52 @@
     </tbody>
   </table>
 </div>
+
+<!-- Stage 4: 7-Day Source Yield & Attribution Analytics -->
+<div style="margin-top: 36px; margin-bottom: 16px;">
+  <h2 style="font-size: 20px; font-weight: 700; color: #0f172a;">7-Day Source Yield &amp; Attribution Analytics</h2>
+  <p style="font-size: 14px; color: #64748b; margin-top: 2px;">
+    Track which adapters contribute exclusive opportunities and drive actual application submissions.
+  </p>
+</div>
+
+<div class="card" style="padding: 24px;">
+  <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 14px;">
+    <thead>
+      <tr style="border-bottom: 2px solid #e2e8f0; color: #475569;">
+        <th style="padding: 10px 12px;">Source</th>
+        <th style="padding: 10px 12px;">7d Sightings</th>
+        <th style="padding: 10px 12px;">Unique Jobs</th>
+        <th style="padding: 10px 12px;">Incremental (Exclusive)</th>
+        <th style="padding: 10px 12px;">Saved</th>
+        <th style="padding: 10px 12px;">Applied</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for s in sources %}
+      {% set m = s.metrics_7d %}
+      <tr style="border-bottom: 1px solid #f1f5f9;">
+        <td style="padding: 12px; font-weight: 600; color: #0f172a;">
+          {{ s.name }}
+        </td>
+        <td style="padding: 12px; font-weight: 500;">
+          {{ m.total_sightings }}
+        </td>
+        <td style="padding: 12px; font-weight: 500;">
+          {{ m.unique_jobs }}
+        </td>
+        <td style="padding: 12px; color: #0284c7; font-weight: 600;">
+          {{ m.incremental_jobs }}
+        </td>
+        <td style="padding: 12px; color: #d97706; font-weight: 500;">
+          {{ m.saved_jobs }}
+        </td>
+        <td style="padding: 12px; color: #16a34a; font-weight: 600;">
+          {{ m.applied_jobs }}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
 {% endblock %}

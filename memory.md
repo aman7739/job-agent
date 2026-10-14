@@ -65,7 +65,7 @@
 | **Containerization** | **Docker** | Multi-stage build | Lightweight Linux production image running as non-root `appuser` |
 | **Cloud Hosting** | **Render** | Web Service (Docker) | Production host for dashboard, webhooks, and scheduler |
 | **Showcase Hosting** | **GitHub Pages** | Static Site | Zero-JS public portfolio site deployed via `pages.yml` |
-| **Test Suite** | **pytest** | `9.1+` | Test runner executing 187 unit, integration, and reliability tests |
+| **Test Suite** | **pytest** | `9.1+` | Test runner executing 194 unit, integration, and reliability tests |
 | **Async Testing** | **pytest-asyncio** / `anyio`| `1.4+` / `4.15+` | Strict mode event loop management for async source tests |
 
 ---
@@ -440,10 +440,12 @@ CREATE TABLE IF NOT EXISTS email_messages (
   4. `smartrecruiters`: 21 jobs (Healthy)
   5. `workable`: 0 active Indian jobs (Healthy)
   6. `adzuna`: 20 live Indian tech jobs via developer API keys (Healthy)
-  7. `remotive`: 10 remote jobs (Healthy)
-  8. `email_alerts`: 15 jobs parsed & smart cached deduplication (Healthy)
+  7. `jooble`: Jooble search API adapter configured for Indian tech freshers (Healthy)
+  8. `remotive`: 10 remote jobs (Healthy)
+  9. `arbeitnow`: Free remote tech jobs feed (Healthy)
+  10. `email_alerts`: 15 jobs parsed & smart cached deduplication (Healthy)
 - **Total Ingestion Reach:** Over **1,410+ raw roles** scanned and normalized across both Indian and global tech markets.
-- **Test Suite Status:** **187 passing unit and integration tests (100% green).**
+- **Test Suite Status:** **194 passing unit and integration tests (100% green).**
 
 ---
 
@@ -457,7 +459,7 @@ The system deliberately separates raw ingestion throughput from actionable oppor
 
 ```
 [Raw Ingestion Throughput]
-1,410+ Total Postings Scanned across 8 Sources (Greenhouse, Ashby, Lever, SmartRecruiters, Workable, Adzuna, Remotive, Email Alerts)
+1,410+ Total Postings Scanned across 10 Sources (Greenhouse, Ashby, Lever, SmartRecruiters, Workable, Adzuna, Jooble, Remotive, Arbeitnow, Email Alerts)
      │
      ▼ (Deduplication & Recency Window)
 ~195 Unique Fresh Jobs
@@ -502,7 +504,7 @@ Target Applications Submitted
 
 ---
 
-## 12. Source Expansion Build Plan (Status: Stages 1 & 2 Completed)
+## 12. Source Expansion Build Plan (Status: All 5 Stages Completed)
 
 Based on [`job_digest_build_plan.md`](file:///C:/Users/KRAMA/OneDrive/Desktop/AI%20AGENT/job_digest_build_plan.md):
 
@@ -515,6 +517,7 @@ Based on [`job_digest_build_plan.md`](file:///C:/Users/KRAMA/OneDrive/Desktop/AI
     * `greenhouse`: `groww` (11 India roles), `inmobi` (46 India roles), `druva` (14 India roles), `twilio` (143 India/Remote roles), `rubrik` (50 India roles), `samsara` (221 India/Remote roles), `databricks` (164 India roles), `okta` (111 India roles)
     * `ashby`: `snowflake` (51 India roles)
   - Results logged to `reports/ats_slug_report.csv`.
+
 - **Stage 2 (Completed): Adzuna Query Groups & Email Alert Expansion:**
   - Replaced generic broad queries with 6 targeted fresher/intern groups in [`job_digest/sources/adzuna.py`](file:///C:/Users/KRAMA/OneDrive/Desktop/AI%20AGENT/job_digest/sources/adzuna.py):
     1. `python developer (fresher OR entry level OR junior)`
@@ -525,5 +528,19 @@ Based on [`job_digest_build_plan.md`](file:///C:/Users/KRAMA/OneDrive/Desktop/AI
     6. `associate software engineer OR junior software engineer`
   - Expanded [`job_digest/sources/email_alerts.py`](file:///C:/Users/KRAMA/OneDrive/Desktop/AI%20AGENT/job_digest/sources/email_alerts.py) whitelisting to accept direct company ATS alert senders (`greenhouse.io`, `lever.co`, `smartrecruiters.com`, `ashbyhq.com`, `myworkdayjobs.com`, `amazon.jobs`).
   - Added unit test [`test_parse_direct_ats_career_alerts`](file:///C:/Users/KRAMA/OneDrive/Desktop/AI%20AGENT/tests/test_email_source.py).
-- **Stage 3 (Next):** Trial one aggregator API (Jooble or Careerjet).
-- **Stage 4:** Implement `job_sightings` metric table and 7-day per-source analytics on `/sources`.
+
+- **Stage 3 (Completed): Official Aggregator Adapter (Jooble):**
+  - Implemented [`job_digest/sources/jooble.py`](file:///C:/Users/KRAMA/OneDrive/Desktop/AI%20AGENT/job_digest/sources/jooble.py) connecting to official Jooble REST API with 5 targeted fresher queries in India.
+  - Full fault isolation; skips gracefully if `JOOBLE_API_KEY` is not configured.
+  - Verified by [`tests/test_jooble.py`](file:///C:/Users/KRAMA/OneDrive/Desktop/AI%20AGENT/tests/test_jooble.py).
+
+- **Stage 4 (Completed): `job_sightings` Table & 7-Day Attribution Analytics:**
+  - Added `job_sightings` table to `database/schema.sql` and `job_digest/db.py` to record multi-source sightings per job fingerprint.
+  - Implemented `get_7day_source_metrics` in [`job_digest/dedup.py`](file:///C:/Users/KRAMA/OneDrive/Desktop/AI%20AGENT/job_digest/dedup.py) calculating 7-day total sightings, unique jobs, incremental exclusive jobs, and saved/applied yield.
+  - Added interactive "7-Day Source Yield & Attribution Analytics" dashboard card to [`job_digest/templates/web/sources.html`](file:///C:/Users/KRAMA/OneDrive/Desktop/AI%20AGENT/job_digest/templates/web/sources.html).
+  - Verified by [`tests/test_sightings.py`](file:///C:/Users/KRAMA/OneDrive/Desktop/AI%20AGENT/tests/test_sightings.py).
+
+- **Stage 5 (Completed): Zero-Auth Remote Tech Feed (Arbeitnow):**
+  - Implemented [`job_digest/sources/arbeitnow.py`](file:///C:/Users/KRAMA/OneDrive/Desktop/AI%20AGENT/job_digest/sources/arbeitnow.py) connecting to Arbeitnow's public JSON feed with zero API key required.
+  - Filters for India and Remote positions.
+  - Verified by [`tests/test_arbeitnow.py`](file:///C:/Users/KRAMA/OneDrive/Desktop/AI%20AGENT/tests/test_arbeitnow.py).

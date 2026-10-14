@@ -1,7 +1,7 @@
 # Job Digest Agent &bull; Autonomous Career Intelligence Pipeline
 
 [![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/downloads/)
-[![Tests Passing](https://img.shields.io/badge/tests-187%20passing-success.svg)](https://pytest.org/)
+[![Tests Passing](https://img.shields.io/badge/tests-194%20passing-success.svg)](https://pytest.org/)
 [![Status](https://img.shields.io/badge/status-production--v1.0.0-emerald.svg)]()
 [![Compliance](https://img.shields.io/badge/compliance-zero--scraping%20charter-blue.svg)]()
 
@@ -9,21 +9,23 @@ An autonomous, fault-isolated job intelligence system designed for a final-year 
 1. **Internships & Apprenticeships:** 3 to 6-month engineering internships with stipends.
 2. **Full-Time Fresher Roles:** Graduate Engineer Trainee (GET), Associate Software Engineer, and Junior Backend roles requiring 0 to 1 years experience.
 
-The pipeline monitors 8 permitted ATS and search feeds twice daily (08:00 AM & 07:00 PM IST), cleans and deduplicates listings, evaluates opportunities using a deterministic 10-point scoring algorithm, delivers digests via Telegram and SMTP Email, and dispatches immediate high-priority alerts for urgent roles closing in $\le 4$ hours.
+The pipeline monitors 10 permitted ATS, search, and job board feeds twice daily (08:00 AM & 07:00 PM IST), cleans and deduplicates listings, evaluates opportunities using a deterministic 10-point scoring algorithm, delivers digests via Telegram and SMTP Email, and dispatches immediate high-priority alerts for urgent roles closing in $\le 4$ hours.
 
 ---
 
 ## Architecture & Data Flow
 
 ```
-[8 Permitted Sources]
+[10 Permitted Sources]
  ├── Greenhouse API (slug pacing)
  ├── Lever API (slug pacing)
  ├── Ashby API (isListed=True)
  ├── SmartRecruiters API (public REST)
  ├── Workable (v3 API / v1 Widget fallback)
- ├── Adzuna Search API (5 batches per run)
+ ├── Adzuna Search API (targeted fresher queries)
+ ├── Jooble REST API (India fresher queries)
  ├── Remotive API (remote feed <= 4/day)
+ ├── Arbeitnow API (remote developer jobs)
  └── IMAP Email Alerts (Mailbox A, SSL Port 993)
         │
         ▼
@@ -66,7 +68,7 @@ The pipeline monitors 8 permitted ATS and search feeds twice daily (08:00 AM & 0
 
 ---
 
-## 8 Permitted Sources & Anti-Scraping Charter
+## 10 Permitted Sources & Anti-Scraping Charter
 
 The project maintains an ethical compliance boundary:
 - **Zero Headless Automation:** No Selenium, Playwright, or Puppeteer DOM scraping.
@@ -74,7 +76,7 @@ The project maintains an ethical compliance boundary:
 - **Dual-Mailbox Separation:**
   - **Mailbox A (Alerts Inbox):** Receives official forwarded email alerts from job platforms; read via SSL IMAP (Port 993) using an App Password.
   - **Mailbox B (Notifications Inbox):** Receives the final daily digests via SMTP (Port 587 STARTTLS) to prevent circular loops.
-- **Rate-Limited Official APIs:** Sequential pacing across public ATS endpoints (Greenhouse, Lever, Ashby, SmartRecruiters, Workable) and official search APIs (Adzuna, Remotive).
+- **Rate-Limited Official APIs:** Sequential pacing across public ATS endpoints (Greenhouse, Lever, Ashby, SmartRecruiters, Workable), official search/aggregator APIs (Adzuna, Jooble, Remotive, Arbeitnow), and inbound email alerts.
 
 ---
 

@@ -252,6 +252,9 @@ def process_and_upsert_jobs(
             },
         )
 
+        # Record sighting in job_sightings table (Stage 4 Source Attribution)
+        record_sighting(session, fp, job.source, current_ts)
+
     session.commit()
 
     return DeduplicationResult(
@@ -260,3 +263,148 @@ def process_and_upsert_jobs(
         stale_count=stale_count,
         duplicate_count=dup_count,
     )
+
+
+def ensure_sightings_table(session: Session) -> None:
+    """Ensure job_sightings table exists in the connected database."""
+    try:
+        bind_url = str(session.bind.url) if session.bind else ""
+        if "sqlite" in bind_url:
+            sql = """
+            CREATE TABLE IF NOT EXISTS job_sightings (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                fingerprint VARCHAR(64) NOT NULL,
+                source VARCHAR(64) NOT NULL,
+                seen_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+            """
+        else:
+            sql = """
+            CREATE TABLE IF NOT EXISTS job_sightings (
+                id BIGSERIAL PRIMARY KEY,
+                fingerprint VARCHAR(64) NOT NULL REFERENCES seen_jobs(fingerprint) ON DELETE CASCADE,
+                source VARCHAR(64) NOT NULL,
+                seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            )
+            """
+        session.execute(text(sql))
+        session.commit()
+    except Exception as exc:
+        logger.debug(f"ensure_sightings_table notice: {exc}")
+
+
+def record_sighting(
+    session: Session,
+    fingerprint: str,
+    source: str,
+    seen_at: datetime,
+) -> None:
+    """Record a job sighting to track multi-source yield and incremental contribution."""
+    ensure_sightings_table(session)
+    try:
+        session.execute(
+            text(
+                """
+                INSERT INTO job_sightings (fingerprint, source, seen_at)
+                VALUES (:fp, :src, :ts)
+                """
+            ),
+            {"fp": fingerprint, "src": source, "ts": seen_at},
+        )
+    except Exception as exc:
+        logger.debug(f"Could not record sighting for {fingerprint} from {source}: {exc}")
+
+
+def get_7day_source_metrics(
+    session: Session,
+    now: Optional[datetime] = None,
+) -> Dict[str, Dict[str, int]]:
+    """
+    Compute 7-day attribution metrics per source:
+    - total_sightings: total roles spotted
+    - unique_jobs: distinct fingerprints found
+    - incremental_jobs: unique jobs found ONLY by this source
+    - applied_jobs: jobs originating from this source that candidate applied to
+    - saved_jobs: jobs originating from this source that candidate saved
+    """
+    ensure_sightings_table(session)
+    current_time = now or datetime.now(timezone.utc)
+    since_ts = current_time - timedelta(days=7)
+
+    metrics: Dict[str, Dict[str, int]] = {}
+
+    try:
+        # 1. Total and unique jobs seen in last 7 days per source
+        rows = session.execute(
+            text(
+                """
+                SELECT source, count(id) AS total_sightings, count(DISTINCT fingerprint) AS unique_jobs
+                FROM job_sightings
+                WHERE seen_at >= :since
+                GROUP BY source
+                """
+            ),
+            {"since": since_ts},
+        ).fetchall()
+
+        for r in rows:
+            src = str(r[0])
+            metrics[src] = {
+                "total_sightings": int(r[1]),
+                "unique_jobs": int(r[2]),
+                "incremental_jobs": 0,
+                "saved_jobs": 0,
+                "applied_jobs": 0,
+            }
+
+        # 2. Incremental jobs: fingerprints seen ONLY by this source in the window
+        solo_rows = session.execute(
+            text(
+                """
+                SELECT s.source, count(DISTINCT s.fingerprint) AS solo_count
+                FROM job_sightings s
+                WHERE s.seen_at >= :since
+                  AND s.fingerprint IN (
+                      SELECT fingerprint
+                      FROM job_sightings
+                      WHERE seen_at >= :since
+                      GROUP BY fingerprint
+                      HAVING count(DISTINCT source) = 1
+                  )
+                GROUP BY s.source
+                """
+            ),
+            {"since": since_ts},
+        ).fetchall()
+
+        for r in solo_rows:
+            src = str(r[0])
+            if src in metrics:
+                metrics[src]["incremental_jobs"] = int(r[1])
+
+        # 3. Application yield: jobs with status 'applied' or 'saved'
+        yield_rows = session.execute(
+            text(
+                """
+                SELECT s.source,
+                       count(DISTINCT CASE WHEN sj.status = 'saved' OR sj.saved_at IS NOT NULL THEN s.fingerprint END) AS saved_cnt,
+                       count(DISTINCT CASE WHEN sj.status = 'applied' OR sj.applied_at IS NOT NULL THEN s.fingerprint END) AS applied_cnt
+                FROM job_sightings s
+                JOIN seen_jobs sj ON s.fingerprint = sj.fingerprint
+                WHERE s.seen_at >= :since
+                GROUP BY s.source
+                """
+            ),
+            {"since": since_ts},
+        ).fetchall()
+
+        for r in yield_rows:
+            src = str(r[0])
+            if src in metrics:
+                metrics[src]["saved_jobs"] = int(r[1] or 0)
+                metrics[src]["applied_jobs"] = int(r[2] or 0)
+
+    except Exception as exc:
+        logger.warning(f"Error computing 7-day source metrics: {exc}")
+
+    return metrics

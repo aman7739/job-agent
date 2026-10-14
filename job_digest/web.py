@@ -28,6 +28,7 @@ from job_digest.auth import (
     verify_password,
 )
 from job_digest.db import get_database_url, get_db_session
+from job_digest.dedup import get_7day_source_metrics
 from job_digest.profile import load_profile
 from job_digest.profile_service import get_active_profile_from_db, save_profile_to_db
 from job_digest.status import (
@@ -728,12 +729,18 @@ async def source_health_page(
     """Render source health monitoring page across all 8 permitted source adapters."""
     all_source_names = [
         "greenhouse", "lever", "ashby", "smartrecruiters",
-        "workable", "adzuna", "remotive", "email_alerts",
+        "workable", "adzuna", "jooble", "remotive", "arbeitnow", "email_alerts",
     ]
     sources_metrics: List[Dict[str, Any]] = []
     latest_by_source: Dict[str, Any] = {}
+    seven_day_metrics: Dict[str, Dict[str, int]] = {}
 
     if session:
+        try:
+            seven_day_metrics = get_7day_source_metrics(session)
+        except Exception as exc:
+            logger.warning(f"Error computing 7-day source metrics: {exc}")
+
         try:
             rows = session.execute(
                 text(
@@ -759,6 +766,13 @@ async def source_health_page(
 
         for sname in all_source_names:
             data = latest_by_source.get(sname)
+            s7 = seven_day_metrics.get(sname, {
+                "total_sightings": 0,
+                "unique_jobs": 0,
+                "incremental_jobs": 0,
+                "saved_jobs": 0,
+                "applied_jobs": 0,
+            })
             if data:
                 st = data["started_at"]
                 last_run = st.strftime("%d %b %Y %H:%M UTC") if hasattr(st, "strftime") else str(st)
@@ -768,6 +782,7 @@ async def source_health_page(
                     "jobs_found": data["jobs_found"],
                     "is_success": data["is_success"],
                     "error_message": data["error_message"],
+                    "metrics_7d": s7,
                 })
             else:
                 sources_metrics.append({
@@ -776,6 +791,7 @@ async def source_health_page(
                     "jobs_found": 0,
                     "is_success": False,
                     "error_message": "No run recorded yet",
+                    "metrics_7d": s7,
                 })
     else:
         for sname in all_source_names:
@@ -785,6 +801,13 @@ async def source_health_page(
                 "jobs_found": 0,
                 "is_success": True,
                 "error_message": None,
+                "metrics_7d": {
+                    "total_sightings": 0,
+                    "unique_jobs": 0,
+                    "incremental_jobs": 0,
+                    "saved_jobs": 0,
+                    "applied_jobs": 0,
+                },
             })
 
     weekly_cnt = get_weekly_applied_count(session) if session else 0

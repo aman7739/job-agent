@@ -31,10 +31,12 @@ from job_digest.notify import (
 from job_digest.urgency import detect_job_urgency
 from job_digest.profile import UserProfile, load_profile
 from job_digest.sources.adzuna import AdzunaSource
+from job_digest.sources.arbeitnow import ArbeitnowSource
 from job_digest.sources.ashby import AshbySource
 from job_digest.sources.base import JobSource
 from job_digest.sources.email_alerts import EmailAlertSource
 from job_digest.sources.greenhouse import GreenhouseSource
+from job_digest.sources.jooble import JoobleSource
 from job_digest.sources.lever import LeverSource
 from job_digest.sources.remote import RemotiveSource
 from job_digest.sources.runner import run_all_sources
@@ -61,7 +63,9 @@ def instantiate_sources(
         "smartrecruiters": SmartRecruitersSource(slugs=sources_cfg.smartrecruiters),
         "workable": WorkableSource(slugs=sources_cfg.workable),
         "remotive": RemotiveSource(enforce_rate_limit=True),
+        "arbeitnow": ArbeitnowSource(),
         "adzuna": AdzunaSource(),
+        "jooble": JoobleSource(),
         "email_alerts": EmailAlertSource(session=db_session),
     }
 

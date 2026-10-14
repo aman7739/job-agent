@@ -21,11 +21,11 @@ def test_instantiate_sources():
         workable=["test"],
     )
     sources = instantiate_sources(cfg)
-    assert len(sources) == 8
+    assert len(sources) == 10
     names = {s.name for s in sources}
     expected = {
         "greenhouse", "lever", "ashby", "smartrecruiters",
-        "workable", "remotive", "adzuna", "email_alerts",
+        "workable", "remotive", "arbeitnow", "adzuna", "jooble", "email_alerts",
     }
     assert names == expected
 

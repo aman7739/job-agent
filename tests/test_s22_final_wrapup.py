@@ -41,7 +41,9 @@ def test_milestone_1_autonomous_pipeline_integrity():
         "smartrecruiters.py",
         "workable.py",
         "adzuna.py",
+        "jooble.py",
         "remote.py",  # Remotive API feed
+        "arbeitnow.py",
         "email_alerts.py",
     ]
     for src in expected_sources:

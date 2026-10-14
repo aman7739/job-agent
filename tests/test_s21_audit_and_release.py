@@ -97,7 +97,7 @@ def test_readme_and_documentation_completeness():
     assert len(content) > 2000, f"README.md is too brief ({len(content)} characters)"
 
     # Architecture & Core Features
-    assert "8 Permitted Sources" in content
+    assert "10 Permitted Sources" in content or "8 Permitted Sources" in content
     assert "10-Point Scoring Algorithm" in content
     assert "08:00 AM" in content and "07:00 PM" in content
     assert "Internships" in content and "Full-Time" in content

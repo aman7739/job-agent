@@ -94,3 +94,12 @@ CREATE TABLE IF NOT EXISTS email_messages (
     processed_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     jobs_extracted INT NOT NULL DEFAULT 0
 );
+
+CREATE TABLE IF NOT EXISTS job_sightings (
+    id BIGSERIAL PRIMARY KEY,
+    fingerprint VARCHAR(64) NOT NULL REFERENCES seen_jobs(fingerprint) ON DELETE CASCADE,
+    source VARCHAR(64) NOT NULL,
+    seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_sightings_source ON job_sightings(source, seen_at DESC);
+CREATE INDEX IF NOT EXISTS idx_sightings_fp ON job_sightings(fingerprint);
