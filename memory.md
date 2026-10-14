@@ -1,7 +1,7 @@
-# Job Digest Agent — Project Memory & Context
+# Job Digest Agent — Master Project Memory & Context
 
 > **Last Updated:** Post-Launch Production Milestone (All 8 Sources 100% Healthy & Live on Render!)  
-> **Target Audience:** Agent context persistence across sessions and long-term project reference.
+> **Target Audience:** Agent context persistence across sessions, architectural documentation, and complete operational reference.
 
 ---
 
@@ -40,106 +40,332 @@
 
 ---
 
-## 3. Architecture & Data Flow
+## 3. Comprehensive Technology Stack Matrix
 
-```
-[8 Permitted Sources]
- ├── Greenhouse API (18 company slugs, e.g. Cloudflare, Stripe, Datadog)
- ├── Lever API (8 company slugs, e.g. Palantir, Spotify, Canonical)
- ├── Ashby API (8 company slugs, e.g. OpenAI, Figma, Notion, Linear)
- ├── SmartRecruiters API (4 company slugs, e.g. Bosch, IKEA, Ubisoft, Visa)
- ├── Workable API / Widget (4 company slugs, e.g. Transferwise, Harness)
- ├── Adzuna Search API (Live Indian tech jobs: Python, ML/AI, QA, Web, Internships)
- ├── Remotive API (Remote tech vacancies in India / Worldwide)
- └── IMAP Email Alerts (Header-First, Non-Blocking Thread, 11 Whitelisted Platforms)
-        │
-        ▼
-[Fault-Isolated Runner (45s Timeout per Source)] ──> Logs metrics to `source_runs`
-        │
-        ▼
-[Normalization Engine]
- ├── HTML tag stripping & whitespace cleaning
- ├── Location canonicalization (Gurgaon -> Gurugram, Calcutta -> Kolkata, etc.)
- ├── URL tracker cleaning (stripping UTM, ref, tracking tokens)
- ├── Anti-Trap regex extractors: 'C', 'Go', 'REST API'
- └── Salary/Stipend parser (LPA range, annual INR, monthly stipend, USD to LPA)
-        │
-        ▼
-[Deduplication & Freshness Filter]
- ├── Legal suffix stripping (normalize_company)
- ├── SHA-256 fingerprint: sha256(company | title | location)
- ├── Canonical URL duplicate drop
- ├── 48-hour freshness cutoff
- └── Database upsert into `seen_jobs` and `jobs`
-        │
-        ▼
-[Eligibility & 10-Point Scoring Engine]
- ├── Hard Filters:
- │    ├── Strict title exclusion: senior, lead, manager, principal, staff, director, architect, head, VP, leadership
- │    ├── Max required experience <= 2 years
- │    ├── Allowed batch year: 2027 only (drops other named batches like 2024/2025)
- │    └── Full-time salary floor: >= 3.5 LPA when listed
- └── 10-Point Score Breakdown:
-      ├── Skills overlap: 4.0 pts (4+ skills = 4.0, 3 = 3.2, 2 = 2.4, 1 = 1.6)
-      ├── Role match: 3.0 pts (41 target roles)
-      ├── Level match: 2.0 pts (intern/apprentice/0-yr = 2.0, <=1 yr = 1.8, <=2 yr = 1.4)
-      └── Location match: 1.0 pt (Preferred city = 1.0, India/Remote = 0.5, Abroad = 0.0)
-        │
-        ▼
-[Jinja2 Digest Builder]
- ├── Section 1: Internships & Apprenticeships (Strong >= 7.0 & Maybe 4.0-6.9)
- ├── Section 2: Full-Time Roles (Strong >= 7.0 & Maybe 4.0-6.9)
- ├── Apply link first, pay, score, matched skills, tracked gaps, source attribution
- └── Capped at 40 items total; graceful "nothing new" empty state
-        │
-        ▼
-[Delivery & Notification Engine]
- ├── Telegram: BotFather bot token & chat ID, splits > 4000 chars along lines
- └── Email: SMTP port 587 STARTTLS multipart HTML + plain text to Mailbox B
-        │
-        ▼
-[Database Persistence]
- ├── Save rendered digest to `digests` table
- └── Mark delivered jobs with `notified_at = NOW()` in `seen_jobs`
-```
-
----
-
-## 4. Completed Sessions & Milestone History
-
-| Session | Focus | Deliverables & Key Files | Commit Hash / Tag |
+| Category | Technology | Version / Spec | Role in Project |
 |---|---|---|---|
-| **Session 0** | Setup & Skeleton | Git repo, `.venv` (Python 3.12), `requirements.txt`, `.env.example`, `docs/decisions.md`, `.github/workflows/ci.yml` | `day0` |
-| **Session 1** | Profile & Database Schema | `profile.example.yaml`, `job_digest/profile.py` (strict Pydantic), `database/schema.sql` (6 tables), `job_digest/db.py` (NullPool) | `day1` |
-| **Session 2** | Greenhouse & Lever Sources | `job_digest/models.py` (`RawJob`), `job_digest/sources/base.py`, `greenhouse.py`, `lever.py`, `sources.yaml` | `day2` |
-| **Session 3** | Ashby, SmartRecruiters, Workable | `ashby.py` (`isListed=True`), `smartrecruiters.py`, `workable.py` (v3 API + v1 widget fallback), test fixtures | `day3` |
-| **Session 4** | Adzuna, Remotive & Runner | `adzuna.py`, `remote.py` (max 4 fetches/day), `job_digest/sources/runner.py` (fault-isolated `run_all_sources`) | `day4` |
-| **Session 5** | IMAP Email Alerts | `job_digest/sources/email_alerts.py` (read-only SSL IMAP, sender whitelist, HTML sanitizer, Message-ID deduplication) | `day5` |
-| **Session 6** | Normalization & Anti-Traps | `job_digest/normalize.py` (anti-traps for C, Go, REST; 4 salary parsers; location & URL cleaners), `Job` model | `day6` |
-| **Session 7** | Deduplication & Freshness | `job_digest/dedup.py` (SHA-256 fingerprint, company legal suffix stripper, 48h freshness threshold, DB upserts) | `day7` |
-| **Session 8** | Eligibility & 10-Point Score | `job_digest/match.py` (hard filters, 10-point scoring algorithm, tracked gap visibility without penalty) | `day8` |
-| **Session 9** | Jinja2 Digest Builder | `job_digest/templates/digest.html`, `digest.txt`, `job_digest/digest.py` (dual apply-now sections, 40 cap, DB persistence) | `day9` |
-| **Session 10** | Telegram & Email Delivery | `job_digest/notify.py` (`TelegramNotifier`, `EmailNotifier`, paragraph chunking, fault-isolated delivery) | `day10` |
-| **Session 11** | Master Runner & Scheduler | `job_digest/run.py` (CLI `--dry-run`, `--schedule`), `.github/workflows/daily-digest.yml` (`30 2 * * *` cron), APScheduler | `day11` |
-| **Session 12** | Tests, Tuning & Reliability | `tests/test_reliability_s12.py` (101 tests green, mocked-network pipeline, rate limits, source failure notices, channel fault isolation), ADR 006 | `day12` |
-| **Session 13** | Profile in DB + Job Status | `job_digest/profile_service.py` (validation, versioning, fallback), `job_digest/status.py` (`saved`, `applied`, `not_interested` with timestamps & notes), `user_profiles` schema, ADR 007 | `day13` |
-| **Session 14** | App, Login & Read Pages | `job_digest/auth.py` (Argon2, signed session cookie, login rate limit), `job_digest/web.py` (FastAPI app, today's digest, history filters), templates, ADR 008 | `day14` |
-| **Session 15** | Actions & Settings | Quick status buttons (`POST /jobs/{fp}/status`), weekly counter (`get_weekly_applied_count`), settings editor (`/settings`), source health (`/sources`), manual job entry (`/jobs/add`), ADR 009 | `day15` |
-| **Urgency & Cadence** | Twice-Daily & Fast Alerts | Twice-daily schedule (08:00 AM & 07:00 PM IST), immediate alerts for jobs closing in ≤ 4h (`job_digest/urgency.py`), on-demand dashboard button (`POST /jobs/run-now`), ADR 010 | `b8507a0` |
-| **Session 16** | Deploy | `Dockerfile` (non-root `appuser`), `render.yaml`, `Procfile`, `.dockerignore`, public `/health` endpoint with DB ping, `docs/deployment.md`, ADR 011 | `day16` |
-| **Session 17** | Hardening (Milestone 2) | Security headers middleware, robots.txt (`Disallow: /`), PWA `manifest.json`, webhook trigger (`/api/trigger`), backup script (`scripts/backup_db.py`), `docs/backup_plan.md`, ADR 012 | `day17` |
-| **Session 18** | Site Foundation | Static generator (`site/build.py`), clean semantic templates (index, how-it-works, sources, privacy, terms, 404), SEO validation, ADR 013 | `day18` |
-| **Session 19** | Content & Structured Data | Schema.org JSON-LD (`SoftwareApplication`, `WebSite`, `BreadcrumbList`), OpenGraph/Twitter cards (1200x630 OG image), vector assets (`architecture.svg`, `telegram-mockup.svg`), zero-placeholder audit, ADR 014 | `day19` |
-| **Session 20** | Domain & Crawl Files | Build-time `sitemap.xml`, permissive `robots.txt`, `llms.txt`, custom `404.html`, GitHub Pages workflow (`pages.yml`), `docs/domain_setup.md`, ADR 015 | `day20` |
-| **Session 21** | Pre-Launch Audit & Release | Bundle hygiene (0 KB JS, ~6 KB CSS), anti-slop design audit, production `README.md`, all 20 pre-launch checklist items verified, tagged `v1.0.0`, ADR 016 | `day21` |
-| **Session 22** | Wrap-Up & Handoff | Operational runbook (`docs/runbook.md`), portfolio briefing (`docs/portfolio_summary.md`), all 17 ADRs verified, 166 tests passing, ADR 017 | `day22` |
-| **Session 23+ (Post-Launch)** | High-Speed IMAP & Sources | IMAP header-first inspection, `asyncio.to_thread` worker offloading, 15s socket timeout, single-query `/sources` batching (sub-100ms load), button loading state, 45s source runner safety timeout | `5b65337` |
-| **Session 24+ (Multi-Platform)** | 11-Platform Email Expansion | Added Internshala, Unstop, Instahyre, Wellfound, Cutshort, Foundit, Glassdoor, Hirist to IMAP engine; universal job parser; fallback aria/title tag parsing | `e22c0ef` |
-| **Session 25+ (Live Adzuna)** | Adzuna API Production Live | Live integration of `ADZUNA_APP_ID` & `ADZUNA_APP_KEY`, verified 20 live Indian tech jobs, achieved 100% Green (8/8 sources Healthy) | Live on Render |
+| **Language & Runtime** | **Python** | `3.12.1+` | Core backend language, asynchronous concurrency, script execution |
+| **Web Framework** | **FastAPI** | `0.115+` | High-performance asynchronous REST API and web dashboard |
+| **ASGI Server** | **Uvicorn** | `0.30+` | Production ASGI web server running behind Render reverse proxy |
+| **Data Validation** | **Pydantic** | `v2.8+` | Strict profile validation (`extra="forbid"`), data model validation |
+| **Database Engine** | **PostgreSQL** | `16` (Neon Serverless) | Production relational database hosted in AWS Singapore (`ap-southeast-1`) |
+| **ORM & SQL Tool** | **SQLAlchemy** | `2.0+` | Query builder, schema migrations, and connection management |
+| **DB Driver** | **psycopg3** | `3.2+` | Modern asynchronous/synchronous PostgreSQL database driver |
+| **Connection Pooling** | **NullPool** | Built-in SQLAlchemy | Disables idle connection pooling to prevent PgBouncer pool exhaustion |
+| **HTTP Client** | **httpx** | `0.27+` | Asynchronous non-blocking HTTP requests for ATS and REST job feeds |
+| **HTML Parsing** | **html.parser** | Python stdlib | Safe, lightweight parsing of untrusted email HTML without C-bindings |
+| **Email Ingestion** | **imaplib** | Python stdlib (SSL) | Connects to Gmail over Port 993 in `readonly=True` mode |
+| **Email Delivery** | **smtplib** | Python stdlib (STARTTLS)| Dispatches digest emails to Mailbox B over Port 587 |
+| **Instant Messaging** | **Telegram Bot API** | HTTPS REST | Instant markdown digest delivery & urgent deadline alerts |
+| **Authentication** | **Argon2id** (`argon2-cffi`)| `23.1+` | Memory-hard cryptographic hashing for dashboard single-user password |
+| **Session Security** | **itsdangerous** / HMAC | `2.2+` | Cryptographically signed, HTTP-only, SameSite session cookies |
+| **Scheduling** | **APScheduler** | `3.10+` | In-app `AsyncIOScheduler` executing crawls at 08:00 AM & 07:00 PM IST |
+| **Keepalive Automation**| **GitHub Actions** | Hosted Runners | 10-minute cron workflow pinging `/health` to eliminate cold-start sleep |
+| **Templating Engine** | **Jinja2** | `3.1+` | Renders Telegram markdown, HTML digest emails, and web pages |
+| **Containerization** | **Docker** | Multi-stage build | Lightweight Linux production image running as non-root `appuser` |
+| **Cloud Hosting** | **Render** | Web Service (Docker) | Production host for dashboard, webhooks, and scheduler |
+| **Showcase Hosting** | **GitHub Pages** | Static Site | Zero-JS public portfolio site deployed via `pages.yml` |
+| **Test Suite** | **pytest** | `9.1+` | Test runner executing 180 unit, integration, and reliability tests |
+| **Async Testing** | **pytest-asyncio** / `anyio`| `1.4+` / `4.15+` | Strict mode event loop management for async source tests |
 
 ---
 
-## 5. Architectural Decisions (ADR Summary)
+## 4. Complete Repository & File Directory Tree
+
+```
+AI AGENT/
+├── .github/
+│   └── workflows/
+│       ├── ci.yml                 # Continuous Integration: runs pytest on every push/PR
+│       ├── daily-digest.yml       # Backup scheduled crawl workflow on GitHub Actions
+│       ├── keepalive.yml          # Zero-sleep keepalive: pings /health every 10 minutes
+│       └── pages.yml              # Static portfolio deployment to GitHub Pages
+├── database/
+│   └── schema.sql                 # Complete PostgreSQL DDL (7 tables, indexes, constraints)
+├── dist/                          # Compiled static portfolio site output (generated by site/build.py)
+├── docs/
+│   ├── backup_plan.md             # Disaster recovery backup and restore procedures
+│   ├── decisions.md               # Historical architectural decision records log
+│   ├── deployment.md              # Cloud deployment guide for Render and Neon
+│   ├── domain_setup.md            # Custom domain and DNS configuration guide
+│   ├── portfolio_summary.md       # High-level technical summary for portfolio presentation
+│   └── runbook.md                 # Production incident response and maintenance runbook
+├── job_digest/                    # Core Python application package
+│   ├── __init__.py                # Package initialization
+│   ├── auth.py                    # Argon2id password verification, session cookies, rate limiting
+│   ├── config.py                  # Sources YAML loader and environment configuration
+│   ├── db.py                      # SQLAlchemy engine, session maker, schema auto-migration
+│   ├── dedup.py                   # Company name normalizer, SHA-256 fingerprinting, 48h freshness
+│   ├── digest.py                  # Jinja2 digest builder, dual section grouping, DB persistence
+│   ├── match.py                   # Hard filters (senior exclusions, batch year), 10-point scoring
+│   ├── models.py                  # Pydantic & SQLAlchemy data models (RawJob, Job, SourceRunResult)
+│   ├── normalize.py               # Text cleaning, anti-traps (C, Go, REST), salary/stipend parsing
+│   ├── notify.py                  # TelegramNotifier (4000-char chunking) and EmailNotifier (SMTP)
+│   ├── profile.py                 # Strict Pydantic UserProfile model and schema
+│   ├── profile_service.py         # DB profile versioning, fallback, and validation service
+│   ├── run.py                     # Master pipeline orchestrator, CLI runner, and local scheduler
+│   ├── status.py                  # Application status transitions (saved, applied, not_interested)
+│   ├── urgency.py                 # Urgent deadline detector (jobs closing in <= 4 hours)
+│   ├── web.py                     # FastAPI dashboard routes, auth middleware, health endpoint
+│   ├── sources/                   # Source adapter package (Protocol: JobSource)
+│   │   ├── __init__.py            # Sources package root
+│   │   ├── adzuna.py              # Adzuna search API adapter (5 role query groups in India)
+│   │   ├── ashby.py               # Ashby public postings API adapter
+│   │   ├── base.py                # JobSource protocol, Indian location matcher, default User-Agent
+│   │   ├── email_alerts.py        # IMAP email alert parser (header-first, 11 platforms, non-blocking)
+│   │   ├── greenhouse.py          # Greenhouse public board API adapter
+│   │   ├── lever.py               # Lever public postings API adapter
+│   │   ├── remote.py              # Remotive remote developer feed adapter (rate-limited)
+│   │   ├── runner.py              # Fault-isolated source runner with 45s safety timeout
+│   │   ├── smartrecruiters.py     # SmartRecruiters postings API adapter
+│   │   └── workable.py            # Workable v3 API and v1 widget fallback adapter
+│   └── templates/                 # Jinja2 template directory
+│       ├── digest.html            # Multipart HTML email digest template
+│       ├── digest.txt             # Plain text and Telegram markdown digest template
+│       └── web/                   # Web dashboard templates
+│           ├── add_job.html       # Manual ad-hoc job entry form
+│           ├── base.html          # Dashboard master layout with navigation and security headers
+│           ├── digest_view.html   # Today's live digest view with on-demand trigger button
+│           ├── history.html       # Searchable, filterable historical jobs table
+│           ├── login.html         # Argon2 protected single-user login interface
+│           ├── settings.html      # Interactive profile, skills, and blocklist YAML editor
+│           └── sources.html       # Real-time source health and execution metrics dashboard
+├── scripts/
+│   ├── backup_db.py               # Standalone JSON snapshot backup script for database tables
+│   └── keepalive.py              # Lightweight HTTP ping script executed by keepalive workflow
+├── site/                          # Public portfolio showcase static site generator
+│   ├── build.py                   # Standalone Jinja2 static compiler generating dist/
+│   ├── static/                    # CSS stylesheets, favicon, manifest, and SVG diagrams
+│   └── templates/                 # Semantic SEO templates (index, how-it-works, sources, privacy, 404)
+├── tests/                         # Comprehensive automated test suite
+│   ├── fixtures/                  # Raw EML files, JSON responses, and mock data
+│   ├── test_db.py                 # Database connectivity, transaction handling, and schema tests
+│   ├── test_dedup.py              # SHA-256 fingerprinting, legal suffix stripping, freshness tests
+│   ├── test_digest.py             # Digest rendering, 40-item cap, empty state tests
+│   ├── test_email_source.py       # IMAP parsing, header-first inspection, 11-platform tests
+│   ├── test_keepalive.py          # Render keepalive monitoring tests
+│   ├── test_match.py              # 10-point scoring algorithm, hard filters, senior exclusion tests
+│   ├── test_normalize.py          # Anti-traps (C, Go), location cleaner, salary parser tests
+│   ├── test_notify.py             # Telegram chunking and Email SMTP delivery tests
+│   ├── test_profile.py            # Strict Pydantic profile validation tests
+│   ├── test_reliability_s12.py   # Fault isolation, source crash recovery, rate limit tests
+│   ├── test_run.py                # Master pipeline end-to-end integration tests
+│   ├── test_s13_profile_and_status.py # Profile versioning and job status transition tests
+│   ├── test_s14_web_and_auth.py   # FastAPI web routes, Argon2 login, and session cookie tests
+│   ├── test_s15_actions_and_settings.py # Interactive status actions and settings editor tests
+│   ├── test_s16_deploy.py         # Deployment configuration and health endpoint tests
+│   ├── test_s17_hardening.py      # Enterprise security headers, robots.txt, PWA tests
+│   ├── test_s18_site_foundation.py # Static site generator and semantic SEO tests
+│   ├── test_s19_content_and_schema.py # Schema.org JSON-LD and visual asset tests
+│   ├── test_s20_crawl_files_and_deployment.py # Sitemap, llms.txt, and Pages deployment tests
+│   ├── test_s21_audit_and_release.py # Pre-launch checklist, bundle hygiene, README tests
+│   ├── test_s22_final_wrapup.py   # Operational runbook and portfolio briefing tests
+│   ├── test_smoke.py              # Basic sanity and import verification tests
+│   ├── test_sources.py            # Greenhouse and Lever adapter tests
+│   ├── test_sources_s3.py         # Ashby, SmartRecruiters, Workable adapter tests
+│   ├── test_sources_s4.py         # Adzuna, Remotive, and fault-isolated runner tests
+│   └── test_urgency_and_schedule.py # 4-hour urgency detector and twice-daily schedule tests
+├── .dockerignore                  # Files excluded from production Docker image build
+├── .env.example                   # Sanitized environment variable template with zero secrets
+├── .gitignore                     # Git ignore rules (.env, .venv, pycache, dist)
+├── Dockerfile                     # Multi-stage production container configuration
+├── memory.md                      # Master project memory, architecture, and context document
+├── Procfile                       # Process definition for cloud hosting (Render web process)
+├── pyproject.toml                 # Build system configuration and pytest options
+├── render.yaml                    # Infrastructure-as-code blueprint for Render deployment
+├── requirements.txt               # Pinned Python package dependencies
+└── sources.yaml                   # Verified company slugs for Greenhouse, Lever, Ashby, etc.
+```
+
+---
+
+## 5. Data Ingestion Matrix — Where & How Every Single Source Fetches Data
+
+| Source Name | Method | Exact URL / Protocol Pattern | Authentication | Request Parameters & Headers | Rate Limit / Delay | Payload Format | What Data is Extracted |
+|---|---|---|---|---|---|---|---|
+| **Greenhouse** | `GET` | `https://boards-api.greenhouse.io/v1/boards/{slug}/jobs?content=true` | None (Public JSON) | `User-Agent: JobDigestAgent/1.0`, `Accept: application/json` | 0.3s between slugs | JSON Object (`jobs: [...]`) | Job ID, title, company slug, office location, apply URL, full HTML job description. (18 slugs: Cloudflare, Stripe, Datadog, etc.) |
+| **Lever** | `GET` | `https://api.lever.co/v0/postings/{slug}?mode=json` | None (Public JSON) | `User-Agent: JobDigestAgent/1.0`, `Accept: application/json` | 0.3s between slugs | JSON Array of postings | Job ID, text (title), workplaceType, categories.location, apply URL, description. (8 slugs: Palantir, Spotify, Canonical, etc.) |
+| **Ashby** | `GET` | `https://api.ashbyhq.com/posting-api/job-board/{slug}?includeCompensation=true` | None (Public JSON) | `User-Agent: JobDigestAgent/1.0`, `Accept: application/json` | 0.3s between slugs | JSON Object (`jobs: [...]`) | Job ID, title, location, isListed filter (`True`), compensation tiers, apply URL. (8 slugs: OpenAI, Figma, Notion, Linear, etc.) |
+| **SmartRecruiters** | `GET` | `https://api.smartrecruiters.com/v1/companies/{slug}/postings` | None (Public JSON) | `User-Agent: JobDigestAgent/1.0`, `Accept: application/json` | 0.3s between slugs | JSON Object (`content: [...]`) | Job ID, name (title), location.city, location.country, apply URL. (4 slugs: BoschGroup, IKEA, Ubisoft, Visa) |
+| **Workable** | `POST` / `GET` | `https://apply.workable.com/api/v3/accounts/{slug}/jobs` (Fallback: `widget` v1) | None (Public API) | Payload: `{"query": ""}`, Headers: `Accept: application/json` | 0.3s between slugs | JSON Object (`results: [...]`) | Shortcode (ID), title, city, country, remote flag, apply URL. (4 slugs: Transferwise, Harness, TestGorilla, Farfetch) |
+| **Adzuna** | `GET` | `https://api.adzuna.com/v1/api/jobs/in/search/{page}` | `app_id` & `app_key` query params | `what`: 5 role queries, `country`: `in`, `results_per_page`: 15 | 0.5s between query batches | JSON Object (`results: [...]`) | Live Indian jobs across Gurgaon, Bangalore, Pune, Hyderabad, Remote. Extracts ID, title, company.display_name, location, salary min/max, apply URL. |
+| **Remotive** | `GET` | `https://remotive.com/api/remote-jobs?category=software-dev&limit=50` | None (Public Feed) | `category=software-dev`, `limit=50` | Max 4 requests / 24h (Cached) | JSON Object (`jobs: [...]`) | Global remote tech jobs filtered for candidate location: checks `candidate_required_location` for India, APAC, or Worldwide. |
+| **IMAP Email Alerts** | `IMAP4_SSL` | `imap.gmail.com:993` (Port 993 SSL) | Google 16-char App Password (`readonly=True`) | **Step 1:** Fetch headers only (`BODY.PEEK[HEADER.FIELDS]`) under 1 KB. **Step 2:** Fetch body (`BODY.PEEK[]`) ONLY if sender is whitelisted & ID is new. | 15s socket timeout; runs in background worker thread | RFC-822 MIME (Multipart HTML) | Parses job links from **11 Whitelisted Platforms:** LinkedIn, Naukri, Indeed, Internshala, Unstop, Instahyre, Wellfound, Cutshort, Foundit, Glassdoor, Hirist. |
+
+---
+
+## 6. Database Schema & Architectural Models (Neon PostgreSQL)
+
+```sql
+-- 1. Permitted Source Configuration & Active Status
+CREATE TABLE IF NOT EXISTS job_sources (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(64) UNIQUE NOT NULL,
+    source_type VARCHAR(32) NOT NULL, -- 'ats', 'search_api', 'feed', 'imap', 'manual'
+    config JSONB DEFAULT '{}'::jsonb,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- 2. Master Tracking & Fingerprint Store (Prevents Re-Alerting)
+CREATE TABLE IF NOT EXISTS seen_jobs (
+    fingerprint VARCHAR(64) PRIMARY KEY, -- sha256(company | title | location)
+    canonical_url TEXT NOT NULL,
+    first_seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    last_seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    notified_at TIMESTAMPTZ,
+    status VARCHAR(32) NOT NULL DEFAULT 'seen', -- 'seen', 'saved', 'applied', 'not_interested'
+    saved_at TIMESTAMPTZ,
+    applied_at TIMESTAMPTZ,
+    not_interested_at TIMESTAMPTZ,
+    notes TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_seen_jobs_canonical_url ON seen_jobs(canonical_url);
+CREATE INDEX IF NOT EXISTS idx_seen_jobs_status ON seen_jobs(status);
+
+-- 3. Versioned User Profile Store
+CREATE TABLE IF NOT EXISTS user_profiles (
+    id SERIAL PRIMARY KEY,
+    version INT NOT NULL,
+    profile_yaml TEXT NOT NULL,
+    profile_data JSONB NOT NULL,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_user_profiles_active ON user_profiles(is_active, version DESC);
+
+-- 4. Scored & Normalized Jobs Store
+CREATE TABLE IF NOT EXISTS jobs (
+    id BIGSERIAL PRIMARY KEY,
+    fingerprint VARCHAR(64) UNIQUE NOT NULL REFERENCES seen_jobs(fingerprint) ON DELETE CASCADE,
+    title VARCHAR(255) NOT NULL,
+    company VARCHAR(255) NOT NULL,
+    location VARCHAR(255) NOT NULL,
+    canonical_url TEXT NOT NULL,
+    description_text TEXT,
+    posted_at TIMESTAMPTZ,
+    source VARCHAR(64) NOT NULL,
+    is_intern BOOLEAN NOT NULL DEFAULT FALSE,
+    is_apprentice BOOLEAN NOT NULL DEFAULT FALSE,
+    min_years NUMERIC(3, 1),
+    salary_lpa NUMERIC(6, 2),
+    stipend NUMERIC(8, 2),
+    batch_years INT[],
+    matched_skills TEXT[],
+    missing_skills TEXT[],
+    score NUMERIC(4, 2),
+    score_breakdown JSONB DEFAULT '{}'::jsonb,
+    raw_data JSONB DEFAULT '{}'::jsonb,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_jobs_score ON jobs(score DESC);
+CREATE INDEX IF NOT EXISTS idx_jobs_posted_at ON jobs(posted_at DESC);
+CREATE INDEX IF NOT EXISTS idx_jobs_intern ON jobs(is_intern, is_apprentice);
+
+-- 5. Sent Digests Archive
+CREATE TABLE IF NOT EXISTS digests (
+    id BIGSERIAL PRIMARY KEY,
+    sent_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    total_jobs INT NOT NULL DEFAULT 0,
+    internships_count INT NOT NULL DEFAULT 0,
+    fulltime_count INT NOT NULL DEFAULT 0,
+    channels_notified TEXT[] NOT NULL DEFAULT '{}',
+    failed_sources TEXT[] DEFAULT '{}',
+    content_html TEXT,
+    content_text TEXT
+);
+
+-- 6. Health & Execution Metrics Log (Renders /sources Page)
+CREATE TABLE IF NOT EXISTS source_runs (
+    id BIGSERIAL PRIMARY KEY,
+    source_name VARCHAR(64) NOT NULL,
+    started_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    finished_at TIMESTAMPTZ,
+    jobs_found INT NOT NULL DEFAULT 0,
+    jobs_new INT NOT NULL DEFAULT 0,
+    is_success BOOLEAN NOT NULL DEFAULT FALSE,
+    error_message TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_source_runs_source ON source_runs(source_name, started_at DESC);
+
+-- 7. IMAP Processed Message Store (Deduplicates Email Ingestion)
+CREATE TABLE IF NOT EXISTS email_messages (
+    message_id VARCHAR(255) PRIMARY KEY,
+    sender VARCHAR(255) NOT NULL,
+    subject TEXT,
+    processed_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    jobs_extracted INT NOT NULL DEFAULT 0
+);
+```
+
+---
+
+## 7. End-to-End Pipeline Data Flow & Algorithms
+
+```
+[Trigger: APScheduler 08:00 AM / 07:00 PM IST or Manual POST /jobs/run-now]
+                              │
+                              ▼
+1. INGESTION (run_all_sources)
+   - Executes all 8 source adapters concurrently or sequentially with 45s safety timeout per source.
+   - Fault isolation: If 1 source fails or times out, the other 7 continue uninterrupted.
+   - Source metrics recorded to `source_runs`.
+                              │
+                              ▼
+2. NORMALIZATION (normalize_raw_job)
+   - Strips HTML tags, trims whitespace, standardizes casing.
+   - Cleans tracking tokens: removes UTM parameters, `ref`, `gh_src`, session tokens from URLs.
+   - Resolves location aliases: "Gurgaon" -> "Gurugram", "Calcutta" -> "Kolkata", "Bangalore" -> "Bengaluru".
+   - Regex Anti-Traps: Prevents false skill matches (e.g. 'C' in 'CSS', 'Go' in 'Good', 'REST' in 'Restricted').
+   - Parses compensation: Converts annual INR, monthly stipends, and USD rates into standardized LPA / monthly stipend.
+                              │
+                              ▼
+3. DEDUPLICATION (process_and_upsert_jobs)
+   - Strips legal corporate suffixes ("Pvt Ltd", "Inc.", "LLC") to identify the true company entity.
+   - Computes SHA-256 fingerprint: sha256(normalized_company | normalized_title | canonical_location).
+   - Drops canonical URL duplicates and identical fingerprints seen within the past 48 hours.
+   - Upserts into `seen_jobs` and persists new jobs into `jobs`.
+                              │
+                              ▼
+4. ELIGIBILITY & 10-POINT SCORING (rank_and_score_jobs)
+   - Hard Exclusion Filters:
+     * Drops any job containing senior/lead keywords: `senior`, `lead`, `manager`, `principal`, `staff`, `director`, `architect`, `head`, `vp`, `leadership`.
+     * Drops jobs requiring > 2.0 years of experience.
+     * Drops jobs restricted to graduating batches other than 2027.
+     * Enforces salary floor: Drops full-time roles offering < 3.5 LPA (when salary is explicitly listed).
+   - 10-Point Score Formula:
+     * Skills Match (Max 4.0 pts): 4+ skills = 4.0, 3 = 3.2, 2 = 2.4, 1 = 1.6.
+     * Role Relevance (Max 3.0 pts): Matches 41 target technical job title patterns.
+     * Seniority / Level (Max 2.0 pts): Internships / Apprenticeships / 0-yr = 2.0, <= 1 yr = 1.8, <= 2 yr = 1.4.
+     * Location Preference (Max 1.0 pt): Preferred cities = 1.0, India / Remote = 0.5, Abroad = 0.0.
+   - Identifies candidate skill gaps (Java, Spring Boot, etc.) and tags them for visibility without penalty.
+                              │
+                              ▼
+5. DIGEST CONSTRUCTION (build_digest)
+   - Organizes jobs into two distinct "Apply Now" sections:
+     * Section 1: Internships & Apprenticeships (Strong Matches >= 7.0 & Good Matches 4.0–6.9)
+     * Section 2: Full-Time Fresher Roles (Strong Matches >= 7.0 & Good Matches 4.0–6.9)
+   - Formats listings with Apply link first, compensation, match score, matched skills, and tracked gaps.
+   - Imposes a strict 40-item digest cap to prevent notification fatigue.
+                              │
+                              ▼
+6. DELIVERY (deliver_digest & deliver_urgent_alert)
+   - Telegram: Dispatches formatted markdown message to private chat ID via Telegram Bot API. Partitions messages exceeding 4,000 characters along paragraph boundaries.
+   - Email: Sends multipart HTML + plain text digest to Mailbox B via SMTP STARTTLS (Port 587).
+   - Urgent Deadline Dispatch: If any unnotified role closes in <= 4 hours, dispatches an immediate high-priority alert.
+                              │
+                              ▼
+7. PERSISTENCE & AUDIT
+   - Saves rendered HTML and text digest to `digests` table.
+   - Updates `notified_at = NOW()` on delivered jobs in `seen_jobs`.
+   - Records execution metrics in `source_runs`.
+```
+
+---
+
+## 8. Architectural Decisions (ADR Summary)
 
 - **ADR 001 (Single-User Scope):** Built strictly for one personal user to minimize maintenance and avoid multi-tenant complexity.
 - **ADR 002 (Tech Stack):** Python 3.12, strict Pydantic (`extra="forbid"` on profile, `"ignore"` on models), SQLAlchemy 2.0 + psycopg 3, `httpx` async client, Jinja2, FastAPI.
@@ -164,7 +390,7 @@
 
 ---
 
-## 6. Technical Gotchas & Environment Rules
+## 9. Technical Gotchas & Environment Rules
 
 1. **PowerShell on Windows:** Does not support `&&` for chaining commands; always use semicolon `;` (e.g. `git add . ; git commit -m "..."`).
 2. **GitHub Actions YAML Syntax:** In `.github/workflows/*.yml`, the trigger key `"on":` must be enclosed in quotes because PyYAML parses bare `on:` as boolean `True`.
@@ -187,7 +413,7 @@
 
 ---
 
-## 7. Live Production Deployment & Verification (Active & Verified)
+## 10. Live Production Deployment & Verification (Active & Verified)
 
 - **GitHub Repository:** [https://github.com/aman7739/job-agent](https://github.com/aman7739/job-agent) (`main` branch tracked, tagged `v1.0.0`).
 - **Live Public Showcase Site:** [https://aman7739.github.io/job-agent/](https://aman7739.github.io/job-agent/)
