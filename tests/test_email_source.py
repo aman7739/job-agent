@@ -113,3 +113,33 @@ def test_untrusted_html_and_malicious_script_sanitized():
     assert len(jobs) == 1
     assert jobs[0].url == "https://www.linkedin.com/jobs/view/9999999999"
     assert "alert" not in jobs[0].url
+
+
+def test_parse_indeed_alerts():
+    """Verify parsing Indeed alert email extracts valid job links."""
+    indeed_body = """
+    <html>
+      <body>
+        <h2>New Jobs for You</h2>
+        <a href="https://in.indeed.com/viewjob?jk=abcdef1234567890">Junior Software Engineer</a>
+        <a href="https://in.indeed.com/rc/clk?jk=123456abcdef7890">Associate Python Developer</a>
+        <a href="https://www.indeed.com/unrelated/page">Unrelated link</a>
+      </body>
+    </html>
+    """
+    jobs = parse_alert_message(
+        sender="alert@indeed.com",
+        body=indeed_body,
+        message_id="msg_indeed_001",
+    )
+
+    assert len(jobs) == 2
+    assert jobs[0].source == "email_alerts"
+    assert jobs[0].source_id == "indeed_alerts"
+    assert "Junior Software Engineer" in jobs[0].title
+    assert jobs[0].external_id == "abcdef1234567890"
+    assert "in.indeed.com/viewjob?jk=abcdef1234567890" in jobs[0].url
+
+    assert "Associate Python Developer" in jobs[1].title
+    assert jobs[1].external_id == "123456abcdef7890"
+

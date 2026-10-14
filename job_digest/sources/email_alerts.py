@@ -21,11 +21,19 @@ from job_digest.sources.base import is_india_or_remote
 logger = logging.getLogger(__name__)
 
 DEFAULT_ALLOWED_SENDERS = {
+    # LinkedIn
     "jobalerts-noreply@linkedin.com",
     "jobs-noreply@linkedin.com",
     "messages-noreply@linkedin.com",
+    # Naukri
     "alerts@naukri.com",
     "info@naukri.com",
+    # Indeed
+    "alert@indeed.com",
+    "jobalerts-noreply@indeed.com",
+    "noreply@indeed.com",
+    "do-not-reply@indeed.com",
+    "alerts@indeed.com",
 }
 
 
@@ -162,6 +170,45 @@ def parse_naukri_jobs(html_content: str, message_id: str) -> List[RawJob]:
     return jobs
 
 
+def parse_indeed_jobs(html_content: str, message_id: str) -> List[RawJob]:
+    """Parse job links and titles from an Indeed alerts email."""
+    extractor = _SimpleHTMLJobExtractor()
+    extractor.feed(html_content)
+
+    jobs: List[RawJob] = []
+    seen_urls = set()
+
+    for text_content, href in extractor.links:
+        # Match Indeed job view links: /viewjob, /rc/clk, /job/
+        if ("indeed.com" in href or "indeed.co.in" in href) and ("/viewjob" in href or "/rc/clk" in href or "/job/" in href):
+            if href in seen_urls:
+                continue
+            seen_urls.add(href)
+
+            # Match job id in URL (jk parameter or trailing id)
+            match_jk = re.search(r"[?&]jk=([a-zA-Z0-9]+)", href)
+            job_id = match_jk.group(1) if match_jk else f"ind_{abs(hash(href))}"
+
+            title = text_content if text_content and len(text_content) > 3 else "Indeed Matched Role"
+            title = re.sub(r"\s+", " ", title).strip()
+
+            jobs.append(
+                RawJob(
+                    source="email_alerts",
+                    source_id="indeed_alerts",
+                    external_id=job_id,
+                    title=title,
+                    company="Indeed Alert Lead",
+                    location="India (Alert)",
+                    url=href,
+                    description_text=f"Imported from Indeed alert email (Message-ID: {message_id})",
+                    raw_data={"message_id": message_id, "original_text": text_content},
+                )
+            )
+
+    return jobs
+
+
 def parse_alert_message(
     sender: str,
     body: str,
@@ -181,9 +228,11 @@ def parse_alert_message(
         return parse_linkedin_jobs(body, message_id)
     elif "naukri" in clean_sender:
         return parse_naukri_jobs(body, message_id)
+    elif "indeed" in clean_sender:
+        return parse_indeed_jobs(body, message_id)
     else:
         # Fallback generic parsing for allowed senders
-        return parse_linkedin_jobs(body, message_id) + parse_naukri_jobs(body, message_id)
+        return parse_linkedin_jobs(body, message_id) + parse_naukri_jobs(body, message_id) + parse_indeed_jobs(body, message_id)
 
 
 def parse_eml_bytes(
