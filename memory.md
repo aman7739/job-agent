@@ -1,6 +1,6 @@
 # Job Digest Agent — Project Memory & Context
 
-> **Last Updated:** Session 22 (All 22 Sessions Completed — Production Handoff & Milestone 4 Achieved!)  
+> **Last Updated:** Post-Launch Production Milestone (All 8 Sources 100% Healthy & Live on Render!)  
 > **Target Audience:** Agent context persistence across sessions and long-term project reference.
 
 ---
@@ -13,6 +13,7 @@
   - **Graduating Batch:** 2027.
   - **Current Standing:** Final Year Student.
   - **Core Application Rule:** **Actively applying to BOTH Internships/Apprenticeships and Full-Time fresher roles.** Both categories are immediate, top-priority application targets. In digests and dashboards, both categories must always be presented as active "Apply Now" opportunities.
+  - **Seniority Constraint:** **Strictly NO senior, lead, principal, manager, director, or staff roles.** Only fresher, entry-level (0–2 years), internships, and apprenticeships are eligible.
   - **Preferred Cities:** Noida, Delhi NCR, Gurugram, Kolkata, Mumbai, Pune, Bengaluru, Indore, or Remote (India).
   - **Core Skills:** Python, FastAPI, Supabase, PostgreSQL, React, JavaScript, HTML/CSS, Git/GitHub, Linux, REST APIs, ML/AI foundations.
   - **Tracked Gaps:** Java, Spring Boot, Angular, Node.js, scikit-learn, PyTorch (monitored and displayed in digests, but never penalized with negative points).
@@ -22,12 +23,18 @@
 ## 2. Hard Boundaries & Compliance Rules
 
 1. **Strictly Single-User:** Built exclusively for one person. No multi-tenant accounts, complex auth systems, or public registrations.
-2. **No Unofficial Scraping:** Absolutely zero web scraping or DOM crawling of LinkedIn, Naukri, or Indeed. No Selenium, Playwright, or headless browsers for scraping.
+2. **No Unofficial Scraping:** Absolutely zero web scraping or DOM crawling of LinkedIn, Naukri, or Indeed. No Selenium, Playwright, or headless browsers for scraping (avoids Cloudflare/Akamai bot-blocks and OOM crashes on 512MB RAM containers).
 3. **No Auto-Applying:** The agent curates and scores opportunities; the user always clicks the direct link to review and submit applications themselves.
 4. **Dual Mailbox Separation:**
    - **Mailbox A (Alerts Inbox):** Receives job alert notifications from job boards. Read-only access via SSL IMAP with an App Password.
    - **Mailbox B (Notifications Inbox):** Receives the final daily digest via SMTP (Port 587 STARTTLS). Prevents circular digest loops.
-5. **Fault Isolation:**
+5. **Strict Privacy Firewall on Mailbox A:**
+   - Only authorized job platforms (LinkedIn, Naukri, Indeed, Internshala, Unstop, Instahyre, Wellfound, Cutshort, Foundit, Glassdoor, Hirist) are inspected.
+   - All personal emails, banking statements, OTPs, and promotional spam from non-whitelisted senders are rejected in 1 millisecond without downloading bodies.
+6. **Zero Credential Leakage:**
+   - Real passwords, tokens, and API keys are NEVER written to git, `.env.example`, or logs.
+   - Secrets persist strictly in Render's encrypted environment variables.
+7. **Fault Isolation:**
    - Any individual source failure must never crash the pipeline; failed sources are logged to `source_runs` and named in the digest header.
    - Any delivery channel failure (Telegram vs Email) must not block the other. Jobs are marked notified if at least one channel succeeds.
 
@@ -37,17 +44,17 @@
 
 ```
 [8 Permitted Sources]
- ├── Greenhouse API (slug-based)
- ├── Lever API (slug-based)
- ├── Ashby API (slug-based)
- ├── SmartRecruiters API (slug-based)
- ├── Workable API / Widget (slug-based)
- ├── Adzuna Search API (5 query batches)
- ├── Remotive API (remote feed, rate-limited <= 4/day)
- └── IMAP Email Alerts (Mailbox A, whitelisted senders)
+ ├── Greenhouse API (18 company slugs, e.g. Cloudflare, Stripe, Datadog)
+ ├── Lever API (8 company slugs, e.g. Palantir, Spotify, Canonical)
+ ├── Ashby API (8 company slugs, e.g. OpenAI, Figma, Notion, Linear)
+ ├── SmartRecruiters API (4 company slugs, e.g. Bosch, IKEA, Ubisoft, Visa)
+ ├── Workable API / Widget (4 company slugs, e.g. Transferwise, Harness)
+ ├── Adzuna Search API (Live Indian tech jobs: Python, ML/AI, QA, Web, Internships)
+ ├── Remotive API (Remote tech vacancies in India / Worldwide)
+ └── IMAP Email Alerts (Header-First, Non-Blocking Thread, 11 Whitelisted Platforms)
         │
         ▼
-[Fault-Isolated Runner] ──> Logs metrics to `source_runs` table
+[Fault-Isolated Runner (45s Timeout per Source)] ──> Logs metrics to `source_runs`
         │
         ▼
 [Normalization Engine]
@@ -68,7 +75,7 @@
         ▼
 [Eligibility & 10-Point Scoring Engine]
  ├── Hard Filters:
- │    ├── Exclude titles: senior, lead, manager, principal, staff, director, architect
+ │    ├── Strict title exclusion: senior, lead, manager, principal, staff, director, architect, head, VP, leadership
  │    ├── Max required experience <= 2 years
  │    ├── Allowed batch year: 2027 only (drops other named batches like 2024/2025)
  │    └── Full-time salary floor: >= 3.5 LPA when listed
@@ -98,34 +105,37 @@
 
 ---
 
-## 4. Completed Sessions (Milestone 1 History)
+## 4. Completed Sessions & Milestone History
 
 | Session | Focus | Deliverables & Key Files | Commit Hash / Tag |
 |---|---|---|---|
-| **Session 0** | Setup & Skeleton | Git repo, `.venv` (Python 3.12), `requirements.txt`, `.env.example`, `docs/decisions.md`, `.github/workflows/ci.yml` | `day0: setup and initial project skeleton` |
-| **Session 1** | Profile & Database Schema | `profile.example.yaml`, `job_digest/profile.py` (strict Pydantic), `database/schema.sql` (6 tables), `job_digest/db.py` (NullPool) | `day1: profile and database schema` |
-| **Session 2** | Greenhouse & Lever Sources | `job_digest/models.py` (`RawJob`), `job_digest/sources/base.py`, `greenhouse.py`, `lever.py`, `sources.yaml` | `day2: source interface + greenhouse and lever` |
-| **Session 3** | Ashby, SmartRecruiters, Workable | `ashby.py` (`isListed=True`), `smartrecruiters.py`, `workable.py` (v3 API + v1 widget fallback), test fixtures | `day3: ashby, smartrecruiters, and workable adapters` |
-| **Session 4** | Adzuna, Remotive & Runner | `adzuna.py`, `remote.py` (max 4 fetches/day), `job_digest/sources/runner.py` (fault-isolated `run_all_sources`) | `day4: adzuna, remotive feed, and source runner` |
-| **Session 5** | IMAP Email Alerts | `job_digest/sources/email_alerts.py` (read-only SSL IMAP, sender whitelist, HTML sanitizer, Message-ID deduplication) | `day5: imap email alerts source and untrusted email parser` |
-| **Session 6** | Normalization & Anti-Traps | `job_digest/normalize.py` (anti-traps for C, Go, REST; 4 salary parsers; location & URL cleaners), `Job` model | `day6: job normalization, text stripping, traps, and salary parsers` |
-| **Session 7** | Deduplication & Freshness | `job_digest/dedup.py` (SHA-256 fingerprint, company legal suffix stripper, 48h freshness threshold, DB upserts) | `day7: dedup, sha256 fingerprinting, freshness filter, and upserts` |
-| **Session 8** | Eligibility & 10-Point Score | `job_digest/match.py` (hard filters, 10-point scoring algorithm, tracked gap visibility without penalty) | `day8: eligibility + match score` |
-| **Session 9** | Jinja2 Digest Builder | `job_digest/templates/digest.html`, `digest.txt`, `job_digest/digest.py` (dual apply-now sections, 40 cap, DB persistence) | `day9: jinja2 digest builder, dual section templates, and db persistence` |
-| **Session 10** | Telegram & Email Delivery | `job_digest/notify.py` (`TelegramNotifier`, `EmailNotifier`, paragraph chunking, fault-isolated delivery) | `day10: delivery via telegram and smtp email with fault isolation` |
-| **Session 11** | Master Runner & Scheduler | `job_digest/run.py` (CLI `--dry-run`, `--schedule`), `.github/workflows/daily-digest.yml` (`30 2 * * *` cron), APScheduler | `day11: master pipeline runner, local apscheduler, and daily digest workflow` |
-| **Session 12** | Tests, Tuning & Reliability | `tests/test_reliability_s12.py` (101 tests green, mocked-network pipeline, rate limits, source failure notices, channel fault isolation), ADR 006 | `day12: end-to-end reliability tests and tuning` |
-| **Session 13** | Profile in DB + Job Status | `job_digest/profile_service.py` (validation, versioning, fallback), `job_digest/status.py` (`saved`, `applied`, `not_interested` with timestamps & notes), `user_profiles` schema, ADR 007 | `day13: profile in database and job status tracking` |
-| **Session 14** | App, Login & Read Pages | `job_digest/auth.py` (Argon2, signed session cookie, login rate limit), `job_digest/web.py` (FastAPI app, today's digest, history filters), templates, ADR 008 | `day14: fastapi web app with argon2 login and read pages` |
-| **Session 15** | Actions & Settings | Quick status buttons (`POST /jobs/{fp}/status`), weekly counter (`get_weekly_applied_count`), settings editor (`/settings`), source health (`/sources`), manual job entry (`/jobs/add`), ADR 009 | `day15: interactive status actions, settings editor, source health, and manual job entry` |
+| **Session 0** | Setup & Skeleton | Git repo, `.venv` (Python 3.12), `requirements.txt`, `.env.example`, `docs/decisions.md`, `.github/workflows/ci.yml` | `day0` |
+| **Session 1** | Profile & Database Schema | `profile.example.yaml`, `job_digest/profile.py` (strict Pydantic), `database/schema.sql` (6 tables), `job_digest/db.py` (NullPool) | `day1` |
+| **Session 2** | Greenhouse & Lever Sources | `job_digest/models.py` (`RawJob`), `job_digest/sources/base.py`, `greenhouse.py`, `lever.py`, `sources.yaml` | `day2` |
+| **Session 3** | Ashby, SmartRecruiters, Workable | `ashby.py` (`isListed=True`), `smartrecruiters.py`, `workable.py` (v3 API + v1 widget fallback), test fixtures | `day3` |
+| **Session 4** | Adzuna, Remotive & Runner | `adzuna.py`, `remote.py` (max 4 fetches/day), `job_digest/sources/runner.py` (fault-isolated `run_all_sources`) | `day4` |
+| **Session 5** | IMAP Email Alerts | `job_digest/sources/email_alerts.py` (read-only SSL IMAP, sender whitelist, HTML sanitizer, Message-ID deduplication) | `day5` |
+| **Session 6** | Normalization & Anti-Traps | `job_digest/normalize.py` (anti-traps for C, Go, REST; 4 salary parsers; location & URL cleaners), `Job` model | `day6` |
+| **Session 7** | Deduplication & Freshness | `job_digest/dedup.py` (SHA-256 fingerprint, company legal suffix stripper, 48h freshness threshold, DB upserts) | `day7` |
+| **Session 8** | Eligibility & 10-Point Score | `job_digest/match.py` (hard filters, 10-point scoring algorithm, tracked gap visibility without penalty) | `day8` |
+| **Session 9** | Jinja2 Digest Builder | `job_digest/templates/digest.html`, `digest.txt`, `job_digest/digest.py` (dual apply-now sections, 40 cap, DB persistence) | `day9` |
+| **Session 10** | Telegram & Email Delivery | `job_digest/notify.py` (`TelegramNotifier`, `EmailNotifier`, paragraph chunking, fault-isolated delivery) | `day10` |
+| **Session 11** | Master Runner & Scheduler | `job_digest/run.py` (CLI `--dry-run`, `--schedule`), `.github/workflows/daily-digest.yml` (`30 2 * * *` cron), APScheduler | `day11` |
+| **Session 12** | Tests, Tuning & Reliability | `tests/test_reliability_s12.py` (101 tests green, mocked-network pipeline, rate limits, source failure notices, channel fault isolation), ADR 006 | `day12` |
+| **Session 13** | Profile in DB + Job Status | `job_digest/profile_service.py` (validation, versioning, fallback), `job_digest/status.py` (`saved`, `applied`, `not_interested` with timestamps & notes), `user_profiles` schema, ADR 007 | `day13` |
+| **Session 14** | App, Login & Read Pages | `job_digest/auth.py` (Argon2, signed session cookie, login rate limit), `job_digest/web.py` (FastAPI app, today's digest, history filters), templates, ADR 008 | `day14` |
+| **Session 15** | Actions & Settings | Quick status buttons (`POST /jobs/{fp}/status`), weekly counter (`get_weekly_applied_count`), settings editor (`/settings`), source health (`/sources`), manual job entry (`/jobs/add`), ADR 009 | `day15` |
 | **Urgency & Cadence** | Twice-Daily & Fast Alerts | Twice-daily schedule (08:00 AM & 07:00 PM IST), immediate alerts for jobs closing in ≤ 4h (`job_digest/urgency.py`), on-demand dashboard button (`POST /jobs/run-now`), ADR 010 | `b8507a0` |
-| **Session 16** | Deploy | `Dockerfile` (non-root `appuser`), `render.yaml`, `Procfile`, `.dockerignore`, public `/health` endpoint with DB ping, `docs/deployment.md`, ADR 011 | `day16: deployment configuration, health check endpoint, and render blueprint` |
-| **Session 17** | Hardening (Milestone 2) | Security headers middleware, robots.txt (`Disallow: /`), PWA `manifest.json`, webhook trigger (`/api/trigger`), backup script (`scripts/backup_db.py`), `docs/backup_plan.md`, ADR 012 | `day17: enterprise hardening, security headers, robots disallow, pwa manifest, and disaster recovery backup` |
-| **Session 18** | Site Foundation | Static generator (`site/build.py`), clean semantic templates (index, how-it-works, sources, privacy, terms, 404), SEO validation, ADR 013 | `day18: static portfolio site builder, semantic templates, and seo validation` |
-| **Session 19** | Content & Structured Data | Schema.org JSON-LD (`SoftwareApplication`, `WebSite`, `BreadcrumbList`), OpenGraph/Twitter cards (1200x630 OG image), vector assets (`architecture.svg`, `telegram-mockup.svg`), zero-placeholder audit, ADR 014 | `day19: real content, json-ld structured data, social graph, and accessible visual assets` |
-| **Session 20** | Domain & Crawl Files | Build-time `sitemap.xml`, permissive `robots.txt`, `llms.txt`, custom `404.html`, GitHub Pages workflow (`pages.yml`), `docs/domain_setup.md`, ADR 015 | `day20: sitemap, robots, llms.txt, 404 routing, and github pages deployment workflow` |
-| **Session 21** | Pre-Launch Audit & Release | Bundle hygiene (0 KB JS, ~6 KB CSS), anti-slop design audit, comprehensive production `README.md`, all 20 pre-launch checklist items verified, tagged `v1.0.0`, ADR 016 | `day21: pre-launch audit, anti-slop compliance, production readme, and v1.0.0 release baseline` |
-| **Session 22** | Wrap-Up & Handoff | Operational runbook (`docs/runbook.md`), portfolio briefing (`docs/portfolio_summary.md`), all 17 ADRs verified, 166 tests passing, ADR 017 | `day22: operational runbook, portfolio summary, system wrapup, and production handoff` |
+| **Session 16** | Deploy | `Dockerfile` (non-root `appuser`), `render.yaml`, `Procfile`, `.dockerignore`, public `/health` endpoint with DB ping, `docs/deployment.md`, ADR 011 | `day16` |
+| **Session 17** | Hardening (Milestone 2) | Security headers middleware, robots.txt (`Disallow: /`), PWA `manifest.json`, webhook trigger (`/api/trigger`), backup script (`scripts/backup_db.py`), `docs/backup_plan.md`, ADR 012 | `day17` |
+| **Session 18** | Site Foundation | Static generator (`site/build.py`), clean semantic templates (index, how-it-works, sources, privacy, terms, 404), SEO validation, ADR 013 | `day18` |
+| **Session 19** | Content & Structured Data | Schema.org JSON-LD (`SoftwareApplication`, `WebSite`, `BreadcrumbList`), OpenGraph/Twitter cards (1200x630 OG image), vector assets (`architecture.svg`, `telegram-mockup.svg`), zero-placeholder audit, ADR 014 | `day19` |
+| **Session 20** | Domain & Crawl Files | Build-time `sitemap.xml`, permissive `robots.txt`, `llms.txt`, custom `404.html`, GitHub Pages workflow (`pages.yml`), `docs/domain_setup.md`, ADR 015 | `day20` |
+| **Session 21** | Pre-Launch Audit & Release | Bundle hygiene (0 KB JS, ~6 KB CSS), anti-slop design audit, production `README.md`, all 20 pre-launch checklist items verified, tagged `v1.0.0`, ADR 016 | `day21` |
+| **Session 22** | Wrap-Up & Handoff | Operational runbook (`docs/runbook.md`), portfolio briefing (`docs/portfolio_summary.md`), all 17 ADRs verified, 166 tests passing, ADR 017 | `day22` |
+| **Session 23+ (Post-Launch)** | High-Speed IMAP & Sources | IMAP header-first inspection, `asyncio.to_thread` worker offloading, 15s socket timeout, single-query `/sources` batching (sub-100ms load), button loading state, 45s source runner safety timeout | `5b65337` |
+| **Session 24+ (Multi-Platform)** | 11-Platform Email Expansion | Added Internshala, Unstop, Instahyre, Wellfound, Cutshort, Foundit, Glassdoor, Hirist to IMAP engine; universal job parser; fallback aria/title tag parsing | `e22c0ef` |
+| **Session 25+ (Live Adzuna)** | Adzuna API Production Live | Live integration of `ADZUNA_APP_ID` & `ADZUNA_APP_KEY`, verified 20 live Indian tech jobs, achieved 100% Green (8/8 sources Healthy) | Live on Render |
 
 ---
 
@@ -135,19 +145,22 @@
 - **ADR 002 (Tech Stack):** Python 3.12, strict Pydantic (`extra="forbid"` on profile, `"ignore"` on models), SQLAlchemy 2.0 + psycopg 3, `httpx` async client, Jinja2, FastAPI.
 - **ADR 003 (Permitted Sources & Anti-Scraping):** Strict use of public ATS APIs, official search APIs (Adzuna), and personal IMAP email alerts. Zero scraping of LinkedIn/Naukri/Indeed.
 - **ADR 004 (Dual-Mailbox Separation):** Mailbox A for incoming alert emails (read-only IMAP with App Password); Mailbox B for outgoing digest notifications via SMTP.
-- **ADR 005 (Database Engine):** Supabase PostgreSQL accessed via Transaction/Session pooler string for IPv4 compatibility on GitHub Actions runners.
+- **ADR 005 (Database Engine):** Supabase/Neon PostgreSQL accessed via Transaction/Session pooler string with `NullPool` to prevent idle connection exhaustion.
 - **ADR 006 (Fault Isolation & Delivery Resilience):** Sources run in isolated try-except blocks, recording metrics to `source_runs`. Unreachable sources are highlighted in digest notices. Notifiers run independently; jobs are marked notified if $\ge 1$ channel succeeds.
 - **ADR 007 (Database Profile Versioning & Job Status Tracking):** Monotonic versions stored in `user_profiles` with validation on save. Corrupted configs fall back to last good version. Status (`saved`, `applied`, `not_interested`) tracked with dedicated timestamps.
 - **ADR 008 (Single-User Web Dashboard, Argon2 & Session Protection):** FastAPI app with Argon2id password hash, HMAC-SHA256 session cookie, login IP rate limiter, protected digest view and filtered job history.
-- **ADR 009 (Interactive Actions, Settings Editor, Source Health & Manual Entry):** One-click status updates, weekly applied counter, web profile & blocklist editor with validation on save (changes apply to next daily run), live source health monitoring, and manual ad-hoc job submission.
+- **ADR 009 (Interactive Actions, Settings Editor, Source Health & Manual Entry):** One-click status updates, weekly applied counter, web profile & blocklist editor with validation on save, live source health monitoring, and manual ad-hoc job submission.
 - **ADR 010 (Twice-Daily Notification Cadence, Urgent Expiring Alerts & On-Demand Trigger):** Twice-daily scheduled runs (08:00 AM & 07:00 PM IST), urgent deadline detector (`≤ 4 hours left`) dispatching instant high-priority alerts to Telegram and Email, and an authenticated on-demand button (`POST /jobs/run-now`) on the dashboard header.
-- **ADR 011 (Cloud Deployment Architecture, Containerization & Health Monitoring):** Decoupled architecture where GitHub Actions runs automated crawls and pushes to Supabase, web dashboard runs on Render in production container (`Dockerfile`), and public `/health` endpoint is kept alive 24/7 with free 10-minute pings (UptimeRobot).
+- **ADR 011 (Cloud Deployment Architecture, Containerization & Health Monitoring):** Decoupled architecture where GitHub Actions runs automated crawls and pushes to Supabase, web dashboard runs on Render in production container (`Dockerfile`), and public `/health` endpoint is kept alive 24/7 with free 10-minute pings.
 - **ADR 012 (Production Hardening, Security Headers, Privacy & PWA Support):** Comprehensive enterprise security headers (CSP, HSTS, X-Frame-Options, X-Content-Type-Options), strict crawler blocking via `X-Robots-Tag` and `/robots.txt`, authentication guard on all dashboard routes, mobile PWA manifest, token-protected webhook API, and JSON database backup snapshot utility.
-- **ADR 013 (Static Showcase Site Generator & Semantic SEO Architecture):** Custom Jinja2 static site compiler (`site/build.py`) outputting cleanly formatted, pre-rendered HTML to `dist/` with directory-based clean URLs, strict semantic SEO constraints (exactly one H1, unique title, unique description, self-referential canonical, breadcrumb trails), and zero personal candidate data leakage.
+- **ADR 013 (Static Showcase Site Generator & Semantic SEO Architecture):** Custom Jinja2 static site compiler (`site/build.py`) outputting cleanly formatted HTML to `dist/` with directory-based clean URLs, strict semantic SEO constraints, and zero personal candidate data leakage.
 - **ADR 014 (Structured Data, Social Meta Graph & Accessible Visual Asset Architecture):** Schema.org JSON-LD graph (`SoftwareApplication`, `WebSite`, `BreadcrumbList`), complete OpenGraph and Twitter card metadata (1200x630 social share preview card), accessible hand-crafted vector visual assets (`architecture.svg`, `telegram-mockup.svg`), and zero-placeholder content audit across all public pages.
 - **ADR 015 (Domain Deployment, Crawl Files & GitHub Pages Automation):** Automated generation of Sitemaps 0.9 protocol `sitemap.xml`, permissive `robots.txt`, structured `llms.txt` for AI crawlers, custom recovery `404.html`, automated `.github/workflows/pages.yml` deployment on push, and DNS/HTTPS custom domain guide (`docs/domain_setup.md`).
-- **ADR 016 (Production Pre-Launch Audit, Anti-Slop Enforcement & Release Baseline):** Distribution hygiene (0 source maps, 0 KB JS, ~6 KB unminified CSS, 0 console errors), strict anti-slop rules compliance (neutral theme, no purple gradients, rectangular badges, no emoji icons), comprehensive production `README.md`, verified 20-point pre-launch checklist, and release tagging `v1.0.0`.
-- **ADR 017 (Project Wrap-Up, Operational Runbook & Final Production Handoff):** Complete operational runbook (`docs/runbook.md`), portfolio briefing (`docs/portfolio_summary.md`), 166 verified tests, all 22 sessions finished, and production-ready handoff.
+- **ADR 016 (Production Pre-Launch Audit, Anti-Slop Enforcement & Release Baseline):** Distribution hygiene (0 source maps, 0 KB JS, ~6 KB unminified CSS, 0 console errors), strict anti-slop rules compliance, comprehensive production `README.md`, verified 20-point pre-launch checklist, and release tagging `v1.0.0`.
+- **ADR 017 (Project Wrap-Up, Operational Runbook & Final Production Handoff):** Complete operational runbook (`docs/runbook.md`), portfolio briefing (`docs/portfolio_summary.md`), all 17 ADRs verified, 166 tests passing, and production-ready handoff.
+- **ADR 018 (Non-Blocking Header-First IMAP Architecture):** Offloads synchronous IMAP fetching to `asyncio.to_thread` with strict 15s socket timeout, filters emails by header fields (`FROM`, `MESSAGE-ID`) under 1 KB, skips unauthorized senders and cached Message-IDs in 1ms, and searches only past 3 days (`SINCE`). Eliminates event-loop blocking and cuts crawl duration from 5 minutes to 3 seconds.
+- **ADR 019 (Single-Query Dashboard Source Health Architecture):** Replaces 8 individual sequential database roundtrips with a single batch query (`ORDER BY started_at DESC LIMIT 200`) grouped in memory, achieving sub-100ms `/sources` page load times even during remote Singapore-to-client network latency.
+- **ADR 020 (Multi-Platform Job Alert Ingestion & Universal Parser):** Extends IMAP whitelisting from 3 to 11 major platforms (Internshala, Unstop, Instahyre, Wellfound, Cutshort, Foundit, Glassdoor, Hirist) with domain pattern matching, specialized internship extractors, and a universal job link parser for untrusted email HTML.
 
 ---
 
@@ -161,63 +174,44 @@
 6. **Starlette / FastAPI TemplateResponse Signature:** Modern Starlette requires keyword arguments: `templates.TemplateResponse(request=request, name="...", context={...})`. Passing positional arguments causes Jinja2 cache `TypeError: unhashable type: 'dict'`.
 7. **SQLite In-Memory Multi-Threading in Tests:** In FastAPI TestClient tests with in-memory SQLite, always configure `engine = create_engine("sqlite:///:memory:", connect_args={"check_same_thread": False}, poolclass=StaticPool)` to prevent thread collision errors.
 8. **FastAPI Parameter Shadowing:** Never name route arguments `status: str` if referencing `from fastapi import status` for HTTP codes (e.g., `status.HTTP_303_SEE_OTHER`); use direct integer codes (`303`) or alias imports.
-9. **Free Cloud Host Sleep Prevention:** Free PaaS hosts (Render) hibernate after 15 minutes of inactivity. Set up an external ping monitor (UptimeRobot) to query `/health` every 10 minutes to maintain 24/7 responsiveness. Autonomous crawler runs (GitHub Actions) remain completely unaffected by web host state.
-10. **Python stdlib `site` Module Namespace Collision:** Python's standard library includes `site.py`. Avoid `import site.build` directly; invoke `python site/build.py` or use dynamic path imports via `importlib.util.spec_from_file_location` in tests and build tools.
+9. **Free Cloud Host Sleep Prevention:** Free PaaS hosts (Render) hibernate after 15 minutes of inactivity. Set up an external ping monitor (keepalive workflow) to query `/health` every 10 minutes to maintain 24/7 responsiveness.
+10. **Python stdlib `site` Module Namespace Collision:** Python's standard library includes `site.py`. Avoid `import site.build` directly; invoke `python site/build.py` or use dynamic path imports via `importlib.util.spec_from_file_location`.
+11. **GitHub Actions Empty String Secrets:** When optional secrets are not configured in GitHub Secrets, GitHub Actions exports them as empty strings (`""`). Direct conversion via `int(os.getenv("IMAP_PORT", ...))` throws `ValueError: invalid literal for int() with base 10: ''`. Always validate `val and val.strip()` before converting to integers.
+12. **GitHub Pages Repository Subpath (`/repo-name/`):** GitHub project pages are hosted at `username.github.io/repo/` rather than the domain root. `site/build.py` dynamically extracts `site_root` from the configured base URL, prefixing all asset and navigation links.
+13. **Strict XML Entities in SVG Assets:** Standalone SVG files rendered via `<img>` tags are parsed strictly as XML by browser rendering engines. Named entities like `&bull;` or `&le;` produce fatal XML parse errors. Always use numeric references (`&#8226;`, `&#8804;`) or literal UTF-8 symbols (`•`, `≤`).
+14. **Precision In-App Scheduling vs GitHub Actions Queuing:** GitHub Actions scheduled cron runs suffer from hours of queue delay on free runners during peak UTC traffic. Moving scheduled execution into an in-app `AsyncIOScheduler` inside the 24/7 warm Render web container fires crawl runs at exactly 08:00:00 AM IST and 07:00:00 PM IST with 0-second queuing latency.
+15. **IMAP Synchronous Blocking Gotcha:** Calling `imaplib.IMAP4_SSL` directly inside an `async def` route or pipeline blocks the single-threaded asyncio event loop. Always wrap IMAP in `asyncio.to_thread` and set `timeout=15.0` on the socket to prevent server freezes.
+16. **IMAP Full Body Download Latency:** Fetching `(RFC822)` for 20 messages downloads multi-megabytes over SSL, causing 3–5 minute latency. Always fetch headers first (`BODY.PEEK[HEADER.FIELDS (FROM MESSAGE-ID SUBJECT DATE)]`) under 1 KB, verify the sender against the domain whitelist, and check if the Message-ID is already in `email_messages` before downloading the full body.
+17. **Multi-Query Dashboard Bottleneck:** Querying health status for each source adapter in an iterative loop across remote database connections multiplies latency by $N$. Use a single batch query (`LIMIT 200`) and group latest runs in memory for sub-100ms dashboard rendering.
+18. **Anti-Scraping Realities on Job Portals:** Indeed (Cloudflare 403 Forbidden) and Naukri (Akamai 406 Not Acceptable) aggressively block direct HTTP scrapers and cloud IPs. Reading their algorithmic recommendation emails over IMAP completely bypasses bot firewalls legally with 100% zero blocks.
 
 ---
 
-## 7. Road Ahead: Remaining Phases
-
-### Phase 2: Private Single-User Web App (Sessions 13 to 17) — COMPLETED (Milestone 2 Achieved!)
-- **Session 13:** Move profile to `user_profiles` table with versioning; job status tracking (`saved`, `applied`, `not_interested`, notes).
-- **Session 14:** FastAPI app + Jinja2 dashboard, Argon2 single-user auth, session cookies, multi-criteria filters.
-- **Session 15:** Quick status action buttons, weekly applied counter, profile & blocklist editor, source health, manual job entry.
-- **Session 16:** Production deployment files (`Dockerfile`, `render.yaml`, `Procfile`), public `/health` endpoint, keepalive monitoring.
-- **Session 17:** Enterprise hardening: security headers middleware (CSP, HSTS, X-Frame-Options), robots.txt (`Disallow: /`), PWA `manifest.json`, webhook trigger (`/api/trigger`), disaster recovery backup utility (`scripts/backup_db.py`).
-- **Milestone 2 Result:** Verified personal mobile dashboard with 100% login protection, zero search engine indexation, and real-time application tracking.
-
-### Phase 3: Public Showcase Site (Sessions 18 to 21) — COMPLETED (Milestone 3 Achieved!)
-- **Session 18 (Completed):** Static Jinja2 generator (`site/build.py`), clean semantic templates (index, how-it-works, sources, privacy, terms, 404), SEO validation tests (1 H1, unique title/description/canonical).
-- **Session 19 (Completed):** Schema.org JSON-LD structured data (`SoftwareApplication`, `WebSite`, `BreadcrumbList`), social preview assets (1200x630 OG image), architecture diagram SVG, real Telegram mockup, zero placeholder audit.
-- **Session 20 (Completed):** Build-time `sitemap.xml`, permissive `robots.txt`, `llms.txt`, custom `404.html`, GitHub Pages workflow (`pages.yml`), `docs/domain_setup.md`, ADR 015.
-- **Session 21 (Completed):** Distribution hygiene (0 source maps, 0 KB JS, ~6 KB unminified CSS), anti-slop design audit, production `README.md`, verified 20-point pre-launch checklist, tagged `v1.0.0`, ADR 016.
-- **Milestone 3 Result:** High-impact public portfolio showcase with 100% semantic SEO, zero personal profile exposure, accessible SVG visual assets, and automated GitHub Pages CI/CD.
-
-### Phase 4: Project Wrap-Up — COMPLETED (Milestone 4 Achieved — All 22 Sessions Done!)
-- **Session 22 (Completed):** Operational runbook (`docs/runbook.md`), portfolio briefing (`docs/portfolio_summary.md`), all 17 ADRs recorded, 166 tests passing, production handoff, ADR 017.
-- **Milestone 4 Result:** Complete, autonomous personal career intelligence platform running in production with complete documentation, rock-solid tests, and an interview-ready public portfolio showcase.
-
----
-
-## 8. Live Production Deployment & Verification (Active & Verified)
+## 7. Live Production Deployment & Verification (Active & Verified)
 
 - **GitHub Repository:** [https://github.com/aman7739/job-agent](https://github.com/aman7739/job-agent) (`main` branch tracked, tagged `v1.0.0`).
 - **Live Public Showcase Site:** [https://aman7739.github.io/job-agent/](https://aman7739.github.io/job-agent/)
   - Deployed via `.github/workflows/pages.yml`.
-  - Zero-JS static site with dynamic repository subpath (`site_root = "/job-agent"`) prefixing all CSS, SVGs, and navigation links.
+  - Zero-JS static site with dynamic repository subpath (`site_root = "/job-agent"`).
 - **Production Cloud Database:** Neon serverless PostgreSQL (AWS Singapore `ap-southeast-1`) hosting tables:
   - `job_sources`, `seen_jobs`, `user_profiles`, `jobs`, `digests`, `source_runs`, `email_messages`.
 - **Live Private Web Dashboard:** [https://job-agent-sg20.onrender.com](https://job-agent-sg20.onrender.com)
   - Hosted on Render Free-Tier (Singapore region) running production Docker container.
   - Argon2id password-protected single-user authentication, job status controls (`Save`, `Applied`, `Ignore`), profile settings, and on-demand crawler trigger.
-  - Public `/health` endpoint verified: `status: healthy`, `database: connected`, HTTP 200 OK.
+  - Public `/health` endpoint verified: `status: healthy`, `database: connected`, `scheduler: running`, HTTP 200 OK.
   - Kept awake 24/7 with zero cold starts via 10-minute automated GitHub Actions keepalive cron (`.github/workflows/keepalive.yml`).
 - **Telegram Notification Bot:**
   - Registered via `@BotFather` with private chat notifications via `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID`.
 - **Automated Crawl Schedule:**
-  - Automated twice-daily runs via GitHub Actions (`.github/workflows/daily-digest.yml`) scheduled at **08:00 AM IST & 07:00 PM IST** (`cron: '30 2,13 * * *'`).
-  - Successfully verified live run: fetched 1,399 real jobs from ATS platforms, deduplicated and scored for B.Tech 2027 CSE (Internships + Full-Time), persisted to Neon, and delivered live digest to Telegram.
-- **Test Suite Status:** 175 passing unit and integration tests (100% green).
-
----
-
-## 9. Additional Production Gotchas & Fixes Learned
-
-11. **GitHub Actions Empty String Secrets:** When optional secrets (like `IMAP_PORT` or `SMTP_PORT`) are not configured in GitHub Secrets, GitHub Actions exports them as empty strings (`""`). Direct conversion via `int(os.getenv("IMAP_PORT", ...))` throws `ValueError: invalid literal for int() with base 10: ''`. Always validate `val and val.strip()` before converting to integers.
-12. **GitHub Pages Repository Subpath (`/repo-name/`):** GitHub project pages are hosted at `username.github.io/repo/` rather than the domain root. Absolute root paths (`/static/...`, `/how-it-works/`) fail with 404s. `site/build.py` dynamically extracts `site_root` from the configured base URL, prefixing all asset and navigation links.
-13. **GitHub Pages Workflow Step Ordering:** In `pages.yml`, `actions/configure-pages@v5` must execute *before* the site build step so that `steps.pages.outputs.base_url` is available to set `SITE_BASE_URL`.
-14. **Database Auto-Migration on Pipeline Startup:** `job_digest/run.py` automatically runs `run_schema_migration()` on startup when `DATABASE_URL` is configured, ensuring tables and indexes are created idempotently without manual SQL execution.
-15. **Strict XML Entities in SVG Assets:** Standalone SVG files rendered via `<img>` tags are parsed strictly as XML by browser rendering engines. Using HTML named entities such as `&bull;` or `&le;` produces fatal `undefined entity` XML parse errors, which causes the browser to discard rendering and show a broken image box. Always use numeric XML character references (`&#8226;`, `&#8804;`) or literal UTF-8 symbols (`•`, `≤`).
-16. **Render Free-Tier Zero-Sleep Keepalive:** Render free-tier instances sleep after 15 minutes of inactivity. To eliminate cold-start delays, a dedicated keepalive utility (`scripts/keepalive.py`) and a 10-minute automated GitHub Actions cron workflow (`.github/workflows/keepalive.yml`) ping the `/health` endpoint periodically using `RENDER_APP_URL`, resetting Render's idle countdown and maintaining 24/7 responsiveness at $0 cost.
-17. **Precision In-App Scheduling vs GitHub Actions Queuing:** GitHub Actions scheduled cron runs (`cron: '30 2,13 * * *'`) suffer from hours of queue delay on free runners during peak UTC traffic. Moving scheduled execution into an in-app `AsyncIOScheduler` inside the 24/7 warm Render web container fires crawl runs at exactly 08:00:00 AM IST and 07:00:00 PM IST with 0-second queuing latency. Additionally, title exclusion strictly blocks `leadership`, `senior`, `lead`, `manager`, `expert`, and explicit $\ge 3$ years requirements, while preserving open technical and tech-adjacent fresher opportunities.
-18. **IMAP Job Alert Ingestion (LinkedIn, Naukri, Indeed):** The pipeline includes an SSL IMAP email parser (`job_digest/sources/email_alerts.py`) operating strictly in read-only mode (`readonly=True`). It parses job links from whitelisted sender domains (LinkedIn, Naukri, and Indeed) and tracks Message-IDs in the `email_messages` table to prevent re-processing. To activate it in production, `IMAP_HOST` (`imap.gmail.com`), `IMAP_PORT` (`993`), `IMAP_USER`, and `IMAP_PASSWORD` (Google 16-character App Password) must be configured in Render and GitHub Secrets.
+  - In-app `AsyncIOScheduler` running in the 24/7 warm Render container at **08:00 AM IST & 07:00 PM IST** (`cron: hour=2,13, minute=30, timezone=UTC`).
+- **All 8 Sources 100% Green & Verified:**
+  1. `greenhouse`: 1,224 jobs (Healthy)
+  2. `lever`: 29 jobs (Healthy)
+  3. `ashby`: 108 jobs (Healthy)
+  4. `smartrecruiters`: 21 jobs (Healthy)
+  5. `workable`: 0 active Indian jobs (Healthy)
+  6. `adzuna`: 20 live Indian tech jobs via developer API keys (Healthy)
+  7. `remotive`: 10 remote jobs (Healthy)
+  8. `email_alerts`: 15 jobs parsed & smart cached deduplication (Healthy)
+- **Total Reach:** Over **1,410+ raw roles** scanned and normalized across both Indian and global tech markets.
+- **Test Suite Status:** **180 passing unit and integration tests (100% green).**
