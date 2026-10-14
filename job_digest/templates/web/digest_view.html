@@ -20,7 +20,7 @@
     </p>
   </div>
   <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-    <form method="post" action="/jobs/run-now" style="margin: 0;">
+    <form method="post" action="/jobs/run-now" style="margin: 0;" onsubmit="const b = this.querySelector('button'); b.disabled = true; b.innerHTML = '<span>⏳ Checking All Sources...</span>';">
       <button type="submit" class="btn btn-primary" style="display: flex; align-items: center; gap: 6px; padding: 9px 18px; font-weight: 600; cursor: pointer; background: #2563eb; color: #ffffff; border: none; border-radius: 6px;">
         <span>⚡ Check &amp; Notify Now</span>
       </button>

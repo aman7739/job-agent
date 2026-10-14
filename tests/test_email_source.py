@@ -143,3 +143,64 @@ def test_parse_indeed_alerts():
     assert "Associate Python Developer" in jobs[1].title
     assert jobs[1].external_id == "123456abcdef7890"
 
+
+@pytest.mark.asyncio
+async def test_email_source_fetch_unconfigured():
+    """Verify EmailAlertSource.fetch returns empty list when unconfigured without crashing."""
+    source = EmailAlertSource(imap_host="", imap_user="", imap_password="")
+    jobs = await source.fetch()
+    assert jobs == []
+
+
+@pytest.mark.asyncio
+async def test_email_source_fetch_with_header_filtering(monkeypatch):
+    """Verify EmailAlertSource uses header-first inspection and only downloads bodies for allowed senders."""
+    from unittest.mock import MagicMock
+    import imaplib
+
+    eml_path = FIXTURES_DIR / "sample_linkedin_alert.eml"
+    with open(eml_path, "rb") as f:
+        linkedin_eml_bytes = f.read()
+
+    mock_mail = MagicMock()
+    mock_mail.search.return_value = ("OK", [b"1 2"])
+
+    def mock_fetch(msg_id, spec):
+        if "HEADER.FIELDS" in spec:
+            if msg_id == b"1":
+                # Message 1 is spam / unknown sender
+                return ("OK", [(b"1", b"From: promo@spam.com\r\nMessage-ID: <spam1@spam.com>\r\n\r\n")])
+            else:
+                # Message 2 is LinkedIn alerts
+                return ("OK", [(b"2", b"From: jobalerts-noreply@linkedin.com\r\nMessage-ID: <alert2@linkedin.com>\r\n\r\n")])
+        elif "BODY.PEEK[]" in spec or "RFC822" in spec:
+            if msg_id == b"2":
+                return ("OK", [(b"2", linkedin_eml_bytes)])
+            return ("NO", [])
+        return ("NO", [])
+
+    mock_mail.fetch.side_effect = mock_fetch
+
+    monkeypatch.setattr(imaplib, "IMAP4_SSL", lambda host, port, timeout=None: mock_mail)
+
+    source = EmailAlertSource(
+        imap_host="imap.example.com",
+        imap_user="test@example.com",
+        imap_password="test_password",
+    )
+
+    jobs = await source.fetch()
+
+    # Message 1 (spam) should NOT have had its body fetched.
+    # Message 2 (LinkedIn) had its body fetched and yielded jobs.
+    assert len(jobs) == 2
+    assert jobs[0].source_id == "linkedin_alerts"
+
+    # Verify that mock_mail.fetch was called with BODY.PEEK[] ONLY for msg_id b"2", never for b"1"
+    body_peek_calls = [
+        call for call in mock_mail.fetch.call_args_list if "BODY.PEEK[]" in str(call)
+    ]
+    assert len(body_peek_calls) == 1
+    assert body_peek_calls[0][0][0] == b"2"
+
+

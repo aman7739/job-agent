@@ -705,45 +705,51 @@ async def source_health_page(
         "workable", "adzuna", "remotive", "email_alerts",
     ]
     sources_metrics: List[Dict[str, Any]] = []
+    latest_by_source: Dict[str, Any] = {}
 
     if session:
+        try:
+            rows = session.execute(
+                text(
+                    """
+                    SELECT source_name, started_at, jobs_found, is_success, error_message
+                    FROM source_runs
+                    ORDER BY started_at DESC
+                    LIMIT 200
+                    """
+                )
+            ).fetchall()
+            for r in rows:
+                sname = r[0]
+                if sname not in latest_by_source:
+                    latest_by_source[sname] = {
+                        "started_at": r[1],
+                        "jobs_found": r[2],
+                        "is_success": bool(r[3]),
+                        "error_message": r[4],
+                    }
+        except Exception as exc:
+            logger.warning(f"Error querying source health: {exc}")
+
         for sname in all_source_names:
-            try:
-                row = session.execute(
-                    text(
-                        """
-                        SELECT started_at, jobs_found, is_success, error_message
-                        FROM source_runs
-                        WHERE source_name = :name
-                        ORDER BY started_at DESC LIMIT 1
-                        """
-                    ),
-                    {"name": sname},
-                ).fetchone()
-                if row:
-                    last_run = row[0].strftime("%d %b %Y %H:%M UTC") if hasattr(row[0], "strftime") else str(row[0])
-                    sources_metrics.append({
-                        "name": sname,
-                        "last_run": last_run,
-                        "jobs_found": row[1],
-                        "is_success": bool(row[2]),
-                        "error_message": row[3],
-                    })
-                else:
-                    sources_metrics.append({
-                        "name": sname,
-                        "last_run": None,
-                        "jobs_found": 0,
-                        "is_success": False,
-                        "error_message": "No run recorded yet",
-                    })
-            except Exception as exc:
+            data = latest_by_source.get(sname)
+            if data:
+                st = data["started_at"]
+                last_run = st.strftime("%d %b %Y %H:%M UTC") if hasattr(st, "strftime") else str(st)
+                sources_metrics.append({
+                    "name": sname,
+                    "last_run": last_run,
+                    "jobs_found": data["jobs_found"],
+                    "is_success": data["is_success"],
+                    "error_message": data["error_message"],
+                })
+            else:
                 sources_metrics.append({
                     "name": sname,
                     "last_run": None,
                     "jobs_found": 0,
                     "is_success": False,
-                    "error_message": str(exc),
+                    "error_message": "No run recorded yet",
                 })
     else:
         for sname in all_source_names:

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import asyncio
+from datetime import datetime, timedelta, timezone
 import email
 from email.header import decode_header
 from email.message import Message
@@ -295,49 +297,101 @@ class EmailAlertSource:
         return "email_alerts"
 
     async def fetch(self) -> List[RawJob]:
-        """Fetch alert emails over IMAP in read-only mode."""
+        """Fetch alert emails over IMAP asynchronously in read-only mode off the main event loop."""
         if not self.imap_host or not self.imap_user or not self.imap_password:
             logger.info("IMAP credentials not configured. Skipping EmailAlertSource.")
             return []
 
+        return await asyncio.to_thread(self._fetch_sync)
+
+    def _fetch_sync(self) -> List[RawJob]:
+        """Synchronous IMAP fetch executed in a worker thread with socket timeout and header-first filtering."""
         all_jobs: List[RawJob] = []
+        mail: Optional[imaplib.IMAP4_SSL] = None
 
         try:
-            # Connect over SSL
-            mail = imaplib.IMAP4_SSL(self.imap_host, self.imap_port)
+            # Connect over SSL with a strict 15s timeout to prevent hanging
+            mail = imaplib.IMAP4_SSL(self.imap_host, self.imap_port, timeout=15.0)
+            if hasattr(mail, "sock") and mail.sock:
+                mail.sock.settimeout(15.0)
+
             mail.login(self.imap_user, self.imap_password)
-            # Open INBOX in READONLY mode to never delete or alter flags on Mailbox A
+            # Open INBOX in READONLY mode to never delete or alter flags on mailbox
             mail.select("INBOX", readonly=True)
 
-            # Search for unread messages or recent messages
-            status, response = mail.search(None, "UNSEEN")
-            if status != "OK" or not response[0]:
-                # If no unseen messages, search recent messages
-                status, response = mail.search(None, "ALL")
+            # Search recent messages (past 3 days) to avoid scanning thousands of old emails
+            since_date = (datetime.now(timezone.utc) - timedelta(days=3)).strftime("%d-%b-%Y")
+            status, response = mail.search(None, f'(SINCE "{since_date}")')
+            if status != "OK" or not response or not response[0]:
+                # Fallback to UNSEEN if SINCE returns nothing
+                status, response = mail.search(None, "UNSEEN")
+
+            if status != "OK" or not response or not response[0]:
+                try:
+                    mail.close()
+                    mail.logout()
+                except Exception:
+                    pass
+                return []
 
             msg_ids = response[0].split()
-            # Process at most the latest 20 messages per session
-            for msg_id in msg_ids[-20:]:
-                res, data = mail.fetch(msg_id, "(RFC822)")
-                if res != "OK" or not data or not data[0]:
+            # Process at most the latest 20 messages
+            target_ids = msg_ids[-20:]
+
+            for msg_id in target_ids:
+                # 1. Fetch only headers first (fast, ~1KB) to check sender & message-id
+                # Avoid downloading megabytes of bodies for non-job emails
+                res, hdr_data = mail.fetch(msg_id, "(BODY.PEEK[HEADER.FIELDS (FROM MESSAGE-ID SUBJECT DATE)])")
+                if res != "OK" or not hdr_data or not hdr_data[0]:
                     continue
 
-                raw_email = data[0][1]
-                mid, jobs = parse_eml_bytes(raw_email, self.allowed_senders)
+                raw_headers = hdr_data[0][1] if isinstance(hdr_data[0], tuple) else b""
+                hdr_msg = email.message_from_bytes(raw_headers)
+                sender = hdr_msg.get("From", "")
+                mid = hdr_msg.get("Message-ID", "")
+
+                clean_sender = extract_email_address(sender)
+                # Quick filter: is the sender from an allowed job alert domain?
+                if clean_sender not in self.allowed_senders:
+                    continue
+
+                # Quick filter: has this message ID already been processed and recorded in DB?
+                if mid and self._is_message_already_processed(mid):
+                    continue
+
+                # 2. Only download the full body for confirmed new job alert emails
+                res, body_data = mail.fetch(msg_id, "(BODY.PEEK[])")
+                if res != "OK" or not body_data or not body_data[0]:
+                    continue
+
+                raw_email = body_data[0][1] if isinstance(body_data[0], tuple) else b""
+                parsed_mid, jobs = parse_eml_bytes(raw_email, self.allowed_senders)
+                final_mid = mid or parsed_mid
 
                 if not jobs:
                     continue
 
-                if self._is_message_already_processed(mid):
+                if self._is_message_already_processed(final_mid):
                     continue
 
                 all_jobs.extend(jobs)
-                self._record_processed_message(mid, "alerts_sender", len(jobs))
+                self._record_processed_message(final_mid, clean_sender, len(jobs))
 
-            mail.close()
-            mail.logout()
+            try:
+                mail.close()
+            except Exception:
+                pass
+            try:
+                mail.logout()
+            except Exception:
+                pass
         except Exception as exc:
             logger.warning(f"Error reading alert emails over IMAP: {exc}")
+            if mail:
+                try:
+                    mail.logout()
+                except Exception:
+                    pass
 
         logger.info(f"EmailAlertSource extracted {len(all_jobs)} jobs from alert mailbox.")
         return all_jobs

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from datetime import datetime, timezone
 from typing import Dict, List, Optional, Tuple
@@ -62,7 +63,7 @@ async def execute_source(
     logger.info(f"Starting fetch for source: {source.name}")
 
     try:
-        jobs = await source.fetch()
+        jobs = await asyncio.wait_for(source.fetch(), timeout=45.0)
         finished_at = datetime.now(timezone.utc)
         result = SourceRunResult(
             source_name=source.name,
