@@ -65,7 +65,7 @@
 | **Containerization** | **Docker** | Multi-stage build | Lightweight Linux production image running as non-root `appuser` |
 | **Cloud Hosting** | **Render** | Web Service (Docker) | Production host for dashboard, webhooks, and scheduler |
 | **Showcase Hosting** | **GitHub Pages** | Static Site | Zero-JS public portfolio site deployed via `pages.yml` |
-| **Test Suite** | **pytest** | `9.1+` | Test runner executing 181 unit, integration, and reliability tests |
+| **Test Suite** | **pytest** | `9.1+` | Test runner executing 186 unit, integration, and reliability tests |
 | **Async Testing** | **pytest-asyncio** / `anyio`| `1.4+` / `4.15+` | Strict mode event loop management for async source tests |
 
 ---
@@ -443,7 +443,7 @@ CREATE TABLE IF NOT EXISTS email_messages (
   7. `remotive`: 10 remote jobs (Healthy)
   8. `email_alerts`: 15 jobs parsed & smart cached deduplication (Healthy)
 - **Total Ingestion Reach:** Over **1,410+ raw roles** scanned and normalized across both Indian and global tech markets.
-- **Test Suite Status:** **181 passing unit and integration tests (100% green).**
+- **Test Suite Status:** **186 passing unit and integration tests (100% green).**
 
 ---
 
@@ -499,3 +499,22 @@ Target Applications Submitted
 - **Daily Time Saved:** ~90 minutes per day previously spent manually refreshing 6 job boards and opening spam emails.
 - **Signal-to-Noise Ratio:** Raw volume (1,410+) is filtered down to ~15 highly targeted opportunities per run—delivering a ~98.8% noise reduction rate.
 - **Application Tracking:** The dashboard's interactive weekly applied counter and status actions persist exact timestamps, providing clear visibility into application velocity and pipeline health.
+
+---
+
+## 12. Source Expansion Build Plan (Status: Stage 1 Completed)
+
+Based on [`job_digest_build_plan.md`](file:///C:/Users/KRAMA/OneDrive/Desktop/AI%20AGENT/job_digest_build_plan.md):
+
+- **Stage 1 (Completed): Automated ATS Slug Checker & sources.yaml Expansion:**
+  - Created standalone scanner [`scripts/check_ats_slugs.py`](file:///C:/Users/KRAMA/OneDrive/Desktop/AI%20AGENT/scripts/check_ats_slugs.py) and test suite [`tests/test_slug_checker.py`](file:///C:/Users/KRAMA/OneDrive/Desktop/AI%20AGENT/tests/test_slug_checker.py).
+  - Verified 50 target companies across Greenhouse, Lever, Ashby, and SmartRecruiters with polite 0.3s pacing.
+  - Expanded `sources.yaml` from 42 to **57 company boards**, adding verified Indian tech companies:
+    * `smartrecruiters`: `swiggy` (100 India roles), `cars24`, `freshworks` (32 India roles), `grab`
+    * `lever`: `cred` (7 India roles), `meesho` (58 India roles)
+    * `greenhouse`: `groww` (11 India roles), `inmobi` (46 India roles), `druva` (14 India roles), `twilio` (143 India/Remote roles), `rubrik` (50 India roles), `samsara` (221 India/Remote roles), `databricks` (164 India roles), `okta` (111 India roles)
+    * `ashby`: `snowflake` (51 India roles)
+  - Results logged to `reports/ats_slug_report.csv`.
+- **Stage 2 (Next):** Expand Adzuna query groups and activate 11 whitelisted email alerts.
+- **Stage 3:** Trial one aggregator API (Jooble or Careerjet).
+- **Stage 4:** Implement `job_sightings` metric table and 7-day per-source analytics on `/sources`.
