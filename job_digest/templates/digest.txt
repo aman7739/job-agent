@@ -81,5 +81,5 @@ Checked all configured company boards at 08:00 IST. Next run tomorrow morning!
 {% if has_remotive %}
 Remote listings credited to Remotive (https://remotive.com)
 {% endif %}
-Job Digest Agent - Delivered at 08:00 IST
+Job Digest Agent - Delivered at {{ delivery_time_ist | default('08:00 IST') }}
 ==================================================

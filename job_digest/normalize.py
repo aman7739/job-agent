@@ -281,17 +281,29 @@ def detect_experience_and_batch(text_corpus: str, title: str) -> Tuple[Optional[
 
     # Detect min experience years
     min_years: Optional[float] = None
-    if bool(re.search(r"\b(fresher|freshers|entry\s+level|no\s+experience\s+required|0\s+years?)\b", combined)):
-        min_years = 0.0
+
+    # Check for explicit experience requirements first
+    exp_range = re.search(r"(\d+(?:\.\d+)?)\s*(?:-|to)\s*(\d+(?:\.\d+)?)\s*(?:years?|yrs?)(?:\s+(?:of\s+)?experience)?", combined)
+    if exp_range:
+        min_years = float(exp_range.group(1))
     else:
-        # Check ranges like '0-2 years', '1-3 years', '2+ years'
-        exp_range = re.search(r"(\d+(?:\.\d+)?)\s*(?:-|to)\s*(\d+(?:\.\d+)?)\s*(?:years?|yrs?)(?:\s+of\s+experience)?", combined)
-        if exp_range:
-            min_years = float(exp_range.group(1))
+        exp_min = re.search(r"(?:minimum|min\.?|at\s+least)\s*(\d+(?:\.\d+)?)\s*(?:years?|yrs?)(?:\s+(?:of\s+)?experience)?", combined)
+        if exp_min:
+            min_years = float(exp_min.group(1))
         else:
-            exp_single = re.search(r"(\d+(?:\.\d+)?)\+?\s*(?:years?|yrs?)(?:\s+of\s+experience)?", combined)
+            exp_single = re.search(r"(\d+(?:\.\d+)?)\+?\s*(?:years?|yrs?)(?:\s+(?:of\s+)?experience)", combined)
             if exp_single:
                 min_years = float(exp_single.group(1))
+            else:
+                exp_plus = re.search(r"\b(\d+(?:\.\d+)?)\+\s*(?:years?|yrs?)\b", combined)
+                if exp_plus:
+                    min_years = float(exp_plus.group(1))
+
+    # If no explicit experience found, check positive fresher indicators with negative guard
+    if min_years is None:
+        if bool(re.search(r"\b(fresher|freshers|entry\s+level|no\s+experience\s+required|0\s+years?)\b", combined)):
+            if not re.search(r"\b(?:no|not|neither|without)\s+freshers?\b|\bfreshers?\s+(?:need\s+not|do\s+not|cannot)\b", combined):
+                min_years = 0.0
 
     return min_years, is_intern, is_apprentice, sorted(list(batch_years))
 

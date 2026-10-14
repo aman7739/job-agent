@@ -146,7 +146,7 @@
     {% endif %}
 
     <div class="footer">
-      Personal Job Digest Agent &bull; Delivered at 08:00 IST
+      Personal Job Digest Agent &bull; Delivered at {{ delivery_time_ist | default('08:00 IST') }}
       {% if has_remotive %}
       <br>Remote listings credited to <a href="https://remotive.com" target="_blank" rel="noopener">Remotive</a>.
       {% endif %}

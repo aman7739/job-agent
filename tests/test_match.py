@@ -175,3 +175,65 @@ def test_ranking_sorts_descending():
     assert len(ranked) == 2
     assert ranked[0].score >= ranked[1].score
     assert ranked[0].job.company == "Razorpay"
+
+
+def test_leadership_and_experienced_roles_strictly_excluded():
+    """Verify leadership, expert, and high-experience roles are strictly dropped."""
+    # 1. Leadership in title
+    leadership_job = Job(
+        title="Enterprise Digital & AI Leadership",
+        company="Bosch Group",
+        location="Bengaluru",
+        canonical_url="https://example.com/lead",
+        description_text="Leading AI initiatives",
+        source="smartrecruiters",
+    )
+    eligible, reason = check_eligibility(leadership_job, PROFILE)
+    assert eligible is False
+    assert "leadership" in reason.lower()
+
+    # 2. Expert in title
+    expert_job = Job(
+        title="Cloud Infrastructure Expert",
+        company="Oracle",
+        location="Bengaluru",
+        canonical_url="https://example.com/expert",
+        description_text="Cloud role",
+        source="greenhouse",
+    )
+    eligible, reason = check_eligibility(expert_job, PROFILE)
+    assert eligible is False
+    assert "expert" in reason.lower()
+
+    # 3. High experience in description
+    from job_digest.normalize import detect_experience_and_batch
+    min_yrs, _, _, _ = detect_experience_and_batch("Requires minimum 4 years of experience in distributed systems.", "Software Engineer")
+    assert min_yrs == 4.0
+    high_exp_job = Job(
+        title="Software Engineer",
+        company="TechCorp",
+        location="Bengaluru",
+        canonical_url="https://example.com/high-exp",
+        description_text="Requires 4 years experience",
+        source="lever",
+        min_years=min_yrs,
+    )
+    eligible, reason = check_eligibility(high_exp_job, PROFILE)
+    assert eligible is False
+    assert "exceeds maximum" in reason.lower()
+
+
+def test_open_entry_level_roles_allowed():
+    """Verify any role (consultant, analyst, developer) is eligible if open to freshers."""
+    consultant_job = Job(
+        title="AI & Cloud Consultant",
+        company="Bosch Group",
+        location="Bengaluru",
+        canonical_url="https://example.com/ai-consultant",
+        description_text="Entry level AI & Cloud consulting for fresh graduates",
+        source="smartrecruiters",
+        min_years=0.0,
+    )
+    eligible, _ = check_eligibility(consultant_job, PROFILE)
+    assert eligible is True
+

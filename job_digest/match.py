@@ -40,8 +40,14 @@ def check_eligibility(job: Job, profile: UserProfile) -> Tuple[bool, Optional[st
     title_lower = job.title.lower()
     company_lower = job.company.lower()
 
-    # 1. Whole-word exclude title words (e.g. senior, lead, manager, principal, director, staff, architect)
-    for word in profile.hard_filters.exclude_title_words:
+    # 1. Whole-word exclude title words (e.g. senior, leadership, manager, principal, director, staff, architect)
+    builtin_senior_words = {
+        "senior", "sr", "sr.", "lead", "leader", "leadership", "leading",
+        "manager", "management", "principal", "director", "staff",
+        "architect", "head", "vp", "chief", "expert", "experienced",
+    }
+    exclude_words = set(w.lower() for w in profile.hard_filters.exclude_title_words) | builtin_senior_words
+    for word in exclude_words:
         if re.search(rf"\b{re.escape(word)}\b", title_lower, re.I):
             return False, f"Title contains excluded word: '{word}'"
 

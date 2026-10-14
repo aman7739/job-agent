@@ -7,6 +7,7 @@ import logging
 import os
 from datetime import datetime, timezone
 from pathlib import Path
+from contextlib import asynccontextmanager
 from typing import Any, Dict, List, Optional
 from fastapi import Depends, FastAPI, Form, HTTPException, Request, Response, status
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -41,11 +42,58 @@ logger = logging.getLogger(__name__)
 TEMPLATES_DIR = Path(__file__).resolve().parent / "templates"
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 
+# Global reference to in-app scheduler
+app_scheduler = None
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Manage application startup and shutdown lifecycle, including precision in-app scheduler."""
+    global app_scheduler
+    enable_scheduler = os.getenv("ENABLE_IN_APP_SCHEDULER", "true").lower() in ("true", "1", "yes")
+
+    if enable_scheduler and not os.getenv("TESTING"):
+        try:
+            from apscheduler.schedulers.asyncio import AsyncIOScheduler
+            from apscheduler.triggers.cron import CronTrigger
+
+            app_scheduler = AsyncIOScheduler()
+            # 08:00 AM IST = 02:30 UTC, 07:00 PM IST = 13:30 UTC
+            trigger = CronTrigger(hour="2,13", minute="30", timezone="UTC")
+
+            async def scheduled_crawl():
+                logger.info("[Scheduler] Fired scheduled digest (08:00 AM / 07:00 PM IST)...")
+                try:
+                    from job_digest.run import run_digest_pipeline
+                    await run_digest_pipeline(dry_run=False)
+                except Exception as exc:
+                    logger.exception(f"[Scheduler] Error during scheduled digest run: {exc}")
+
+            app_scheduler.add_job(
+                scheduled_crawl,
+                trigger=trigger,
+                id="daily_digest_job",
+                name="Daily Job Digest (8 AM & 7 PM IST)",
+                replace_existing=True,
+            )
+            app_scheduler.start()
+            logger.info("[Scheduler] Live AsyncIOScheduler started inside Web Service (08:00 AM & 07:00 PM IST).")
+        except Exception as e:
+            logger.warning(f"[Scheduler] Failed to initialize in-app scheduler: {e}")
+
+    yield
+
+    if app_scheduler and app_scheduler.running:
+        app_scheduler.shutdown(wait=False)
+        logger.info("[Scheduler] AsyncIOScheduler stopped.")
+
+
 app = FastAPI(
     title="Job Digest Agent Dashboard",
     description="Private Single-User Dashboard for daily job digest and application tracking",
     docs_url=None,  # Disabled for privacy
     redoc_url=None,
+    lifespan=lifespan,
 )
 
 TRIGGER_TOKEN = os.getenv("TRIGGER_TOKEN", os.getenv("SESSION_SECRET", "job-digest-secret-trigger-token"))
@@ -124,6 +172,7 @@ async def health_check(response: Response, session: Optional[Session] = Depends(
         "version": "1.0.0",
         "uptime_seconds": uptime_seconds,
         "database": db_status,
+        "scheduler": "running" if (app_scheduler and app_scheduler.running) else "disabled",
         "timestamp": datetime.now(timezone.utc).isoformat(),
     }
 

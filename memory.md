@@ -207,7 +207,7 @@
 - **Automated Crawl Schedule:**
   - Automated twice-daily runs via GitHub Actions (`.github/workflows/daily-digest.yml`) scheduled at **08:00 AM IST & 07:00 PM IST** (`cron: '30 2,13 * * *'`).
   - Successfully verified live run: fetched 1,399 real jobs from ATS platforms, deduplicated and scored for B.Tech 2027 CSE (Internships + Full-Time), persisted to Neon, and delivered live digest to Telegram.
-- **Test Suite Status:** 172 passing unit and integration tests (100% green).
+- **Test Suite Status:** 174 passing unit and integration tests (100% green).
 
 ---
 
@@ -219,3 +219,4 @@
 14. **Database Auto-Migration on Pipeline Startup:** `job_digest/run.py` automatically runs `run_schema_migration()` on startup when `DATABASE_URL` is configured, ensuring tables and indexes are created idempotently without manual SQL execution.
 15. **Strict XML Entities in SVG Assets:** Standalone SVG files rendered via `<img>` tags are parsed strictly as XML by browser rendering engines. Using HTML named entities such as `&bull;` or `&le;` produces fatal `undefined entity` XML parse errors, which causes the browser to discard rendering and show a broken image box. Always use numeric XML character references (`&#8226;`, `&#8804;`) or literal UTF-8 symbols (`•`, `≤`).
 16. **Render Free-Tier Zero-Sleep Keepalive:** Render free-tier instances sleep after 15 minutes of inactivity. To eliminate cold-start delays, a dedicated keepalive utility (`scripts/keepalive.py`) and a 10-minute automated GitHub Actions cron workflow (`.github/workflows/keepalive.yml`) ping the `/health` endpoint periodically using `RENDER_APP_URL`, resetting Render's idle countdown and maintaining 24/7 responsiveness at $0 cost.
+17. **Precision In-App Scheduling vs GitHub Actions Queuing:** GitHub Actions scheduled cron runs (`cron: '30 2,13 * * *'`) suffer from hours of queue delay on free runners during peak UTC traffic. Moving scheduled execution into an in-app `AsyncIOScheduler` inside the 24/7 warm Render web container fires crawl runs at exactly 08:00:00 AM IST and 07:00:00 PM IST with 0-second queuing latency. Additionally, title exclusion strictly blocks `leadership`, `senior`, `lead`, `manager`, `expert`, and explicit $\ge 3$ years requirements, while preserving open technical and tech-adjacent fresher opportunities.

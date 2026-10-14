@@ -106,7 +106,11 @@ def build_digest(
     Handles zero jobs gracefully with a short 'nothing new today' digest.
     """
     current_time = now or datetime.now(timezone.utc)
-    date_str = current_time.strftime("%A, %d %B %Y")
+    from datetime import timedelta
+    ist_tz = timezone(timedelta(hours=5, minutes=30))
+    ist_time = current_time.astimezone(ist_tz)
+    date_str = ist_time.strftime("%A, %d %B %Y")
+    delivery_time_ist = ist_time.strftime("%I:%M %p IST")
     max_items = profile.digest.max_items if profile else 40
     failed = failed_sources or []
 
@@ -126,6 +130,7 @@ def build_digest(
 
     template_context = {
         "date_str": date_str,
+        "delivery_time_ist": delivery_time_ist,
         "new_count": new_count,
         "seen_count": seen_count,
         "total_selected": total_selected,
