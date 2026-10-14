@@ -1,7 +1,7 @@
 # Job Digest Agent &bull; Autonomous Career Intelligence Pipeline
 
 [![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/downloads/)
-[![Tests Passing](https://img.shields.io/badge/tests-186%20passing-success.svg)](https://pytest.org/)
+[![Tests Passing](https://img.shields.io/badge/tests-187%20passing-success.svg)](https://pytest.org/)
 [![Status](https://img.shields.io/badge/status-production--v1.0.0-emerald.svg)]()
 [![Compliance](https://img.shields.io/badge/compliance-zero--scraping%20charter-blue.svg)]()
 

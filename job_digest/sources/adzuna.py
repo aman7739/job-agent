@@ -21,11 +21,12 @@ class AdzunaSource:
     BASE_URL = "https://api.adzuna.com/v1/api/jobs/{country}/search/{page}"
 
     ROLE_QUERIES = [
-        "software engineer OR web developer OR frontend OR backend OR full stack OR python",
-        "machine learning OR AI engineer OR NLP OR LLM OR data scientist",
-        "data analyst OR business analyst",
-        "QA engineer OR software tester OR SDET",
-        "software intern OR developer intern OR internship OR apprentice",
+        "python developer (fresher OR entry level OR junior)",
+        "backend developer (fresher OR entry level OR junior)",
+        "software engineer trainee OR graduate engineer trainee OR GET",
+        "software developer intern OR full stack intern OR web developer intern",
+        "AI intern OR ML intern OR machine learning intern OR data science intern",
+        "associate software engineer OR junior software engineer",
     ]
 
     def __init__(

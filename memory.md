@@ -65,7 +65,7 @@
 | **Containerization** | **Docker** | Multi-stage build | Lightweight Linux production image running as non-root `appuser` |
 | **Cloud Hosting** | **Render** | Web Service (Docker) | Production host for dashboard, webhooks, and scheduler |
 | **Showcase Hosting** | **GitHub Pages** | Static Site | Zero-JS public portfolio site deployed via `pages.yml` |
-| **Test Suite** | **pytest** | `9.1+` | Test runner executing 186 unit, integration, and reliability tests |
+| **Test Suite** | **pytest** | `9.1+` | Test runner executing 187 unit, integration, and reliability tests |
 | **Async Testing** | **pytest-asyncio** / `anyio`| `1.4+` / `4.15+` | Strict mode event loop management for async source tests |
 
 ---
@@ -183,14 +183,14 @@ AI AGENT/
 
 | Source Name | Method | Exact URL / Protocol Pattern | Authentication | Request Parameters & Headers | Rate Limit / Delay | Payload Format | What Data is Extracted |
 |---|---|---|---|---|---|---|---|
-| **Greenhouse** | `GET` | `https://boards-api.greenhouse.io/v1/boards/{slug}/jobs?content=true` | None (Public JSON) | `User-Agent: JobDigestAgent/1.0`, `Accept: application/json` | 0.3s between slugs | JSON Object (`jobs: [...]`) | Job ID, title, company slug, office location, apply URL, full HTML job description. (18 slugs: Cloudflare, Stripe, Datadog, etc.) |
-| **Lever** | `GET` | `https://api.lever.co/v0/postings/{slug}?mode=json` | None (Public JSON) | `User-Agent: JobDigestAgent/1.0`, `Accept: application/json` | 0.3s between slugs | JSON Array of postings | Job ID, text (title), workplaceType, categories.location, apply URL, description. (8 slugs: Palantir, Spotify, Canonical, etc.) |
-| **Ashby** | `GET` | `https://api.ashbyhq.com/posting-api/job-board/{slug}?includeCompensation=true` | None (Public JSON) | `User-Agent: JobDigestAgent/1.0`, `Accept: application/json` | 0.3s between slugs | JSON Object (`jobs: [...]`) | Job ID, title, location, isListed filter (`True`), compensation tiers, apply URL. (8 slugs: OpenAI, Figma, Notion, Linear, etc.) |
-| **SmartRecruiters** | `GET` | `https://api.smartrecruiters.com/v1/companies/{slug}/postings` | None (Public JSON) | `User-Agent: JobDigestAgent/1.0`, `Accept: application/json` | 0.3s between slugs | JSON Object (`content: [...]`) | Job ID, name (title), location.city, location.country, apply URL. (4 slugs: BoschGroup, IKEA, Ubisoft, Visa) |
+| **Greenhouse** | `GET` | `https://boards-api.greenhouse.io/v1/boards/{slug}/jobs?content=true` | None (Public JSON) | `User-Agent: JobDigestAgent/1.0`, `Accept: application/json` | 0.3s between slugs | JSON Object (`jobs: [...]`) | Job ID, title, company slug, office location, apply URL, full HTML job description. (26 verified boards: Databricks, Okta, InMobi, Groww, Twilio, Rubrik, Samsara, Cloudflare, Stripe, etc.) |
+| **Lever** | `GET` | `https://api.lever.co/v0/postings/{slug}?mode=json` | None (Public JSON) | `User-Agent: JobDigestAgent/1.0`, `Accept: application/json` | 0.3s between slugs | JSON Array of postings | Job ID, text (title), workplaceType, categories.location, apply URL, description. (10 verified boards: CRED, Meesho, Palantir, Spotify, Postman, BrowserStack, etc.) |
+| **Ashby** | `GET` | `https://api.ashbyhq.com/posting-api/job-board/{slug}?includeCompensation=true` | None (Public JSON) | `User-Agent: JobDigestAgent/1.0`, `Accept: application/json` | 0.3s between slugs | JSON Object (`jobs: [...]`) | Job ID, title, location, isListed filter (`True`), compensation tiers, apply URL. (9 verified boards: OpenAI, Figma, Notion, Snowflake, Linear, etc.) |
+| **SmartRecruiters** | `GET` | `https://api.smartrecruiters.com/v1/companies/{slug}/postings` | None (Public JSON) | `User-Agent: JobDigestAgent/1.0`, `Accept: application/json` | 0.3s between slugs | JSON Object (`content: [...]`) | Job ID, name (title), location.city, location.country, apply URL. (8 verified boards: Swiggy, Freshworks, Grab, Cars24, Bosch, Visa, IKEA, Ubisoft) |
 | **Workable** | `POST` / `GET` | `https://apply.workable.com/api/v3/accounts/{slug}/jobs` (Fallback: `widget` v1) | None (Public API) | Payload: `{"query": ""}`, Headers: `Accept: application/json` | 0.3s between slugs | JSON Object (`results: [...]`) | Shortcode (ID), title, city, country, remote flag, apply URL. (4 slugs: Transferwise, Harness, TestGorilla, Farfetch) |
-| **Adzuna** | `GET` | `https://api.adzuna.com/v1/api/jobs/in/search/{page}` | `app_id` & `app_key` query params | `what`: 5 role queries, `country`: `in`, `results_per_page`: 15 | 0.5s between query batches | JSON Object (`results: [...]`) | Live Indian jobs across Gurgaon, Bangalore, Pune, Hyderabad, Remote. Extracts ID, title, company.display_name, location, salary min/max, apply URL. |
+| **Adzuna** | `GET` | `https://api.adzuna.com/v1/api/jobs/in/search/{page}` | `app_id` & `app_key` query params | `what`: 6 focused fresher/intern queries, `country`: `in`, `results_per_page`: 15 | 0.5s between query batches | JSON Object (`results: [...]`) | Live Indian jobs across Gurgaon, Bangalore, Pune, Hyderabad, Remote. Extracts ID, title, company.display_name, location, salary min/max, apply URL. Focuses exclusively on Python fresher, backend fresher, SDE trainee, GET, and intern roles. |
 | **Remotive** | `GET` | `https://remotive.com/api/remote-jobs?category=software-dev&limit=50` | None (Public Feed) | `category=software-dev`, `limit=50` | Max 4 requests / 24h (Cached) | JSON Object (`jobs: [...]`) | Global remote tech jobs filtered for candidate location: checks `candidate_required_location` for India, APAC, or Worldwide. |
-| **IMAP Email Alerts** | `IMAP4_SSL` | `imap.gmail.com:993` (Port 993 SSL) | Google 16-char App Password (`readonly=True`) | **Step 1:** Fetch headers only (`BODY.PEEK[HEADER.FIELDS]`) under 1 KB. **Step 2:** Fetch body (`BODY.PEEK[]`) ONLY if sender is whitelisted & ID is new. | 15s socket timeout; runs in background worker thread | RFC-822 MIME (Multipart HTML) | Parses job links from **11 Whitelisted Platforms:** LinkedIn, Naukri, Indeed, Internshala, Unstop, Instahyre, Wellfound, Cutshort, Foundit, Glassdoor, Hirist. |
+| **IMAP Email Alerts** | `IMAP4_SSL` | `imap.gmail.com:993` (Port 993 SSL) | Google 16-char App Password (`readonly=True`) | **Step 1:** Fetch headers only (`BODY.PEEK[HEADER.FIELDS]`) under 1 KB. **Step 2:** Fetch body (`BODY.PEEK[]`) ONLY if sender is whitelisted & ID is new. | 15s socket timeout; runs in background worker thread | RFC-822 MIME (Multipart HTML) | Parses job links from **11 Whitelisted Platforms + Direct ATS Career Alerts:** LinkedIn, Naukri, Indeed, Internshala, Unstop, Instahyre, Wellfound, Cutshort, Foundit, Glassdoor, Hirist, Greenhouse, Lever, SmartRecruiters, Ashby, Workday, Amazon Jobs. |
 
 ---
 
@@ -443,7 +443,7 @@ CREATE TABLE IF NOT EXISTS email_messages (
   7. `remotive`: 10 remote jobs (Healthy)
   8. `email_alerts`: 15 jobs parsed & smart cached deduplication (Healthy)
 - **Total Ingestion Reach:** Over **1,410+ raw roles** scanned and normalized across both Indian and global tech markets.
-- **Test Suite Status:** **186 passing unit and integration tests (100% green).**
+- **Test Suite Status:** **187 passing unit and integration tests (100% green).**
 
 ---
 
@@ -502,7 +502,7 @@ Target Applications Submitted
 
 ---
 
-## 12. Source Expansion Build Plan (Status: Stage 1 Completed)
+## 12. Source Expansion Build Plan (Status: Stages 1 & 2 Completed)
 
 Based on [`job_digest_build_plan.md`](file:///C:/Users/KRAMA/OneDrive/Desktop/AI%20AGENT/job_digest_build_plan.md):
 
@@ -515,6 +515,15 @@ Based on [`job_digest_build_plan.md`](file:///C:/Users/KRAMA/OneDrive/Desktop/AI
     * `greenhouse`: `groww` (11 India roles), `inmobi` (46 India roles), `druva` (14 India roles), `twilio` (143 India/Remote roles), `rubrik` (50 India roles), `samsara` (221 India/Remote roles), `databricks` (164 India roles), `okta` (111 India roles)
     * `ashby`: `snowflake` (51 India roles)
   - Results logged to `reports/ats_slug_report.csv`.
-- **Stage 2 (Next):** Expand Adzuna query groups and activate 11 whitelisted email alerts.
-- **Stage 3:** Trial one aggregator API (Jooble or Careerjet).
+- **Stage 2 (Completed): Adzuna Query Groups & Email Alert Expansion:**
+  - Replaced generic broad queries with 6 targeted fresher/intern groups in [`job_digest/sources/adzuna.py`](file:///C:/Users/KRAMA/OneDrive/Desktop/AI%20AGENT/job_digest/sources/adzuna.py):
+    1. `python developer (fresher OR entry level OR junior)`
+    2. `backend developer (fresher OR entry level OR junior)`
+    3. `software engineer trainee OR graduate engineer trainee OR GET`
+    4. `software developer intern OR full stack intern OR web developer intern`
+    5. `AI intern OR ML intern OR machine learning intern OR data science intern`
+    6. `associate software engineer OR junior software engineer`
+  - Expanded [`job_digest/sources/email_alerts.py`](file:///C:/Users/KRAMA/OneDrive/Desktop/AI%20AGENT/job_digest/sources/email_alerts.py) whitelisting to accept direct company ATS alert senders (`greenhouse.io`, `lever.co`, `smartrecruiters.com`, `ashbyhq.com`, `myworkdayjobs.com`, `amazon.jobs`).
+  - Added unit test [`test_parse_direct_ats_career_alerts`](file:///C:/Users/KRAMA/OneDrive/Desktop/AI%20AGENT/tests/test_email_source.py).
+- **Stage 3 (Next):** Trial one aggregator API (Jooble or Careerjet).
 - **Stage 4:** Implement `job_sightings` metric table and 7-day per-source analytics on `/sources`.

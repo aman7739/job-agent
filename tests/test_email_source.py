@@ -292,4 +292,17 @@ def test_parse_wellfound_cutshort_glassdoor_alerts():
     assert "Data Scientist Intern" in gd_jobs[0].title
 
 
+def test_parse_direct_ats_career_alerts():
+    """Verify parsing direct company ATS alerts (Greenhouse / SmartRecruiters)."""
+    gh_body = '<a href="https://boards.greenhouse.io/swiggy/jobs/123456">Software Development Engineer Intern</a>'
+    gh_jobs = parse_alert_message("no-reply@greenhouse.io", gh_body, "msg_gh_01")
+    assert len(gh_jobs) == 1
+    assert "Software Development Engineer Intern" in gh_jobs[0].title
+
+    sr_body = '<a href="https://jobs.smartrecruiters.com/Swiggy/789012-associate-engineer">Associate Engineer</a>'
+    sr_jobs = parse_alert_message("alerts@smartrecruiters.com", sr_body, "msg_sr_01")
+    assert len(sr_jobs) == 1
+    assert "Associate Engineer" in sr_jobs[0].title
+
+
 

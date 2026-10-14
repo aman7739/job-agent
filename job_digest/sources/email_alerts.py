@@ -63,6 +63,11 @@ DEFAULT_ALLOWED_SENDERS = {
     # Hirist (IT & Software Careers)
     "alerts@hirist.com",
     "jobs@hirist.tech",
+    # Direct Company Career Alerts (ATS Notifications)
+    "no-reply@greenhouse.io",
+    "notifications@lever.co",
+    "alerts@smartrecruiters.com",
+    "notifications@ashbyhq.com",
 }
 
 ALLOWED_SENDER_DOMAINS = {
@@ -83,6 +88,14 @@ ALLOWED_SENDER_DOMAINS = {
     "glassdoor.co.in",
     "hirist.com",
     "hirist.tech",
+    # Direct Company Career Alerts
+    "greenhouse.io",
+    "lever.co",
+    "smartrecruiters.com",
+    "ashbyhq.com",
+    "myworkdayjobs.com",
+    "myworkday.com",
+    "amazon.jobs",
 }
 
 
@@ -372,7 +385,8 @@ def parse_generic_job_alerts(html_content: str, message_id: str, platform_name: 
     JOB_KEYWORDS = (
         "/job/", "/jobs/", "/job-", "/job_", "/viewjob", "/job-listing",
         "/internship/", "/internships/", "/opportunity/", "/opportunities/",
-        "/careers/", "/rc/clk", "/j/", "/listing/",
+        "/careers/", "/rc/clk", "/j/", "/listing/", "/postings/",
+        "smartrecruiters.com/", "greenhouse.io/", "lever.co/", "ashbyhq.com/",
     )
     SKIP_TEXTS = {
         "apply", "apply now", "view job", "view jobs", "click here", "read more",
