@@ -204,3 +204,92 @@ async def test_email_source_fetch_with_header_filtering(monkeypatch):
     assert body_peek_calls[0][0][0] == b"2"
 
 
+def test_parse_internshala_alert():
+    """Verify parsing Internshala alert email extracts internships and fresher jobs."""
+    internshala_body = """
+    <html>
+      <body>
+        <h2>Top Internships & Jobs for You</h2>
+        <a href="https://internshala.com/internship/detail/python-development-internship-12345">Python Development Intern</a>
+        <a href="https://internshala.com/job/detail/junior-backend-engineer-67890">Junior Backend Engineer</a>
+        <a href="https://internshala.com/registration/student">Student Dashboard</a>
+      </body>
+    </html>
+    """
+    jobs = parse_alert_message(
+        sender="alerts@mail.internshala.com",
+        body=internshala_body,
+        message_id="msg_is_001",
+    )
+
+    assert len(jobs) == 2
+    assert jobs[0].source == "email_alerts"
+    assert jobs[0].source_id == "internshala_alerts"
+    assert "Python Development Intern" in jobs[0].title
+    assert "python-development-internship-12345" in jobs[0].external_id
+    assert jobs[0].raw_data.get("is_intern") is True
+
+    assert "Junior Backend Engineer" in jobs[1].title
+    assert "junior-backend-engineer-67890" in jobs[1].external_id
+
+
+def test_parse_unstop_and_instahyre_alerts():
+    """Verify parsing Unstop and Instahyre job alert emails."""
+    unstop_body = """
+    <html>
+      <body>
+        <h3>Exciting Opportunities for You</h3>
+        <a href="https://unstop.com/jobs/graduate-trainee-software-engineer-54321">Graduate Trainee Software Engineer</a>
+        <a href="https://unstop.com/competitions/hackathon-2026">Hackathon 2026</a>
+      </body>
+    </html>
+    """
+    unstop_jobs = parse_alert_message(
+        sender="notifications@unstop.com",
+        body=unstop_body,
+        message_id="msg_unstop_01",
+    )
+
+    assert len(unstop_jobs) >= 1
+    assert unstop_jobs[0].source_id == "unstop_alerts"
+    assert "Graduate Trainee Software Engineer" in unstop_jobs[0].title
+
+    instahyre_body = """
+    <html>
+      <body>
+        <a href="https://www.instahyre.com/job-998877-associate-full-stack-engineer">Associate Full Stack Engineer</a>
+      </body>
+    </html>
+    """
+    instahyre_jobs = parse_alert_message(
+        sender="jobs@instahyre.com",
+        body=instahyre_body,
+        message_id="msg_insta_01",
+    )
+    assert len(instahyre_jobs) == 1
+    assert instahyre_jobs[0].source_id == "instahyre_alerts"
+    assert "Associate Full Stack Engineer" in instahyre_jobs[0].title
+
+
+def test_parse_wellfound_cutshort_glassdoor_alerts():
+    """Verify parsing Wellfound, Cutshort, and Glassdoor job alerts."""
+    wf_body = '<a href="https://wellfound.com/jobs/776655-junior-ai-engineer">Junior AI Engineer</a>'
+    wf_jobs = parse_alert_message("talent@wellfound.com", wf_body, "msg_wf_01")
+    assert len(wf_jobs) == 1
+    assert wf_jobs[0].source_id == "wellfound_alerts"
+    assert "Junior AI Engineer" in wf_jobs[0].title
+
+    cs_body = '<a href="https://cutshort.io/job/Software-Developer-at-Innovaccer-112233">Software Developer</a>'
+    cs_jobs = parse_alert_message("alerts@cutshort.io", cs_body, "msg_cs_01")
+    assert len(cs_jobs) == 1
+    assert cs_jobs[0].source_id == "cutshort_alerts"
+    assert "Software Developer" in cs_jobs[0].title
+
+    gd_body = '<a href="https://www.glassdoor.co.in/job-listing/data-scientist-intern-xyz?jl=445566">Data Scientist Intern</a>'
+    gd_jobs = parse_alert_message("noreply@glassdoor.com", gd_body, "msg_gd_01")
+    assert len(gd_jobs) == 1
+    assert gd_jobs[0].source_id == "glassdoor_alerts"
+    assert "Data Scientist Intern" in gd_jobs[0].title
+
+
+

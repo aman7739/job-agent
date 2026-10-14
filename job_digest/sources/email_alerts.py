@@ -36,6 +36,53 @@ DEFAULT_ALLOWED_SENDERS = {
     "noreply@indeed.com",
     "do-not-reply@indeed.com",
     "alerts@indeed.com",
+    # Internshala (Internships & Fresher Jobs)
+    "alerts@internshala.com",
+    "digest@internshala.com",
+    "student@internshala.com",
+    # Unstop / Dare2Compete (Freshers & Competitions)
+    "alerts@unstop.com",
+    "updates@unstop.com",
+    "notifications@unstop.com",
+    # Instahyre (Curated Tech Jobs)
+    "jobs@instahyre.com",
+    "alerts@instahyre.com",
+    "notifications@instahyre.com",
+    # Wellfound / AngelList (Startup Roles)
+    "talent@wellfound.com",
+    "jobs@wellfound.com",
+    # Cutshort (Tech Recruitment)
+    "notifications@cutshort.io",
+    "alerts@cutshort.io",
+    # Foundit / Monster (Job Vacancies)
+    "alerts@foundit.in",
+    "info@foundit.in",
+    # Glassdoor
+    "noreply@glassdoor.com",
+    "alerts@glassdoor.com",
+    # Hirist (IT & Software Careers)
+    "alerts@hirist.com",
+    "jobs@hirist.tech",
+}
+
+ALLOWED_SENDER_DOMAINS = {
+    "linkedin.com",
+    "naukri.com",
+    "indeed.com",
+    "indeed.co.in",
+    "internshala.com",
+    "unstop.com",
+    "dare2compete.com",
+    "instahyre.com",
+    "wellfound.com",
+    "angel.co",
+    "cutshort.io",
+    "foundit.in",
+    "monsterindia.com",
+    "glassdoor.com",
+    "glassdoor.co.in",
+    "hirist.com",
+    "hirist.tech",
 }
 
 
@@ -65,6 +112,61 @@ def extract_email_address(raw_sender: str) -> str:
     return raw_sender.strip().lower()
 
 
+def is_sender_allowed(
+    sender: str,
+    allowed_senders: Optional[Set[str]] = None,
+    allowed_domains: Optional[Set[str]] = None,
+) -> bool:
+    """Validate sender against allowed exact addresses or permitted sender domains."""
+    clean = extract_email_address(sender)
+    if not clean or "@" not in clean:
+        return False
+
+    senders = allowed_senders if allowed_senders is not None else DEFAULT_ALLOWED_SENDERS
+    if clean in senders:
+        return True
+
+    # If caller provided custom non-default allowed_senders without domains, honor strict whitelist
+    if allowed_senders is not None and allowed_senders != DEFAULT_ALLOWED_SENDERS and allowed_domains is None:
+        return False
+
+    domain = clean.split("@", 1)[1].lower()
+    domains = allowed_domains if allowed_domains is not None else ALLOWED_SENDER_DOMAINS
+    for allowed in domains:
+        if domain == allowed or domain.endswith("." + allowed):
+            return True
+
+    return False
+
+
+def get_platform_from_sender(clean_sender: str) -> str:
+    """Identify the job platform name from sender email domain."""
+    domain = clean_sender.split("@")[-1].lower() if "@" in clean_sender else clean_sender.lower()
+    if "linkedin" in domain:
+        return "linkedin"
+    elif "naukri" in domain:
+        return "naukri"
+    elif "indeed" in domain:
+        return "indeed"
+    elif "internshala" in domain:
+        return "internshala"
+    elif "unstop" in domain or "dare2compete" in domain:
+        return "unstop"
+    elif "instahyre" in domain:
+        return "instahyre"
+    elif "wellfound" in domain or "angel" in domain:
+        return "wellfound"
+    elif "cutshort" in domain:
+        return "cutshort"
+    elif "foundit" in domain or "monster" in domain:
+        return "foundit"
+    elif "glassdoor" in domain:
+        return "glassdoor"
+    elif "hirist" in domain:
+        return "hirist"
+    return "email"
+
+
 class _SimpleHTMLJobExtractor(HTMLParser):
     """Safely extracts text and hyperlinks from untrusted HTML content."""
 
@@ -74,16 +176,19 @@ class _SimpleHTMLJobExtractor(HTMLParser):
         self.current_tag: Optional[str] = None
         self.current_href: Optional[str] = None
         self.current_text: List[str] = []
+        self.current_fallback_text: str = ""
         self.all_text: List[str] = []
 
     def handle_starttag(self, tag: str, attrs: List[Tuple[str, Optional[str]]]):
         self.current_tag = tag.lower()
         if tag.lower() == "a":
-            href = dict(attrs).get("href")
+            attrs_dict = dict(attrs)
+            href = attrs_dict.get("href")
             valid_url = sanitize_url(href or "")
             if valid_url:
                 self.current_href = valid_url
                 self.current_text = []
+                self.current_fallback_text = attrs_dict.get("title") or attrs_dict.get("aria-label") or ""
 
     def handle_data(self, data: str):
         cleaned = data.strip()
@@ -95,9 +200,12 @@ class _SimpleHTMLJobExtractor(HTMLParser):
     def handle_endtag(self, tag: str):
         if tag.lower() == "a" and self.current_href:
             link_text = " ".join(self.current_text).strip()
+            if not link_text and self.current_fallback_text:
+                link_text = self.current_fallback_text.strip()
             self.links.append((link_text, self.current_href))
             self.current_href = None
             self.current_text = []
+            self.current_fallback_text = ""
 
 
 def parse_linkedin_jobs(html_content: str, message_id: str) -> List[RawJob]:
@@ -211,35 +319,147 @@ def parse_indeed_jobs(html_content: str, message_id: str) -> List[RawJob]:
     return jobs
 
 
+def parse_internshala_jobs(html_content: str, message_id: str) -> List[RawJob]:
+    """Parse internship and fresher job links from an Internshala alert email."""
+    extractor = _SimpleHTMLJobExtractor()
+    extractor.feed(html_content)
+
+    jobs: List[RawJob] = []
+    seen_urls = set()
+
+    for text_content, href in extractor.links:
+        if "internshala.com" in href and ("/internship/detail/" in href or "/job/detail/" in href):
+            if href in seen_urls:
+                continue
+            seen_urls.add(href)
+
+            match_slug = re.search(r"/(?:internship|job)/detail/([a-zA-Z0-9\-]+)", href)
+            job_id = match_slug.group(1) if match_slug else f"is_{abs(hash(href))}"
+
+            title = text_content if text_content and len(text_content) > 3 else "Internshala Role"
+            title = re.sub(r"\s+", " ", title).strip()
+
+            is_intern = "/internship/" in href
+
+            jobs.append(
+                RawJob(
+                    source="email_alerts",
+                    source_id="internshala_alerts",
+                    external_id=str(job_id),
+                    title=title,
+                    company="Internshala Alert Lead",
+                    location="India / Remote (Alert)",
+                    url=href,
+                    description_text=f"Imported from Internshala alert email (Message-ID: {message_id})",
+                    raw_data={"message_id": message_id, "original_text": text_content, "is_intern": is_intern},
+                )
+            )
+
+    if not jobs:
+        jobs = parse_generic_job_alerts(html_content, message_id, "internshala")
+
+    return jobs
+
+
+def parse_generic_job_alerts(html_content: str, message_id: str, platform_name: str) -> List[RawJob]:
+    """Universal parser for job alert emails from any authorized platform (Unstop, Instahyre, Wellfound, Cutshort, Glassdoor, etc.)."""
+    extractor = _SimpleHTMLJobExtractor()
+    extractor.feed(html_content)
+
+    jobs: List[RawJob] = []
+    seen_urls = set()
+
+    JOB_KEYWORDS = (
+        "/job/", "/jobs/", "/job-", "/job_", "/viewjob", "/job-listing",
+        "/internship/", "/internships/", "/opportunity/", "/opportunities/",
+        "/careers/", "/rc/clk", "/j/", "/listing/",
+    )
+    SKIP_TEXTS = {
+        "apply", "apply now", "view job", "view jobs", "click here", "read more",
+        "see more", "unsubscribe", "privacy policy", "terms of use", "preferences",
+        "manage preferences", "learn more", "visit", "help center", "view all",
+    }
+
+    for text_content, href in extractor.links:
+        if href in seen_urls:
+            continue
+
+        href_lower = href.lower()
+        if any(keyword in href_lower for keyword in JOB_KEYWORDS):
+            seen_urls.add(href)
+            title = text_content.strip() if text_content else ""
+            if not title or title.lower() in SKIP_TEXTS or len(title) < 4:
+                title = f"{platform_name.capitalize()} Matched Role"
+            title = re.sub(r"\s+", " ", title).strip()
+
+            match_id = re.search(r"[?&](?:jk|id|job_id|jl)=([a-zA-Z0-9]+)", href) or re.search(r"[-/](\d{5,})", href)
+            job_id = match_id.group(1) if match_id else f"{platform_name[:3]}_{abs(hash(href))}"
+
+            is_intern = "intern" in href_lower or "intern" in title.lower()
+
+            jobs.append(
+                RawJob(
+                    source="email_alerts",
+                    source_id=f"{platform_name}_alerts",
+                    external_id=str(job_id),
+                    title=title,
+                    company=f"{platform_name.capitalize()} Alert Lead",
+                    location="India / Remote (Alert)",
+                    url=href,
+                    description_text=f"Imported from {platform_name.capitalize()} alert email (Message-ID: {message_id})",
+                    raw_data={
+                        "message_id": message_id,
+                        "original_text": text_content,
+                        "platform": platform_name,
+                        "is_intern": is_intern,
+                    },
+                )
+            )
+
+    return jobs
+
+
 def parse_alert_message(
     sender: str,
     body: str,
     message_id: str,
-    allowed_senders: Set[str] = DEFAULT_ALLOWED_SENDERS,
+    allowed_senders: Optional[Set[str]] = None,
+    allowed_domains: Optional[Set[str]] = None,
 ) -> List[RawJob]:
     """
     Parse an email message from untrusted input.
-    Validates sender against allowed_senders; unknown senders are immediately ignored.
+    Validates sender against allowed senders / domains; unauthorized senders are immediately ignored.
     """
-    clean_sender = extract_email_address(sender)
-    if clean_sender not in allowed_senders:
+    if not is_sender_allowed(sender, allowed_senders=allowed_senders, allowed_domains=allowed_domains):
+        clean_sender = extract_email_address(sender)
         logger.debug(f"Ignoring email from unauthorized sender: {clean_sender}")
         return []
 
-    if "linkedin" in clean_sender:
-        return parse_linkedin_jobs(body, message_id)
-    elif "naukri" in clean_sender:
-        return parse_naukri_jobs(body, message_id)
-    elif "indeed" in clean_sender:
-        return parse_indeed_jobs(body, message_id)
+    clean_sender = extract_email_address(sender)
+    platform = get_platform_from_sender(clean_sender)
+
+    if platform == "linkedin":
+        jobs = parse_linkedin_jobs(body, message_id)
+    elif platform == "naukri":
+        jobs = parse_naukri_jobs(body, message_id)
+    elif platform == "indeed":
+        jobs = parse_indeed_jobs(body, message_id)
+    elif platform == "internshala":
+        jobs = parse_internshala_jobs(body, message_id)
     else:
-        # Fallback generic parsing for allowed senders
-        return parse_linkedin_jobs(body, message_id) + parse_naukri_jobs(body, message_id) + parse_indeed_jobs(body, message_id)
+        jobs = parse_generic_job_alerts(body, message_id, platform)
+
+    # If platform-specific parser yielded no jobs (e.g. customized newsletter format), fallback to universal parser
+    if not jobs:
+        jobs = parse_generic_job_alerts(body, message_id, platform)
+
+    return jobs
 
 
 def parse_eml_bytes(
     eml_bytes: bytes,
-    allowed_senders: Set[str] = DEFAULT_ALLOWED_SENDERS,
+    allowed_senders: Optional[Set[str]] = None,
+    allowed_domains: Optional[Set[str]] = None,
 ) -> Tuple[str, List[RawJob]]:
     """Parse raw RFC-822 email bytes and return (message_id, jobs)."""
     msg: Message = email.message_from_bytes(eml_bytes)
@@ -265,7 +485,7 @@ def parse_eml_bytes(
         if payload:
             body_content = payload.decode(errors="ignore")
 
-    jobs = parse_alert_message(sender, body_content, message_id, allowed_senders)
+    jobs = parse_alert_message(sender, body_content, message_id, allowed_senders, allowed_domains)
     return message_id, jobs
 
 
@@ -279,6 +499,7 @@ class EmailAlertSource:
         imap_user: Optional[str] = None,
         imap_password: Optional[str] = None,
         allowed_senders: Optional[Set[str]] = None,
+        allowed_domains: Optional[Set[str]] = None,
         session: Optional[Session] = None,
     ):
         self.imap_host = imap_host or os.getenv("IMAP_HOST")
@@ -290,6 +511,7 @@ class EmailAlertSource:
         self.imap_user = imap_user or os.getenv("IMAP_USER")
         self.imap_password = imap_password or os.getenv("IMAP_PASSWORD")
         self.allowed_senders = allowed_senders or DEFAULT_ALLOWED_SENDERS
+        self.allowed_domains = allowed_domains or ALLOWED_SENDER_DOMAINS
         self.session = session
 
     @property
@@ -352,7 +574,7 @@ class EmailAlertSource:
 
                 clean_sender = extract_email_address(sender)
                 # Quick filter: is the sender from an allowed job alert domain?
-                if clean_sender not in self.allowed_senders:
+                if not is_sender_allowed(clean_sender, self.allowed_senders, self.allowed_domains):
                     continue
 
                 # Quick filter: has this message ID already been processed and recorded in DB?
@@ -365,7 +587,7 @@ class EmailAlertSource:
                     continue
 
                 raw_email = body_data[0][1] if isinstance(body_data[0], tuple) else b""
-                parsed_mid, jobs = parse_eml_bytes(raw_email, self.allowed_senders)
+                parsed_mid, jobs = parse_eml_bytes(raw_email, self.allowed_senders, self.allowed_domains)
                 final_mid = mid or parsed_mid
 
                 if not jobs:
