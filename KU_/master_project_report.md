@@ -56,7 +56,7 @@ The system ingests job data from **10 distinct, fully compliant sources**:
 ```
 [10 Permitted Ingestion Feeds]
  ├── 1. Greenhouse API (Public JSON API • 26 Verified Companies)
- ├── 2. Lever API (Public JSON API • 10 Verified Companies)
+ ├── 2. Lever API (Public JSON API • 9 Verified Companies)
  ├── 3. Ashby API (Public JSON API • 9 Verified Companies)
  ├── 4. SmartRecruiters API (Public REST API • 8 Verified Companies)
  ├── 5. Workable API (v3 API & v1 Widget • 4 Verified Companies)
@@ -78,14 +78,14 @@ The system ingests job data from **10 distinct, fully compliant sources**:
 #### 2. Lever (`job_digest/sources/lever.py`)
 - **API Endpoint:** `https://api.lever.co/v0/postings/{company_slug}?mode=json`
 - **Method:** Public HTTP GET
-- **Verified Companies (10 boards):**
-  `palantir`, `spotify`, `lever`, `canonical`, `postman`, `linear`, `docker`, `browserstack`, `cred`, `meesho`.
+- **Verified Companies (9 boards):**
+  `palantir`, `spotify`, `lever`, `canonical`, `postman`, `docker`, `browserstack`, `cred`, `meesho`. *(Note: `linear` was audited and confirmed to be active on Ashby, not Lever).*
 
 #### 3. Ashby (`job_digest/sources/ashby.py`)
 - **API Endpoint:** `https://api.ashbyhq.com/posting-api/job-board/{company_slug}`
 - **Method:** Public HTTP GET (Filters for `isListed=True`)
 - **Verified Companies (9 boards):**
-  `openai`, `retool`, `ramp`, `anthropic`, `notion`, `figma`, `linear`, `monzo`, `snowflake`.
+  `openai`, `retool`, `ramp`, `anthropic`, `notion`, `figma`, `linear`, `monzo`, `snowflake`. *(Linear verified with 30 live roles on Ashby).*
 
 #### 4. SmartRecruiters (`job_digest/sources/smartrecruiters.py`)
 - **API Endpoint:** `https://api.smartrecruiters.com/v1/companies/{company_slug}/postings`
@@ -97,7 +97,7 @@ The system ingests job data from **10 distinct, fully compliant sources**:
 - **API Endpoint:** `https://apply.workable.com/api/v3/accounts/{company_slug}/jobs` (with fallback to `https://apply.workable.com/api/v1/widget/accounts/{company_slug}`)
 - **Method:** Public REST / Widget API
 - **Verified Companies (4 boards):**
-  `transferwise`, `harness`, `testgorilla`, `farfetch`.
+  `transferwise`, `harness`, `testgorilla`, `farfetch`. *(All 4 are international tech employers whose current postings are outside India, returning 0 India roles as expected).*
 
 #### 6. Jooble Aggregator (`job_digest/sources/jooble.py`)
 - **API Endpoint:** `https://jooble.org/api/{JOOBLE_API_KEY}`
@@ -121,13 +121,13 @@ The system ingests job data from **10 distinct, fully compliant sources**:
 
 #### 9. Adzuna Search API (`job_digest/sources/adzuna.py`)
 - **API Endpoint:** `https://api.adzuna.com/v1/api/jobs/in/search/{page}?app_id={ID}&app_key={KEY}`
-- **Method:** Authenticated REST API across 6 Boolean query groups:
-  1. `python developer (fresher OR entry level OR junior)`
-  2. `backend developer (fresher OR entry level OR junior)`
-  3. `software engineer trainee OR graduate engineer trainee OR GET`
-  4. `software developer intern OR full stack intern OR web developer intern`
-  5. `AI intern OR ML intern OR machine learning intern OR data science intern`
-  6. `associate software engineer OR junior software engineer`
+- **Method:** Authenticated REST API across 6 clean keyword query groups (avoiding unsupported nested Boolean syntax):
+  1. `python developer fresher`
+  2. `backend developer fresher`
+  3. `software engineer trainee`
+  4. `graduate engineer trainee`
+  5. `software developer intern`
+  6. `AI ML intern`
 
 #### 10. Email Alerts Ingestion (`job_digest/sources/email_alerts.py`)
 - **Host / Protocol:** Gmail SSL IMAP on Port 993 (`readonly=True` mode)
@@ -148,7 +148,7 @@ AI AGENT/
 │       ├── keepalive.yml              # GitHub-native 10-minute keepalive workflow
 │       └── pages.yml                  # Builds and deploys static showcase to GitHub Pages
 ├── database/
-│   └── schema.sql                     # Complete PostgreSQL DDL (tables, indexes, foreign keys)
+│   └── schema.sql                     # Complete PostgreSQL DDL (8 tables, indexes, foreign keys)
 ├── docs/
 │   ├── decisions.md                   # 20 Architecture Decision Records (ADRs 001 to 020)
 │   ├── deployment.md                  # Comprehensive Render & Neon deployment runbook
@@ -156,18 +156,25 @@ AI AGENT/
 │   └── portfolio_summary.md           # Professional executive summary for recruiters
 ├── job_digest/
 │   ├── __init__.py                    # Module export definitions
+│   ├── auth.py                        # Argon2id password hashing and session cookie verification
 │   ├── config.py                      # Pydantic v2 profile models, env loaders, hard constraints
 │   ├── db.py                          # SQLAlchemy engine, NullPool, session context, DDL runner
 │   ├── dedup.py                       # Normalization, SHA-256 fingerprinting, sightings attribution
 │   ├── digest.py                      # Digest builder, Jinja2 template renderer, partitioning
-│   ├── models.py                      # Core dataclasses: Job, ScoredJob, DigestOutput, DeduplicationResult
+│   ├── match.py                       # 10-point scoring algorithm, hard filters, fresher exceptions
+│   ├── models.py                      # Core dataclasses: Job, RawJob, ScoredJob, DigestOutput, etc.
+│   ├── normalize.py                   # Normalization: HTML stripping, location canonicalization, regex
 │   ├── notify.py                      # TelegramBotNotifier, EmailNotifier, urgent alert dispatcher
+│   ├── profile.py                     # Profile schema, skills models, and YAML loader
+│   ├── profile_service.py             # Active profile manager and ADR 007 database versioning
 │   ├── run.py                         # Master orchestrator, CLI entrypoint, local scheduler
-│   ├── scoring.py                     # Deterministic 10-point scoring algorithm & hard filters
+│   ├── status.py                      # Job tracking: saved, applied, not_interested transitions
 │   ├── urgency.py                     # Deadline extractor and <= 4 hour urgent detector
 │   ├── web.py                         # FastAPI web dashboard, Argon2id auth, APScheduler lifespan
 │   ├── sources/
-│   │   ├── __init__.py                # BaseSource abstract base class
+│   │   ├── __init__.py                # Sources package export
+│   │   ├── base.py                    # BaseSource abstract protocol and location helpers
+│   │   ├── runner.py                  # Fault-isolated concurrent source execution engine
 │   │   ├── adzuna.py                  # Adzuna job search API adapter
 │   │   ├── arbeitnow.py               # Arbeitnow public remote developer feed
 │   │   ├── ashby.py                   # Ashby ATS posting API client
@@ -193,47 +200,28 @@ AI AGENT/
 ├── reports/
 │   └── ats_slug_report.csv            # Automated verification results of 50 ATS company slugs
 ├── scripts/
-│   └── check_ats_slugs.py             # CLI scanner verifying candidate company slugs across ATSs
+│   ├── check_ats_slugs.py             # CLI scanner verifying candidate company slugs across ATSs
+│   ├── generate_master_docx.py        # Generates styled Word (.docx) master architecture report
+│   └── run_sources_check.py           # Quick CLI diagnostic for ATS sources
 ├── site/
 │   ├── build.py                       # Static site generator for public GitHub Pages showcase
 │   └── index.html                     # Public showcase HTML with Schema.org JSON-LD
-├── tests/
-│   ├── __init__.py                    # Test suite package
-│   ├── conftest.py                    # Pytest fixtures, in-memory SQLite engine, mock data
-│   ├── test_arbeitnow.py              # Tests for Arbeitnow remote feed adapter
-│   ├── test_auth.py                   # Tests for Argon2id hashing and session cookie auth
-│   ├── test_dedup.py                  # Tests for deduplication, normalization, and fingerprinting
-│   ├── test_digest.py                 # Tests for Jinja2 rendering and partitioning
-│   ├── test_email_source.py           # Tests for IMAP email alert parsing and whitelisting
-│   ├── test_jooble.py                 # Tests for Jooble API adapter and fault tolerance
-│   ├── test_models.py                 # Tests for Pydantic profile validation
-│   ├── test_notify.py                 # Tests for Telegram chunking and SMTP multipart delivery
-│   ├── test_run.py                    # Tests for master pipeline runner and source loading
-│   ├── test_s13_profile_and_status.py # Tests for profile and job status transitions
-│   ├── test_s14_web_and_auth.py       # Tests for web routes and dashboard endpoints
-│   ├── test_s15_actions_and_settings.py# Tests for settings updates and job actions
-│   ├── test_s21_audit_and_release.py  # Tests for release readiness, documentation, and security
-│   ├── test_s22_final_wrapup.py       # Comprehensive end-to-end milestone audit test
-│   ├── test_scoring.py                # Tests for 10-point scoring engine and hard knockouts
-│   ├── test_sightings.py              # Tests for multi-source attribution and 7-day metrics
-│   ├── test_slug_checker.py           # Tests for automated ATS slug scanner script
-│   ├── test_sources.py                # Tests for Greenhouse, Lever, Ashby, SmartRecruiters, Workable
-│   └── test_urgency_and_schedule.py   # Tests for deadline detection and cron schedule syntax
+├── tests/                             # 194 automated unit and integration tests (21 files)
 ├── .env.example                       # Documented environment variable template (zero secrets)
-├── .gitignore                         # Strict exclusion of .env, credentials, logs, cache
+├── .gitignore                         # Strict exclusion of .env, credentials, logs, cache, profile.yaml
 ├── Dockerfile                         # Production multi-stage Docker build running as appuser
 ├── memory.md                          # Comprehensive persistent system memory (14 sections)
-├── profile.yaml                       # Candidate profile configuration
+├── profile.example.yaml               # Tracked candidate profile template (profile.yaml is git-ignored)
 ├── README.md                          # Full GitHub project documentation and badges
 ├── requirements.txt                   # Frozen production dependencies
-└── sources.yaml                       # 57 verified company ATS slugs and configurations
+└── sources.yaml                       # 56 verified company ATS slugs (26 Greenhouse, 9 Lever, 9 Ashby, 8 SmartRecruiters, 4 Workable)
 ```
 
 ---
 
 ## 5. Complete Database Architecture & Schema DDL
 
-The database schema is hosted on **Neon Serverless PostgreSQL** and executed via [`database/schema.sql`](file:///C:/Users/KRAMA/OneDrive/Desktop/AI%20AGENT/database/schema.sql), comprising **8 relational tables**:
+The database schema is hosted on **Neon Serverless PostgreSQL** and executed via [`database/schema.sql`](../database/schema.sql), comprising **8 relational tables**:
 
 ```sql
 -- 1. Permitted Source Configuration & Active Status

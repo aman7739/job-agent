@@ -231,18 +231,18 @@ def build_docx_report(output_path: Path):
     format_table(tbl_tech, [Inches(1.5), Inches(1.3), Inches(1.0), Inches(2.7)], tech_headers, tech_data)
 
     # SECTION 3
-    add_h1("3. All Ingestion Websites & API Endpoints (10 Sources • 57 Company Boards)")
+    add_h1("3. All Ingestion Websites & API Endpoints (10 Sources • 56 Company Boards)")
     src_headers = ["Source", "Method / Protocol", "Endpoint / Feed URL", "Target Coverage / Details"]
     src_data = [
         ["Greenhouse", "Public HTTP GET", "https://boards-api.greenhouse.io/v1/boards/{slug}/jobs", "26 Boards: Cloudflare, Stripe, Datadog, Reddit, MongoDB, Airbnb, Groww, InMobi, Twilio, Databricks, Okta, etc."],
-        ["Lever", "Public HTTP GET", "https://api.lever.co/v0/postings/{slug}?mode=json", "10 Boards: CRED, Meesho, Palantir, Spotify, Lever, Canonical, Postman, Linear, Docker, BrowserStack"],
+        ["Lever", "Public HTTP GET", "https://api.lever.co/v0/postings/{slug}?mode=json", "9 Boards: CRED, Meesho, Palantir, Spotify, Lever, Canonical, Postman, Docker, BrowserStack (Linear on Ashby)"],
         ["Ashby", "Public HTTP GET", "https://api.ashbyhq.com/posting-api/job-board/{slug}", "9 Boards: OpenAI, Retool, Ramp, Anthropic, Notion, Figma, Linear, Monzo, Snowflake"],
         ["SmartRecruiters", "Public REST API", "https://api.smartrecruiters.com/v1/companies/{slug}/postings", "8 Boards: Swiggy, Freshworks, Cars24, Grab, BoschGroup, IKEA, Ubisoft, Visa"],
-        ["Workable", "Public REST / Widget", "https://apply.workable.com/api/v3/accounts/{slug}/jobs", "4 Boards: Transferwise, Harness, TestGorilla, Farfetch"],
+        ["Workable", "Public REST / Widget", "https://apply.workable.com/api/v3/accounts/{slug}/jobs", "4 Boards: Transferwise, Harness, TestGorilla, Farfetch (International listings)"],
         ["Jooble", "Official POST API", "https://jooble.org/api/{JOOBLE_API_KEY}", "5 Targeted Indian fresher queries (Python, Backend, Trainee, Junior, ML)"],
         ["Arbeitnow", "Public HTTP GET", "https://www.arbeitnow.com/api/job-board-api", "Zero-auth public feed for remote and Indian developer postings"],
         ["Remotive", "Public HTTP GET", "https://remotive.com/api/remote-jobs?category=software-dev", "Remote tech feed; strictly limited to max 4 daily fetches to obey API terms"],
-        ["Adzuna", "Official REST API", "https://api.adzuna.com/v1/api/jobs/in/search/", "6 Targeted Boolean query groups across Indian tech hubs"],
+        ["Adzuna", "Official REST API", "https://api.adzuna.com/v1/api/jobs/in/search/", "6 Clean keyword query groups across Indian tech hubs (Python, Backend, Trainee, Intern)"],
         ["Email Alerts", "SSL IMAP Port 993", "imap.gmail.com (Mailbox A)", "Whitelisted platforms (LinkedIn, Naukri, Indeed) + Direct ATS career alert domains"],
     ]
     tbl_src = doc.add_table(rows=1, cols=4)
@@ -256,16 +256,17 @@ def build_docx_report(output_path: Path):
         ["job_digest/web.py", "FastAPI Application", "Provides web dashboard, Argon2id authentication, and in-app APScheduler"],
         ["job_digest/dedup.py", "Deduplication Engine", "Normalizes jobs, computes SHA-256 fingerprints, records sightings"],
         ["job_digest/match.py", "10-Point Scoring", "Applies hard knockout filters, fresher exceptions, and 10-point scoring"],
+        ["job_digest/normalize.py", "Normalization Engine", "HTML stripping, location canonicalization, regex word boundaries, salary parsing"],
         ["job_digest/urgency.py", "Urgency Detector", "Detects deadlines closing in <= 4 hours and triggers fast-track alerts"],
         ["job_digest/notify.py", "Notification Dispatcher", "Handles 4,096-char Telegram chunking and SMTP multipart HTML emails"],
         ["job_digest/db.py", "Database Engine", "Configures SQLAlchemy NullPool engine and executes schema migrations"],
         ["job_digest/sources/*.py", "Source Adapters (10)", "Concrete implementations for Greenhouse, Lever, Ashby, Jooble, Arbeitnow, etc."],
         ["database/schema.sql", "PostgreSQL DDL", "Defines 8 tables: job_sources, seen_jobs, user_profiles, jobs, digests, source_runs, email_messages, job_sightings"],
-        ["sources.yaml", "ATS Slugs Registry", "57 verified company boards for Greenhouse, Lever, Ashby, SmartRecruiters, and Workable"],
-        ["profile.yaml", "Candidate Profile", "Defines target roles, skills, locations, and scoring thresholds"],
+        ["sources.yaml", "ATS Slugs Registry", "56 verified company boards for Greenhouse (26), Lever (9), Ashby (9), SmartRecruiters (8), Workable (4)"],
+        ["profile.example.yaml", "Candidate Profile Template", "Tracked profile configuration template (private profile.yaml is local & git-ignored)"],
         ["scripts/check_ats_slugs.py", "CLI Scanner", "Automated validation tool for testing new company ATS career slugs"],
         ["site/build.py", "Showcase Generator", "Generates static HTML with Schema.org JSON-LD for GitHub Pages"],
-        ["tests/test_*.py (20 files)", "Automated Tests", "194 unit, integration, and reliability test cases covering all modules"],
+        ["tests/test_*.py (21 files)", "Automated Tests", "194 unit, integration, and reliability test cases covering all modules"],
     ]
     tbl_file = doc.add_table(rows=1, cols=3)
     format_table(tbl_file, [Inches(1.8), Inches(1.5), Inches(3.2)], file_headers, file_data)

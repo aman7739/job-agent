@@ -428,23 +428,23 @@ CREATE TABLE IF NOT EXISTS email_messages (
   - Hosted on Render Free-Tier (Singapore region) running production Docker container.
   - Argon2id password-protected single-user authentication, job status controls (`Save`, `Applied`, `Ignore`), profile settings, and on-demand crawler trigger.
   - Public `/health` endpoint verified: `status: healthy`, `database: connected`, `scheduler: running`, HTTP 200 OK.
-  - Kept awake 24/7 with zero cold starts via 10-minute automated GitHub Actions keepalive cron (`.github/workflows/keepalive.yml`).
+  - Kept awake 24/7 with zero cold starts via Cron-Job.org external 10-minute automated health monitor (with `.github/workflows/keepalive.yml` as secondary fallback).
 - **Telegram Notification Bot:**
   - Registered via `@BotFather` with private chat notifications via `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID`.
 - **Automated Crawl Schedule:**
   - In-app `AsyncIOScheduler` running in the 24/7 warm Render container at **08:00 AM IST & 07:00 PM IST** (`cron: hour=2,13, minute=30, timezone=UTC`).
-- **All 8 Sources 100% Green & Verified:**
-  1. `greenhouse`: 1,224 jobs (Healthy)
-  2. `lever`: 29 jobs (Healthy)
-  3. `ashby`: 108 jobs (Healthy)
-  4. `smartrecruiters`: 21 jobs (Healthy)
-  5. `workable`: 0 active Indian jobs (Healthy)
-  6. `adzuna`: 20 live Indian tech jobs via developer API keys (Healthy)
-  7. `jooble`: Jooble search API adapter configured for Indian tech freshers (Healthy)
-  8. `remotive`: 10 remote jobs (Healthy)
-  9. `arbeitnow`: Free remote tech jobs feed (Healthy)
-  10. `email_alerts`: 15 jobs parsed & smart cached deduplication (Healthy)
-- **Total Ingestion Reach:** Over **1,410+ raw roles** scanned and normalized across both Indian and global tech markets.
+- **All 10 Sources 100% Green & Verified:**
+  1. `greenhouse`: 1,990 jobs scanned (Healthy)
+  2. `lever`: 96 jobs scanned (Healthy - 9 verified boards, dead linear slug removed)
+  3. `ashby`: 163 jobs scanned (Healthy - 9 verified boards, Linear verified with 30 roles)
+  4. `smartrecruiters`: 167 jobs scanned (Healthy)
+  5. `workable`: 0 active Indian jobs (Healthy - 4 international boards)
+  6. `adzuna`: 6 clean keyword fresher query groups (Healthy)
+  7. `jooble`: 75 jobs scanned via official API (Healthy)
+  8. `remotive`: 10 remote jobs scanned, max 4 fetches/day (Healthy)
+  9. `arbeitnow`: 45 remote developer jobs scanned (Healthy)
+  10. `email_alerts`: 12 jobs parsed via IMAP SSL Mailbox A (Healthy)
+- **Total Ingestion Reach:** Over **2,558+ raw roles** scanned and normalized across both Indian and global tech markets.
 - **Test Suite Status:** **194 passing unit and integration tests (100% green).**
 
 ---
@@ -520,13 +520,13 @@ Based on [`job_digest_build_plan.md`](file:///C:/Users/KRAMA/OneDrive/Desktop/AI
 
 - **Stage 2 (Completed): Adzuna Query Groups & Email Alert Expansion:**
   - Replaced generic broad queries with 6 targeted fresher/intern groups in [`job_digest/sources/adzuna.py`](file:///C:/Users/KRAMA/OneDrive/Desktop/AI%20AGENT/job_digest/sources/adzuna.py):
-    1. `python developer (fresher OR entry level OR junior)`
-    2. `backend developer (fresher OR entry level OR junior)`
-    3. `software engineer trainee OR graduate engineer trainee OR GET`
-    4. `software developer intern OR full stack intern OR web developer intern`
-    5. `AI intern OR ML intern OR machine learning intern OR data science intern`
-    6. `associate software engineer OR junior software engineer`
-  - Expanded [`job_digest/sources/email_alerts.py`](file:///C:/Users/KRAMA/OneDrive/Desktop/AI%20AGENT/job_digest/sources/email_alerts.py) whitelisting to accept direct company ATS alert senders (`greenhouse.io`, `lever.co`, `smartrecruiters.com`, `ashbyhq.com`, `myworkdayjobs.com`, `amazon.jobs`).
+    1. `python developer fresher`
+    2. `backend developer fresher`
+    3. `software engineer trainee`
+    4. `graduate engineer trainee`
+    5. `software developer intern`
+    6. `AI ML intern`
+  - Expanded [`job_digest/sources/email_alerts.py`](job_digest/sources/email_alerts.py) whitelisting to accept direct company ATS alert senders (`greenhouse.io`, `lever.co`, `smartrecruiters.com`, `ashbyhq.com`, `myworkdayjobs.com`, `amazon.jobs`).
   - Added unit test [`test_parse_direct_ats_career_alerts`](file:///C:/Users/KRAMA/OneDrive/Desktop/AI%20AGENT/tests/test_email_source.py).
 
 - **Stage 3 (Completed): Official Aggregator Adapter (Jooble):**

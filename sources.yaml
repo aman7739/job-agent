@@ -32,7 +32,6 @@ lever:
 - lever
 - canonical
 - postman
-- linear
 - docker
 - browserstack
 - cred

@@ -113,8 +113,8 @@ The candidate sets a minimum score threshold (default: $\ge 7.0 / 10$) to receiv
 ### 2. Environment Installation
 ```bash
 # Clone the repository
-git clone https://github.com/KRAMA/AI-AGENT.git
-cd "AI AGENT"
+git clone https://github.com/aman7739/job-agent.git
+cd job-agent
 
 # Create virtual environment
 py -3.12 -m venv .venv
