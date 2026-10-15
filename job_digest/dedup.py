@@ -276,7 +276,9 @@ def ensure_sightings_table(session: Session) -> None:
                 fingerprint VARCHAR(64) NOT NULL,
                 source VARCHAR(64) NOT NULL,
                 seen_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
+            );
+            CREATE INDEX IF NOT EXISTS idx_job_sightings_source_seen_at ON job_sightings(source, seen_at);
+            CREATE INDEX IF NOT EXISTS idx_job_sightings_fingerprint ON job_sightings(fingerprint);
             """
         else:
             sql = """
@@ -285,9 +287,14 @@ def ensure_sightings_table(session: Session) -> None:
                 fingerprint VARCHAR(64) NOT NULL REFERENCES seen_jobs(fingerprint) ON DELETE CASCADE,
                 source VARCHAR(64) NOT NULL,
                 seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-            )
+            );
+            CREATE INDEX IF NOT EXISTS idx_job_sightings_source_seen_at ON job_sightings(source, seen_at);
+            CREATE INDEX IF NOT EXISTS idx_job_sightings_fingerprint ON job_sightings(fingerprint);
             """
-        session.execute(text(sql))
+        for stmt in sql.split(";"):
+            clean = stmt.strip()
+            if clean:
+                session.execute(text(clean))
         session.commit()
     except Exception as exc:
         logger.debug(f"ensure_sightings_table notice: {exc}")

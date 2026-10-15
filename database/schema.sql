@@ -101,5 +101,5 @@ CREATE TABLE IF NOT EXISTS job_sightings (
     source VARCHAR(64) NOT NULL,
     seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
-CREATE INDEX IF NOT EXISTS idx_sightings_source ON job_sightings(source, seen_at DESC);
-CREATE INDEX IF NOT EXISTS idx_sightings_fp ON job_sightings(fingerprint);
+CREATE INDEX IF NOT EXISTS idx_job_sightings_source_seen_at ON job_sightings(source, seen_at);
+CREATE INDEX IF NOT EXISTS idx_job_sightings_fingerprint ON job_sightings(fingerprint);
