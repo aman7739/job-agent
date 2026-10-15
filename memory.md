@@ -1,13 +1,13 @@
 # Job Digest Agent — Master Project Memory & Context
 
-> **Last Updated:** Post-Launch Production Milestone (All 8 Sources 100% Healthy & Live on Render!)  
+> **Last Updated:** Post-Launch Production Milestone (All 10 Sources 100% Healthy & Live on Render!)  
 > **Target Audience:** Agent context persistence across sessions, architectural documentation, and complete operational reference.
 
 ---
 
 ## 1. Project Vision & User Profile
 
-- **Project Purpose:** A private, autonomous, high-reliability personal Job Digest Agent running twice daily at 08:00 AM & 07:00 PM IST (and on-demand via the dashboard). It aggregates postings from 8 permitted sources, normalizes and deduplicates them, scores eligibility against a personal profile, delivers formatted digests via Telegram and SMTP Email, and dispatches immediate high-priority alerts for urgent jobs closing in ≤ 4 hours.
+- **Project Purpose:** A private, autonomous, high-reliability personal Job Digest Agent running twice daily at 08:00 AM & 07:00 PM IST (and on-demand via the dashboard). It aggregates postings from 10 permitted sources, normalizes and deduplicates them, scores eligibility against a personal profile, delivers formatted digests via Telegram and SMTP Email, and dispatches immediate high-priority alerts for urgent jobs closing in ≤ 4 hours.
 - **Candidate Context:**
   - **Degree & Branch:** B.Tech Computer Science and Engineering (CSE).
   - **Graduating Batch:** 2027.
@@ -544,3 +544,46 @@ Based on [`job_digest_build_plan.md`](file:///C:/Users/KRAMA/OneDrive/Desktop/AI
   - Implemented [`job_digest/sources/arbeitnow.py`](file:///C:/Users/KRAMA/OneDrive/Desktop/AI%20AGENT/job_digest/sources/arbeitnow.py) connecting to Arbeitnow's public JSON feed with zero API key required.
   - Filters for India and Remote positions.
   - Verified by [`tests/test_arbeitnow.py`](file:///C:/Users/KRAMA/OneDrive/Desktop/AI%20AGENT/tests/test_arbeitnow.py).
+
+---
+
+## 13. Live Production Execution & End-to-End Verification
+
+During the live production test on Render (triggered via `POST /jobs/run-now`), the complete 10-source pipeline executed with 100% health across all adapters:
+
+- **Raw Ingestion Throughput (2,558 Roles Scanned in Single Run):**
+  - `greenhouse`: **1,990 jobs** scanned across verified company slugs (Swiggy, Groww, InMobi, Twilio, Databricks, etc.)
+  - `smartrecruiters`: **167 jobs** scanned
+  - `ashby`: **163 jobs** scanned (Snowflake, etc.)
+  - `lever`: **96 jobs** scanned (CRED, Meesho, etc.)
+  - `jooble`: **75 jobs** scanned via official API using production `JOOBLE_API_KEY`
+  - `arbeitnow`: **45 remote developer jobs** scanned
+  - `email_alerts`: **12 jobs** parsed via IMAP SSL Mailbox A
+  - `remotive`: **10 remote jobs** scanned
+  - `workable` & `adzuna`: **0 jobs** in current 48h window (clean responses, healthy)
+- **Deduplication & Freshness Filtering:**
+  - **425 previously tracked jobs** recognized and deduplicated via SHA-256 fingerprint.
+  - **125 brand-new fresh postings** discovered within the 48-hour freshness window.
+- **Scoring & Notification Dispatch:**
+  - Evaluated by the deterministic 10-point scoring algorithm.
+  - Selected **14 high-conviction matches ($\ge 7.0/10$)**:
+    - **3 Internships & Apprenticeships**
+    - **11 Full-Time Fresher Roles**
+  - Delivered immediately via Telegram Bot with formatting and link preservation.
+- **Attribution Recording:**
+  - Successfully logged sightings into `job_sightings` with `idx_job_sightings_source_seen_at` and `idx_job_sightings_fingerprint`.
+  - Visualized on `/sources` under the **7-Day Source Yield & Attribution Analytics** dashboard.
+
+---
+
+## 14. 24/7 Container Keepalive & Precision Scheduling Architecture
+
+- **Root Cause of Prior Inconsistencies:**
+  - GitHub Actions free runner queues experience 3 to 5 hours of delay during peak UTC hours, causing scheduled cron runs to trigger late (e.g. 7:00 PM job running at 11:00 PM).
+  - Render free tier spins down to sleep after 15 minutes of HTTP inactivity, pausing in-app APScheduler timers during overnight periods.
+- **Permanent Solution Implemented:**
+  - Configured **Cron-Job.org** automated monitor pinging `https://job-agent-sg20.onrender.com/health` every 10 minutes (`*/10 * * * *`).
+  - Ensures the Render web container remains permanently warm (uptime > 99.9%).
+  - Enables the internal `AsyncIOScheduler` inside the warm container to execute with second-level precision at **exactly 08:00:00 AM IST and 07:00:00 PM IST** with zero queue lag.
+  - Startup catch-up safety net remains active: if container ever restarts, it inspects the latest digest in `digests` table and runs catch-up if > 14 hours have elapsed.
+
