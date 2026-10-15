@@ -161,10 +161,6 @@ def client_and_session(monkeypatch):
     app.dependency_overrides.clear()
 
 
-# ==============================================================================
-# 1. Interactive Job Status Actions & Weekly Applied Count
-# ==============================================================================
-
 def test_update_job_status_actions(client_and_session):
     """
     Session 15 Check:
@@ -245,11 +241,6 @@ def test_weekly_applied_count_calculation(client_and_session):
     weekly_cnt = get_weekly_applied_count(session, now=now)
     assert weekly_cnt == 2
 
-
-# ==============================================================================
-# 2. Settings Editor & Check Line Verification (Blocklist Edit Changes Tomorrow's Digest)
-# ==============================================================================
-
 def test_settings_page_view(client_and_session):
     """Verify authenticated user can view profile settings page."""
     client, session = client_and_session
@@ -306,18 +297,11 @@ def test_blocklist_edit_changes_tomorrows_digest(client_and_session):
     assert "badcompany" in active_profile.hard_filters.company_blocklist
     assert "scamcorp" in active_profile.hard_filters.company_blocklist
 
-    # 4. Next run loads profile directly from database
     profile_next_run = load_profile(session=session)
     is_eligible_after, reason = check_eligibility(job_before, profile_next_run)
 
-    # Check Line Satisfied: The job from BadCompany is now strictly dropped from the digest!
     assert is_eligible_after is False
     assert "in blocklist" in reason.lower()
-
-
-# ==============================================================================
-# 3. Source Health Page & Manual Job Entry
-# ==============================================================================
 
 def test_source_health_page(client_and_session):
     """Verify /sources displays execution status for all 8 source adapters."""

@@ -51,11 +51,9 @@ def test_schema_org_json_ld_validity_and_entities():
             graph = data["@graph"]
 
             types = {item.get("@type") for item in graph}
-            # Every page must have WebSite and SoftwareApplication
             assert "WebSite" in types, f"Missing WebSite schema in {html_file.name}"
             assert "SoftwareApplication" in types, f"Missing SoftwareApplication schema in {html_file.name}"
 
-            # Validate SoftwareApplication properties
             app_entity = next(item for item in graph if item.get("@type") == "SoftwareApplication")
             assert app_entity.get("name") == "Job Digest Agent"
             assert app_entity.get("applicationCategory") == "BusinessApplication"
@@ -84,17 +82,14 @@ def test_social_sharing_open_graph_and_twitter_cards():
     html_files = list(DIST_DIR.rglob("*.html"))
     og_image_path = DIST_DIR / "static" / "images" / "og-image.png"
 
-    # 1. Assert social card image file exists and is valid 1200x630 PNG
     assert og_image_path.exists(), "Social preview image og-image.png does not exist in dist/"
     with Image.open(og_image_path) as img:
         assert img.size == (1200, 630), f"Expected 1200x630 dimensions, got {img.size}"
         assert img.format == "PNG", f"Expected PNG format, got {img.format}"
 
-    # 2. Check meta tags in every compiled page
     for html_file in html_files:
         soup = BeautifulSoup(html_file.read_text(encoding="utf-8"), "html.parser")
 
-        # OpenGraph tags
         assert soup.find("meta", property="og:type"), f"Missing og:type in {html_file.name}"
         assert soup.find("meta", property="og:site_name"), f"Missing og:site_name in {html_file.name}"
         assert soup.find("meta", property="og:url"), f"Missing og:url in {html_file.name}"
@@ -129,7 +124,7 @@ def test_visual_assets_and_alt_text_compliance():
     assert "<title" in tg_content and "</title>" in tg_content
     assert "<desc" in tg_content and "</desc>" in tg_content
 
-    # Every <img> element across all pages must have a non-empty, descriptive alt attribute
+    
     html_files = list(DIST_DIR.rglob("*.html"))
     total_imgs = 0
     for html_file in html_files:
@@ -163,7 +158,6 @@ def test_content_audit_zero_placeholders_and_authentic_copy():
         for token in banned_tokens:
             assert token not in content, f"Found banned placeholder token '{token}' in {html_file}"
 
-    # Verify key authentic project concepts in home & documentation
     index_content = (DIST_DIR / "index.html").read_text(encoding="utf-8")
     assert "2027" in index_content
     assert "Internships" in index_content
@@ -173,6 +167,6 @@ def test_content_audit_zero_placeholders_and_authentic_copy():
     assert "08:00 AM" in index_content
     assert "07:00 PM" in index_content
 
-    # Privacy and Terms must explicitly confirm no private user profile data is shown on the public site
+   
     privacy_content = (DIST_DIR / "privacy" / "index.html").read_text(encoding="utf-8")
     assert "never exposes" in privacy_content.lower() or "isolated" in privacy_content.lower()

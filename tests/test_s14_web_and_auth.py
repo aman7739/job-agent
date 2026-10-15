@@ -136,10 +136,6 @@ def client_with_db():
     app.dependency_overrides.clear()
 
 
-# ==============================================================================
-# 1. Password Verification & Session Token Tests
-# ==============================================================================
-
 def test_password_hashing_and_verification():
     """Verify Argon2 password hashing and verification."""
     password = "secret_password_2027"
@@ -164,10 +160,6 @@ def test_session_token_signing_and_expiry():
     tampered = token[:-4] + "xxxx"
     assert verify_session_token(tampered) is None
 
-
-# ==============================================================================
-# 2. Check Line Verification: Wrong Password Rejected & Pages Require Session
-# ==============================================================================
 
 def test_wrong_password_is_rejected(client_with_db):
     """
@@ -214,10 +206,6 @@ def test_every_page_needs_a_session(client_with_db):
     assert res_hist.status_code == 307
     assert "/login?next=/history" in res_hist.headers["location"]
 
-
-# ==============================================================================
-# 3. Successful Login, Read Pages & Filtering
-# ==============================================================================
 
 def test_login_success_sets_session_cookie(client_with_db):
     """Verify correct password logs in, sets session cookie, and redirects."""

@@ -65,9 +65,6 @@ class MockChannelNotifier(Notifier):
         return False
 
 
-# ==============================================================================
-# 1. Mocked-Network End-to-End Pipeline for Every Source
-# ==============================================================================
 
 @pytest.mark.asyncio
 async def test_end_to_end_mocked_network_all_sources_pipeline():
@@ -78,7 +75,6 @@ async def test_end_to_end_mocked_network_all_sources_pipeline():
     """
     now = datetime(2026, 10, 3, 8, 0, 0, tzinfo=timezone.utc)
 
-    # 1. Create realistic RawJobs from all 8 sources
     raw_greenhouse = RawJob(
         source="greenhouse",
         source_id="stripe",
@@ -233,9 +229,7 @@ async def test_end_to_end_mocked_network_all_sources_pipeline():
     assert "utm_source" not in digest_html  # Canonicalization stripped UTM
 
 
-# ==============================================================================
-# 2. Zero Results Graceful Handling
-# ==============================================================================
+
 
 @pytest.mark.asyncio
 async def test_zero_results_graceful_handling():
@@ -266,14 +260,11 @@ async def test_zero_results_graceful_handling():
     assert result["total_in_digest"] == 0
     assert set(result["delivered_channels"]) == {"telegram", "email"}
 
-    # Delivered digest has empty message
     assert "No new matching jobs found this morning" in result["digest_text"]
     assert "Checked all configured company boards at 08:00 IST" in result["digest_text"]
 
 
-# ==============================================================================
-# 3. Failed Source Named in Digest Header
-# ==============================================================================
+
 
 @pytest.mark.asyncio
 async def test_failed_source_named_in_digest_header():
@@ -321,10 +312,6 @@ async def test_failed_source_named_in_digest_header():
     assert "Swiggy" in digest_output.content_text
 
 
-# ==============================================================================
-# 4. Rate Limits Handling Across Sources
-# ==============================================================================
-
 @pytest.mark.asyncio
 async def test_rate_limits_handling_across_sources():
     """
@@ -333,26 +320,20 @@ async def test_rate_limits_handling_across_sources():
     - Remotive enforce_rate_limit blocks extra requests beyond limit without crashing.
     - 429 Too Many Requests response is caught and handled safely.
     """
-    # 1. Remotive 4 fetches/day limit check
     remotive = RemotiveSource(enforce_rate_limit=True)
     with patch("job_digest.sources.remote._check_and_increment_daily_fetch", return_value=False):
         jobs = await remotive.fetch()
         assert jobs == []
 
-    # 2. HTTP 429 simulated response in custom source
     def handler_429(request):
         return httpx.Response(429, text="Too Many Requests")
 
     transport = httpx.MockTransport(handler_429)
     async with httpx.AsyncClient(transport=transport) as client:
-        # A source encountering 429 returns error status code safely
         response = await client.get("https://api.adzuna.com/test")
         assert response.status_code == 429
 
 
-# ==============================================================================
-# 5. Delivery Channel Fault Isolation
-# ==============================================================================
 
 @pytest.mark.asyncio
 async def test_failed_delivery_channel_isolation():
@@ -390,10 +371,6 @@ async def test_failed_delivery_channel_isolation():
     assert len(working_tg.sent_digests) == 1
 
 
-# ==============================================================================
-# 6. Tuning and Scoring Verification
-# ==============================================================================
-
 def test_tuning_weights_and_thresholds():
     """
     Session 12 Check:
@@ -402,7 +379,6 @@ def test_tuning_weights_and_thresholds():
     - Weights: Skills (4.0), Role (3.0), Level (2.0), Location (1.0).
     - Tracked gaps do NOT reduce match score.
     """
-    # Role matching: Python Developer with preferred city Bengaluru
     strong_job = Job(
         title="Python Developer",
         company="Stripe",
@@ -417,11 +393,10 @@ def test_tuning_weights_and_thresholds():
 
     scored = rank_and_score_jobs([strong_job], profile=PROFILE)
     assert len(scored) == 1
-    # Full match on skills (4.0), role (3.0), level (2.0), and location (1.0) -> score 10.0
+    
     assert scored[0].score >= 8.0
     assert scored[0].category == "Strong"
 
-    # Role matching with missing tracked gap: 'Java' and 'Spring Boot'
     job_with_gap = Job(
         title="Python Developer",
         company="Razorpay",
@@ -435,10 +410,8 @@ def test_tuning_weights_and_thresholds():
     )
     scored_gap = rank_and_score_jobs([job_with_gap], profile=PROFILE)
     assert len(scored_gap) == 1
-    # Tracked gaps in profile (Java, Spring Boot) listed in missing_skills
     assert "Java" in scored_gap[0].missing_skills
     assert "Spring Boot" in scored_gap[0].missing_skills
-    # Still meets threshold
     assert scored_gap[0].score >= 4.0
 
 
@@ -476,7 +449,7 @@ def test_tuning_blocklist_and_batch_exclusions():
         batch_years=[2024],
     )
     scored_batch = rank_and_score_jobs([wrong_batch_job], profile=PROFILE)
-    assert len(scored_batch) == 0  # 2024 passout excluded, user is 2027!
+    assert len(scored_batch) == 0  
 
 
 def test_database_notified_marking_and_exclusion():
@@ -491,7 +464,7 @@ def test_database_notified_marking_and_exclusion():
     assert mock_session.execute.called
     assert mock_session.commit.called
 
-    # 2. Test filter_unnotified_jobs queries DB and excludes notified fingerprints
+    
     job1 = Job(
         title="Python Dev",
         company="Stripe",
@@ -512,7 +485,6 @@ def test_database_notified_marking_and_exclusion():
     )
     job2.fingerprint = "fp_789"
 
-    # Simulate DB returning that fp_123 is already notified
     mock_session.execute.return_value.fetchall.return_value = [("fp_123",)]
     unnotified = filter_unnotified_jobs([job1, job2], mock_session)
 

@@ -39,10 +39,6 @@ def test_client_and_session():
     session.close()
 
 
-# ==============================================================================
-# 1. Security Headers Verification (Session 17 Check)
-# ==============================================================================
-
 def test_security_headers_present_on_all_responses(test_client_and_session):
     """Verify enterprise security headers are attached by middleware."""
     client, _ = test_client_and_session
@@ -58,10 +54,6 @@ def test_security_headers_present_on_all_responses(test_client_and_session):
     assert "default-src 'self'" in headers.get("Content-Security-Policy", "")
     assert "noindex, nofollow" in headers.get("X-Robots-Tag", "")
 
-
-# ==============================================================================
-# 2. Search Engine Disallow (/robots.txt) & PWA Manifest (/manifest.json)
-# ==============================================================================
 
 def test_robots_txt_disallows_all_crawlers(test_client_and_session):
     """Verify robots.txt blocks all search engines."""
@@ -84,9 +76,6 @@ def test_manifest_json_pwa(test_client_and_session):
     assert data["theme_color"] == "#2563eb"
 
 
-# ==============================================================================
-# 3. Unreachable Without Login Verification (Session 17 Check)
-# ==============================================================================
 
 @pytest.mark.parametrize(
     "route,method",
@@ -110,10 +99,6 @@ def test_app_unreachable_without_login(test_client_and_session, route, method):
     location = response.headers.get("location", "")
     assert "/login" in location
 
-
-# ==============================================================================
-# 4. Token-Protected Webhook Trigger (/api/trigger)
-# ==============================================================================
 
 def test_api_trigger_rejected_without_token(test_client_and_session):
     """Verify webhook trigger requires valid secret token."""
@@ -145,9 +130,6 @@ def test_api_trigger_succeeds_with_valid_token(test_client_and_session):
         assert "telegram" in data["delivered_channels"]
 
 
-# ==============================================================================
-# 5. Database Backup Utility (Disaster Recovery Plan)
-# ==============================================================================
 
 def test_backup_db_script(tmp_path, test_client_and_session):
     """Verify create_database_backup dumps database snapshot into JSON file."""

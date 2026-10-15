@@ -122,7 +122,6 @@ def test_milestone_4_documentation_and_adr_completeness():
     """Verify complete documentation suite, runbook, portfolio briefing, and all ADRs 001-017."""
     doc_files = [
         PROJECT_ROOT / "README.md",
-        PROJECT_ROOT / "memory.md",
         PROJECT_ROOT / "docs" / "runbook.md",
         PROJECT_ROOT / "docs" / "portfolio_summary.md",
         PROJECT_ROOT / "docs" / "decisions.md",

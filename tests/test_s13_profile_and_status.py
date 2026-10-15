@@ -87,10 +87,6 @@ def db_session():
         session.close()
 
 
-# ==============================================================================
-# 1. Profile in Database: Validation on Save & Version History
-# ==============================================================================
-
 def test_save_valid_profile_and_history(db_session: Session):
     """
     Session 13 Check:
@@ -151,10 +147,6 @@ def test_invalid_profile_edit_rejected_without_overwriting(db_session: Session):
     assert history[0]["version"] == 1
 
 
-# ==============================================================================
-# 2. Check Line Verification: Profile Edit Changes Next Run & Fallback Recovery
-# ==============================================================================
-
 def test_profile_edit_changes_next_run(db_session: Session):
     """
     Session 13 Check:
@@ -182,7 +174,6 @@ def test_corrupted_active_profile_falls_back_to_last_good_version_and_says_so(db
     # Save valid version 1
     save_profile_to_db(db_session, EXAMPLE_YAML_CONTENT)
 
-    # Manually insert a corrupted active version 2 directly into DB
     db_session.execute(
         text("UPDATE user_profiles SET is_active = 0 WHERE version = 1")
     )
@@ -196,7 +187,6 @@ def test_corrupted_active_profile_falls_back_to_last_good_version_and_says_so(db
     )
     db_session.commit()
 
-    # get_active_profile_from_db should detect corruption, fallback to v1, and say so
     recovered_profile, warning = get_active_profile_from_db(db_session)
     assert recovered_profile is not None
     assert recovered_profile.scoring.min_score == 4.0
@@ -207,10 +197,6 @@ def test_corrupted_active_profile_falls_back_to_last_good_version_and_says_so(db
     loaded = load_profile(session=db_session)
     assert loaded.scoring.min_score == 4.0
 
-
-# ==============================================================================
-# 3. Job Status Tracking (saved, applied, not_interested with timestamps)
-# ==============================================================================
 
 def test_job_status_transitions_and_timestamps(db_session: Session):
     """

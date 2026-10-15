@@ -12,10 +12,6 @@ from job_digest.urgency import detect_job_urgency
 from job_digest.web import app
 
 
-# ==============================================================================
-# 1. Urgency Detection (< 4 Hours Left)
-# ==============================================================================
-
 def test_detect_job_urgency_explicit_deadline():
     """Verify jobs with explicit deadline <= 4h are flagged urgent."""
     now = datetime.now(timezone.utc)
@@ -60,11 +56,6 @@ def test_detect_job_urgency_text_phrases():
     )
     assert urgency_urgent.is_urgent is True
 
-
-# ==============================================================================
-# 2. Urgent Alert Delivery (Immediate Telegram / Email)
-# ==============================================================================
-
 @pytest.mark.asyncio
 async def test_deliver_urgent_alert():
     """Verify deliver_urgent_alert dispatches high-priority message immediately."""
@@ -103,10 +94,6 @@ async def test_deliver_urgent_alert():
     assert "https://razorpay.com/jobs/123" in tg_call_args
 
 
-# ==============================================================================
-# 3. Web Dashboard "⚡ Check & Notify Now" Route
-# ==============================================================================
-
 def test_web_run_now_button():
     """Verify authenticated user can trigger POST /jobs/run-now."""
     client = TestClient(app)
@@ -129,10 +116,6 @@ def test_web_run_now_button():
         assert "Found 3 new roles" in response.text
         assert "Sent 1 urgent closing alerts" in response.text
 
-
-# ==============================================================================
-# 4. Schedule Verification (8 AM & 7 PM IST = 02:30 & 13:30 UTC)
-# ==============================================================================
 
 def test_github_workflow_and_scheduler_cron():
     """Verify GitHub Actions and local scheduler run twice daily (8 AM & 7 PM IST)."""

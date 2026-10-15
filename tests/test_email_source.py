@@ -88,7 +88,6 @@ def test_mail_from_unknown_sender_is_ignored():
 
     mid, jobs = parse_eml_bytes(eml_bytes)
 
-    # Unknown sender promo@unauthorized-promotions.com is ignored
     assert jobs == []
 
 
@@ -109,7 +108,6 @@ def test_untrusted_html_and_malicious_script_sanitized():
         message_id="msg_test_001",
     )
 
-    # Only legitimate link is extracted; javascript: link was discarded
     assert len(jobs) == 1
     assert jobs[0].url == "https://www.linkedin.com/jobs/view/9999999999"
     assert "alert" not in jobs[0].url
@@ -168,10 +166,8 @@ async def test_email_source_fetch_with_header_filtering(monkeypatch):
     def mock_fetch(msg_id, spec):
         if "HEADER.FIELDS" in spec:
             if msg_id == b"1":
-                # Message 1 is spam / unknown sender
                 return ("OK", [(b"1", b"From: promo@spam.com\r\nMessage-ID: <spam1@spam.com>\r\n\r\n")])
             else:
-                # Message 2 is LinkedIn alerts
                 return ("OK", [(b"2", b"From: jobalerts-noreply@linkedin.com\r\nMessage-ID: <alert2@linkedin.com>\r\n\r\n")])
         elif "BODY.PEEK[]" in spec or "RFC822" in spec:
             if msg_id == b"2":
@@ -191,12 +187,11 @@ async def test_email_source_fetch_with_header_filtering(monkeypatch):
 
     jobs = await source.fetch()
 
-    # Message 1 (spam) should NOT have had its body fetched.
-    # Message 2 (LinkedIn) had its body fetched and yielded jobs.
+
     assert len(jobs) == 2
     assert jobs[0].source_id == "linkedin_alerts"
 
-    # Verify that mock_mail.fetch was called with BODY.PEEK[] ONLY for msg_id b"2", never for b"1"
+  
     body_peek_calls = [
         call for call in mock_mail.fetch.call_args_list if "BODY.PEEK[]" in str(call)
     ]

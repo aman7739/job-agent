@@ -34,7 +34,6 @@ def test_clean_location():
     assert clean_location("New Delhi") == "Delhi NCR"
 
 
-# --- 15 Sample Description Tests (Session 6 Check) ---
 
 def test_desc_1_c_programming_language():
     """Sample 1: 'C programming' should extract 'C'."""

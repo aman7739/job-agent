@@ -45,7 +45,6 @@ def test_notifier_protocol_compliance():
 
 def test_telegram_message_splitting():
     """Verify long text (>4000 chars) is split into chunks under the character limit without line breaks."""
-    # Create 9000-character text with lines
     long_text = "\n".join([f"Line {i}: This is a sample job listing line with enough text." for i in range(150)])
     assert len(long_text) > 4000
 
@@ -55,7 +54,6 @@ def test_telegram_message_splitting():
     for chunk in chunks:
         assert len(chunk) <= 4000
 
-    # Ensure all original lines were preserved
     reconstructed = "\n".join(chunks)
     assert "Line 0:" in reconstructed
     assert "Line 149:" in reconstructed

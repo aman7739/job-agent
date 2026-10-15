@@ -37,10 +37,6 @@ def test_client_and_session():
     session.close()
 
 
-# ==============================================================================
-# 1. /health Endpoint Verification
-# ==============================================================================
-
 def test_health_check_public_and_healthy(test_client_and_session):
     """Verify /health is publicly accessible without login and returns HTTP 200."""
     client, session = test_client_and_session
@@ -79,10 +75,6 @@ def test_health_check_degraded_when_db_fails():
     finally:
         app.dependency_overrides.clear()
 
-
-# ==============================================================================
-# 2. Deployment Configuration File Integrity
-# ==============================================================================
 
 def test_dockerfile_integrity():
     """Verify Dockerfile exists and enforces security best practices."""

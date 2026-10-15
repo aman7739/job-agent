@@ -40,15 +40,9 @@ def test_build_produces_all_expected_pages(built_site):
         assert target.exists(), f"Expected generated page missing: {rel}"
         assert target.stat().st_size > 0, f"Generated page is empty: {rel}"
 
-    # Verify static assets copied
     assert (temp_dist / "static" / "css" / "style.css").exists()
     assert (temp_dist / "static" / "favicon.svg").exists()
 
-
-# ==============================================================================
-# Session 18 Check Line Verification:
-# "A build test asserts every page has one H1, a unique title, a description and a canonical."
-# ==============================================================================
 
 def test_semantic_seo_h1_unique_title_description_canonical(built_site):
     """

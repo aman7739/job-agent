@@ -32,9 +32,8 @@ def test_zero_new_jobs_renders_nothing_new_digest():
 
     # HTML contains friendly empty state
     assert "No new matching jobs found this morning" in digest.content_html
-    assert "45" in digest.content_html  # Displays previously tracked count
+    assert "45" in digest.content_html  
 
-    # Plain text contains friendly empty state
     assert "No new matching jobs found this morning" in digest.content_text
     assert "45" in digest.content_text
 
@@ -133,8 +132,8 @@ def test_digest_renders_both_sections_with_strong_and_maybe():
     assert "Junior Software Engineer" in html
     assert "₹30,000/month" in html
     assert "8.0 LPA" in html
-    assert "Workable" in html  # Failed source notice
-    assert "Remotive" in html  # Remotive credit
+    assert "Workable" in html  
+    assert "Remotive" in html  
 
     # Apply link appears first
     assert 'href="https://example.com/intern-strong" class="apply-btn"' in html

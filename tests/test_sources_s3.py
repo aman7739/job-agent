@@ -45,10 +45,6 @@ async def test_ashby_fixture_parsing_and_filtering():
         ashby = AshbySource(slugs=["example"], delay_seconds=0)
         jobs = await ashby.fetch_board(client, "example")
 
-    # From 3 jobs:
-    # - 1 listed in Bengaluru -> KEPT
-    # - 1 unlisted in Pune -> SKIPPED (isListed: false)
-    # - 1 listed in SF -> FILTERED (abroad)
     assert len(jobs) == 1
     assert jobs[0].external_id == "ashby-job-001"
     assert jobs[0].title == "Junior Backend Engineer"
@@ -86,10 +82,6 @@ async def test_smartrecruiters_fixture_parsing_and_filtering():
         sr = SmartRecruitersSource(slugs=["example"], delay_seconds=0)
         jobs = await sr.fetch_board(client, "example")
 
-    # From 3 jobs:
-    # - Pune, India -> KEPT
-    # - Chicago (Remote) -> KEPT (remote keyword)
-    # - Stuttgart, Germany -> FILTERED
     assert len(jobs) == 2
     ids = [j.external_id for j in jobs]
     assert "sr-job-001" in ids
