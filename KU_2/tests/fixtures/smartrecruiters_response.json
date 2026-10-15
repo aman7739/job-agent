@@ -1,0 +1,47 @@
+{
+  "totalFound": 3,
+  "content": [
+    {
+      "id": "sr-job-001",
+      "name": "Graduate Software Engineer",
+      "company": {"name": "Tech Corp"},
+      "location": {
+        "city": "Pune",
+        "region": "MH",
+        "country": "in",
+        "remote": false,
+        "fullLocation": "Pune, Maharashtra, India"
+      },
+      "releasedDate": "2026-03-01T12:00:00.000Z",
+      "refNumber": "REF1001"
+    },
+    {
+      "id": "sr-job-002",
+      "name": "Data Analyst (Remote)",
+      "company": {"name": "Tech Corp"},
+      "location": {
+        "city": "Chicago",
+        "region": "IL",
+        "country": "us",
+        "remote": true,
+        "fullLocation": "Chicago (Remote)"
+      },
+      "releasedDate": "2026-03-01T12:00:00.000Z",
+      "refNumber": "REF1002"
+    },
+    {
+      "id": "sr-job-003",
+      "name": "Senior Embedded Developer",
+      "company": {"name": "Tech Corp"},
+      "location": {
+        "city": "Stuttgart",
+        "region": "BW",
+        "country": "de",
+        "remote": false,
+        "fullLocation": "Stuttgart, Germany"
+      },
+      "releasedDate": "2026-03-01T12:00:00.000Z",
+      "refNumber": "REF1003"
+    }
+  ]
+}

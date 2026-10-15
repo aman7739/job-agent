@@ -1,0 +1,103 @@
+{% extends "web/base.html" %}
+
+{% block title %}Source Health &bull; Job Digest Agent{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 24px;">
+  <h1 style="font-size: 24px; font-weight: 700; color: #0f172a;">Source Health &amp; Execution Metrics</h1>
+  <p style="font-size: 14px; color: #64748b; margin-top: 2px;">
+    Monitoring real-time status, rate limits, and run history across all 10 permitted source adapters.
+  </p>
+</div>
+
+<div class="card" style="padding: 24px;">
+  <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 14px;">
+    <thead>
+      <tr style="border-bottom: 2px solid #e2e8f0; color: #475569;">
+        <th style="padding: 10px 12px;">Source</th>
+        <th style="padding: 10px 12px;">Status</th>
+        <th style="padding: 10px 12px;">Jobs Found</th>
+        <th style="padding: 10px 12px;">Last Run Time</th>
+        <th style="padding: 10px 12px;">Notes / Error Message</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for s in sources %}
+      <tr style="border-bottom: 1px solid #f1f5f9;">
+        <td style="padding: 12px; font-weight: 600; color: #0f172a;">
+          {{ s.name }}
+        </td>
+        <td style="padding: 12px;">
+          {% if s.is_success %}
+          <span class="badge" style="background: #dcfce7; color: #15803d;">Healthy</span>
+          {% elif s.error_message and 'rate' in s.error_message.lower() %}
+          <span class="badge" style="background: #fef9c3; color: #854d0e;">Rate Limited</span>
+          {% elif s.error_message %}
+          <span class="badge" style="background: #fee2e2; color: #991b1b;">Error</span>
+          {% else %}
+          <span class="badge" style="background: #f1f5f9; color: #64748b;">Pending</span>
+          {% endif %}
+        </td>
+        <td style="padding: 12px; font-weight: 500;">
+          {{ s.jobs_found }}
+        </td>
+        <td style="padding: 12px; color: #64748b; font-size: 13px;">
+          {{ s.last_run or 'Never' }}
+        </td>
+        <td style="padding: 12px; color: {% if s.error_message %}#dc2626{% else %}#64748b{% endif %}; font-size: 13px; max-width: 320px;">
+          {{ s.error_message or 'Running smoothly' }}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Stage 4: 7-Day Source Yield & Attribution Analytics -->
+<div style="margin-top: 36px; margin-bottom: 16px;">
+  <h2 style="font-size: 20px; font-weight: 700; color: #0f172a;">7-Day Source Yield &amp; Attribution Analytics</h2>
+  <p style="font-size: 14px; color: #64748b; margin-top: 2px;">
+    Track which adapters contribute exclusive opportunities and drive actual application submissions.
+  </p>
+</div>
+
+<div class="card" style="padding: 24px;">
+  <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 14px;">
+    <thead>
+      <tr style="border-bottom: 2px solid #e2e8f0; color: #475569;">
+        <th style="padding: 10px 12px;">Source</th>
+        <th style="padding: 10px 12px;">7d Sightings</th>
+        <th style="padding: 10px 12px;">Unique Jobs</th>
+        <th style="padding: 10px 12px;">Incremental (Exclusive)</th>
+        <th style="padding: 10px 12px;">Saved</th>
+        <th style="padding: 10px 12px;">Applied</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for s in sources %}
+      {% set m = s.metrics_7d %}
+      <tr style="border-bottom: 1px solid #f1f5f9;">
+        <td style="padding: 12px; font-weight: 600; color: #0f172a;">
+          {{ s.name }}
+        </td>
+        <td style="padding: 12px; font-weight: 500;">
+          {{ m.total_sightings }}
+        </td>
+        <td style="padding: 12px; font-weight: 500;">
+          {{ m.unique_jobs }}
+        </td>
+        <td style="padding: 12px; color: #0284c7; font-weight: 600;">
+          {{ m.incremental_jobs }}
+        </td>
+        <td style="padding: 12px; color: #d97706; font-weight: 500;">
+          {{ m.saved_jobs }}
+        </td>
+        <td style="padding: 12px; color: #16a34a; font-weight: 600;">
+          {{ m.applied_jobs }}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

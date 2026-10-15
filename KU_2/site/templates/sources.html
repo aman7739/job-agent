@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-header">
+  <h1>Permitted Sources &amp; Compliance Specifications</h1>
+  <p>
+    The Job Digest Agent operates exclusively via authorized public endpoints and personal alert subscriptions.
+  </p>
+</div>
+
+<div class="card">
+  <h2>Ethical Anti-Scraping Charter</h2>
+  <p>
+    Many career tools violate terms of service by deploying headless browsers, simulating user clicks, or scraping LinkedIn, Naukri, and Indeed behind authentication. The Job Digest Agent rejects these practices. It maintains a strict compliance charter:
+  </p>
+  <ul style="margin-left: 20px; color: var(--text-muted); font-size: 14px; line-height: 1.8;">
+    <li><strong>Zero Headless Browsers:</strong> No Selenium, Playwright, or Puppeteer automation.</li>
+    <li><strong>No Platform Scraping:</strong> LinkedIn, Naukri, and Indeed are never directly crawled or scraped.</li>
+    <li><strong>Dual-Mailbox Separation:</strong> Job board alerts are routed to a dedicated alerts mailbox (Mailbox A) and read via standard SSL IMAP.</li>
+    <li><strong>Rate Limiting Adherence:</strong> Every source operates under respectful polling intervals and caching limits.</li>
+  </ul>
+</div>
+
+<div class="card">
+  <h2>Adapter Catalog &amp; Rate Limits</h2>
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>Source Adapter</th>
+          <th>Protocol / Format</th>
+          <th>Rate Limit Safeguard</th>
+          <th>Authentication</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Greenhouse</strong></td>
+          <td>Public JSON API</td>
+          <td>Sequential slug pacing (0.2s delay)</td>
+          <td>None (Public Board)</td>
+        </tr>
+        <tr>
+          <td><strong>Lever</strong></td>
+          <td>Public JSON API</td>
+          <td>Sequential slug pacing (0.2s delay)</td>
+          <td>None (Public Board)</td>
+        </tr>
+        <tr>
+          <td><strong>Ashby</strong></td>
+          <td>Public POST JSON API</td>
+          <td>Sequential slug pacing (<code>isListed=True</code>)</td>
+          <td>None (Public Board)</td>
+        </tr>
+        <tr>
+          <td><strong>SmartRecruiters</strong></td>
+          <td>Public REST API</td>
+          <td>Max 100 items per query</td>
+          <td>None (Public Board)</td>
+        </tr>
+        <tr>
+          <td><strong>Workable</strong></td>
+          <td>v3 API / v1 Widget</td>
+          <td>Fallback chain</td>
+          <td>None (Public Board)</td>
+        </tr>
+        <tr>
+          <td><strong>Adzuna</strong></td>
+          <td>Official Search API</td>
+          <td>5 query batches per run</td>
+          <td>App ID &amp; App Key</td>
+        </tr>
+        <tr>
+          <td><strong>Remotive</strong></td>
+          <td>Remote Feed API</td>
+          <td>Capped at &le; 4 fetches per day</td>
+          <td>None (Public Feed)</td>
+        </tr>
+        <tr>
+          <td><strong>Email Alerts</strong></td>
+          <td>SSL IMAP (Port 993)</td>
+          <td>Whitelisted senders, Message-ID dedup</td>
+          <td>App Password (Mailbox A)</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

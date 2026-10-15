@@ -1,0 +1,62 @@
+version: 1
+greenhouse:
+- cloudflare
+- stripe
+- hashicorp
+- datadog
+- instacart
+- reddit
+- gitlab
+- automattic
+- elastic
+- affirm
+- gusto
+- pagerduty
+- confluent
+- mongodb
+- cockroachlabs
+- airbnb
+- pinterest
+- dropbox
+- groww
+- inmobi
+- druva
+- twilio
+- rubrik
+- samsara
+- databricks
+- okta
+lever:
+- palantir
+- spotify
+- lever
+- canonical
+- postman
+- docker
+- browserstack
+- cred
+- meesho
+ashby:
+- openai
+- retool
+- ramp
+- anthropic
+- notion
+- figma
+- linear
+- monzo
+- snowflake
+smartrecruiters:
+- BoschGroup
+- IKEA
+- Ubisoft
+- visa
+- swiggy
+- cars24
+- freshworks
+- grab
+workable:
+- transferwise
+- harness
+- testgorilla
+- farfetch

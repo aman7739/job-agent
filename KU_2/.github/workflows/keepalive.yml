@@ -1,0 +1,37 @@
+name: Render Web Service Keepalive
+
+"on":
+  schedule:
+    # Run every 10 minutes (Render spins down after 15 min of inactivity)
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+jobs:
+  keepalive:
+    name: Ping Render Health
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Health Endpoint
+        env:
+          RENDER_APP_URL: ${{ secrets.RENDER_APP_URL }}
+        run: |
+          if [ -z "$RENDER_APP_URL" ]; then
+            echo "[INFO] RENDER_APP_URL secret is not configured yet. Skipping keepalive ping."
+            echo "Configure RENDER_APP_URL in GitHub Secrets once your Render Web Service is created."
+            exit 0
+          fi
+          # Strip trailing slash if present
+          CLEAN_URL="${RENDER_APP_URL%/}"
+          if [[ "$CLEAN_URL" != */health ]]; then
+            TARGET_URL="${CLEAN_URL}/health"
+          else
+            TARGET_URL="$CLEAN_URL"
+          fi
+          echo "Pinging $TARGET_URL to keep container active..."
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 45 -A "JobDigestAgent-KeepAlive/1.0" "$TARGET_URL")
+          echo "HTTP Response Code: $HTTP_CODE"
+          if [ "$HTTP_CODE" -eq 200 ]; then
+            echo "[SUCCESS] Render instance is active and responded 200 OK."
+          else
+            echo "[WARNING] Response $HTTP_CODE from $TARGET_URL (instance may still be spinning up)."
+          fi

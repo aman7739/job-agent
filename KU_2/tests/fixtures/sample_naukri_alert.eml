@@ -1,0 +1,26 @@
+From: "Naukri Job Alerts" <alerts@naukri.com>
+To: candidate@example.com
+Subject: Matching Jobs for Fresher Software Engineer
+Message-ID: <naukri-alert-20261003-002@naukri.com>
+Date: Sat, 03 Oct 2026 08:05:00 +0000
+Content-Type: text/html; charset="UTF-8"
+
+<!DOCTYPE html>
+<html>
+<body>
+  <div class="naukri-job">
+    <a href="https://www.naukri.com/job-listings-react-frontend-intern-paytm-noida-0-to-1-years-031026001234">
+      React Frontend Intern (0-1 Yrs)
+    </a>
+    <div>Paytm - One97 Communications</div>
+    <div>Noida, Uttar Pradesh</div>
+  </div>
+  <div class="naukri-job">
+    <a href="https://www.naukri.com/job-listings-data-analyst-trainee-wipro-pune-0-to-2-years-031026005678">
+      Data Analyst Trainee
+    </a>
+    <div>Wipro Enterprises</div>
+    <div>Pune, Maharashtra</div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,888 @@
+"""FastAPI web dashboard for Job Digest Agent with single-user authentication and job history."""
+
+from __future__ import annotations
+
+import hmac
+import logging
+import os
+from datetime import datetime, timezone
+from pathlib import Path
+from contextlib import asynccontextmanager
+from typing import Any, Dict, List, Optional
+from fastapi import Depends, FastAPI, Form, HTTPException, Request, Response, status
+from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.templating import Jinja2Templates
+from sqlalchemy import text
+from sqlalchemy.orm import Session
+
+import yaml
+
+from job_digest.auth import (
+    check_rate_limit,
+    create_session_token,
+    get_configured_password_hash,
+    get_current_user_from_request,
+    record_failed_attempt,
+    require_auth,
+    reset_rate_limit,
+    verify_password,
+)
+from job_digest.db import get_database_url, get_db_session
+from job_digest.dedup import get_7day_source_metrics
+from job_digest.profile import load_profile
+from job_digest.profile_service import get_active_profile_from_db, save_profile_to_db
+from job_digest.status import (
+    add_manual_job,
+    get_job_status,
+    get_weekly_applied_count,
+    set_job_status,
+)
+
+logger = logging.getLogger(__name__)
+
+TEMPLATES_DIR = Path(__file__).resolve().parent / "templates"
+templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
+
+# Global reference to in-app scheduler
+app_scheduler = None
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Manage application startup and shutdown lifecycle, including precision in-app scheduler."""
+    global app_scheduler
+    enable_scheduler = os.getenv("ENABLE_IN_APP_SCHEDULER", "true").lower() in ("true", "1", "yes")
+
+    if enable_scheduler and not os.getenv("TESTING"):
+        try:
+            from apscheduler.schedulers.asyncio import AsyncIOScheduler
+            from apscheduler.triggers.cron import CronTrigger
+
+            app_scheduler = AsyncIOScheduler()
+            # 08:00 AM IST = 02:30 UTC, 07:00 PM IST = 13:30 UTC
+            trigger = CronTrigger(hour="2,13", minute="30", timezone="UTC")
+
+            async def scheduled_crawl():
+                logger.info("[Scheduler] Fired scheduled digest (08:00 AM / 07:00 PM IST)...")
+                try:
+                    from job_digest.run import run_digest_pipeline
+                    await run_digest_pipeline(dry_run=False)
+                except Exception as exc:
+                    logger.exception(f"[Scheduler] Error during scheduled digest run: {exc}")
+
+            app_scheduler.add_job(
+                scheduled_crawl,
+                trigger=trigger,
+                id="daily_digest_job",
+                name="Daily Job Digest (8 AM & 7 PM IST)",
+                replace_existing=True,
+                misfire_grace_time=3600,  # 1 hour grace window so restarts never drop a run
+            )
+            app_scheduler.start()
+            logger.info("[Scheduler] Live AsyncIOScheduler started inside Web Service (08:00 AM & 07:00 PM IST).")
+
+            # 14-Hour Startup Catch-Up Safety Net:
+            # If the web service was offline or restarting during a scheduled window,
+            # detect if > 14 hours elapsed since the last digest and catch up immediately.
+            async def startup_catchup():
+                try:
+                    await asyncio.sleep(15)  # Allow container and DB connection to settle
+                    session_ctx = get_db_session()
+                    last_sent = None
+                    with session_ctx as session:
+                        row = session.execute(text("SELECT sent_at FROM digests ORDER BY sent_at DESC LIMIT 1")).fetchone()
+                        if row and row[0]:
+                            last_sent = row[0]
+                    if last_sent:
+                        if getattr(last_sent, "tzinfo", None) is None:
+                            last_sent = last_sent.replace(tzinfo=timezone.utc)
+                        hours_ago = (datetime.now(timezone.utc) - last_sent).total_seconds() / 3600.0
+                        if hours_ago > 14.0:
+                            logger.info(f"[Scheduler] Last digest was {hours_ago:.1f}h ago (>14h). Triggering startup catch-up...")
+                            from job_digest.run import run_digest_pipeline
+                            await run_digest_pipeline(dry_run=False)
+                except Exception as exc:
+                    logger.debug(f"[Scheduler] Startup catch-up check skipped: {exc}")
+
+            asyncio.create_task(startup_catchup())
+        except Exception as e:
+            logger.warning(f"[Scheduler] Failed to initialize in-app scheduler: {e}")
+
+    yield
+
+    if app_scheduler and app_scheduler.running:
+        app_scheduler.shutdown(wait=False)
+        logger.info("[Scheduler] AsyncIOScheduler stopped.")
+
+
+app = FastAPI(
+    title="Job Digest Agent Dashboard",
+    description="Private Single-User Dashboard for daily job digest and application tracking",
+    docs_url=None,  # Disabled for privacy
+    redoc_url=None,
+    lifespan=lifespan,
+)
+
+TRIGGER_TOKEN = os.getenv("TRIGGER_TOKEN", os.getenv("SESSION_SECRET", "job-digest-secret-trigger-token"))
+
+
+@app.middleware("http")
+async def security_headers_middleware(request: Request, call_next):
+    """Attach enterprise security headers to every HTTP response."""
+    response = await call_next(request)
+    headers = response.headers
+    headers["X-Content-Type-Options"] = "nosniff"
+    headers["X-Frame-Options"] = "DENY"
+    headers["X-XSS-Protection"] = "1; mode=block"
+    headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+    headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    headers["Content-Security-Policy"] = (
+        "default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self';"
+    )
+    headers["X-Robots-Tag"] = "noindex, nofollow, noarchive, nosnippet"
+    return response
+
+
+def get_db():
+    """Dependency yielding a database session if configured."""
+    if not get_database_url():
+        yield None
+        return
+
+    session_ctx = get_db_session()
+    with session_ctx as session:
+        yield session
+
+
+def get_client_ip(request: Request) -> str:
+    """Extract client IP handling proxies."""
+    forwarded = request.headers.get("x-forwarded-for")
+    if forwarded:
+        return forwarded.split(",")[0].strip()
+    return request.client.host if request.client else "127.0.0.1"
+
+
+SERVER_START_TIME = datetime.now(timezone.utc)
+
+
+# ==============================================================================
+# Health Check Endpoint (For Cloud Monitoring & Uptime Keepalive)
+# ==============================================================================
+
+@app.get("/health")
+async def health_check(response: Response, session: Optional[Session] = Depends(get_db)):
+    """
+    Public health check endpoint for cloud uptime monitoring (Render, UptimeRobot).
+    Verifies server uptime and database ping without requiring authentication.
+    """
+    uptime_seconds = int((datetime.now(timezone.utc) - SERVER_START_TIME).total_seconds())
+    db_status = "unconfigured"
+    is_healthy = True
+    error_msg = None
+
+    if session:
+        try:
+            session.execute(text("SELECT 1"))
+            db_status = "connected"
+        except Exception as exc:
+            db_status = "error"
+            error_msg = str(exc)
+            is_healthy = False
+    elif get_database_url():
+        db_status = "disconnected"
+        is_healthy = False
+
+    payload = {
+        "status": "healthy" if is_healthy else "degraded",
+        "app": "job-digest-agent",
+        "version": "1.0.0",
+        "uptime_seconds": uptime_seconds,
+        "database": db_status,
+        "scheduler": "running" if (app_scheduler and app_scheduler.running) else "disabled",
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
+
+    if not is_healthy:
+        if error_msg:
+            payload["error"] = error_msg
+        response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+    else:
+        response.status_code = status.HTTP_200_OK
+
+    return payload
+
+
+@app.get("/robots.txt", response_class=Response)
+async def robots_txt():
+    """Search engine crawler disallow directive (Disallow: /)."""
+    content = "User-agent: *\nDisallow: /\n"
+    return Response(content=content, media_type="text/plain")
+
+
+@app.get("/manifest.json")
+async def manifest_json():
+    """PWA Web App Manifest for mobile install-to-home-screen."""
+    return {
+        "name": "Job Digest Agent",
+        "short_name": "Job Digest",
+        "description": "Personal AI Job Digest & Application Tracker",
+        "start_url": "/",
+        "display": "standalone",
+        "background_color": "#f8fafc",
+        "theme_color": "#2563eb",
+        "icons": [
+            {
+                "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚀</text></svg>",
+                "sizes": "192x192 512x512",
+                "type": "image/svg+xml"
+            }
+        ]
+    }
+
+
+@app.post("/api/trigger")
+async def api_trigger_workflow(
+    request: Request,
+    token: Optional[str] = None,
+):
+    """
+    Dedicated webhook trigger protected by secret token.
+    Allows external triggers (iOS Shortcuts, Android Automate, Cron-Job) to trigger a crawl.
+    """
+    header_token = request.headers.get("X-Trigger-Token") or request.headers.get("Authorization", "").replace("Bearer ", "").strip()
+    supplied = token or header_token
+
+    if not supplied or not hmac.compare_digest(supplied, TRIGGER_TOKEN):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or missing trigger token",
+        )
+
+    from job_digest.run import run_digest_pipeline
+    result = await run_digest_pipeline(dry_run=False)
+    return {
+        "status": "triggered",
+        "new_jobs": result.get("new_jobs", 0),
+        "total_in_digest": result.get("total_in_digest", 0),
+        "delivered_channels": result.get("delivered_channels", []),
+        "urgent_alerts_sent": result.get("urgent_alerts_sent", 0),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+# ==============================================================================
+# Authentication Routes
+# ==============================================================================
+
+@app.get("/login", response_class=HTMLResponse)
+async def login_page(request: Request, next: Optional[str] = None):
+    """Render single-user password login page."""
+    user = get_current_user_from_request(request)
+    if user:
+        return RedirectResponse(url="/", status_code=status.HTTP_302_FOUND)
+
+    return templates.TemplateResponse(
+        request=request,
+        name="web/login.html",
+        context={
+            "next_url": next or "/",
+            "error": None,
+            "is_authenticated": False,
+        },
+    )
+
+
+@app.post("/login", response_class=HTMLResponse)
+async def login_action(
+    request: Request,
+    password: str = Form(...),
+    next: Optional[str] = Form("/"),
+):
+    """Process login with Argon2 verification and rate limiting."""
+    client_ip = get_client_ip(request)
+
+    # 1. Check rate limit
+    if not check_rate_limit(client_ip):
+        logger.warning(f"Login rate limit exceeded for IP: {client_ip}")
+        return templates.TemplateResponse(
+            request=request,
+            name="web/login.html",
+            context={
+                "next_url": next,
+                "error": "Too many failed attempts. Please wait 5 minutes before trying again.",
+                "is_authenticated": False,
+            },
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+        )
+
+    # 2. Verify password against configured Argon2 hash
+    config_hash = get_configured_password_hash()
+    is_valid = verify_password(password, config_hash)
+
+    if not is_valid:
+        record_failed_attempt(client_ip)
+        logger.warning(f"Failed login attempt from IP: {client_ip}")
+        return templates.TemplateResponse(
+            request=request,
+            name="web/login.html",
+            context={
+                "next_url": next,
+                "error": "Invalid master password. Please try again.",
+                "is_authenticated": False,
+            },
+            status_code=status.HTTP_401_UNAUTHORIZED,
+        )
+
+    # 3. Success: reset rate limit & set session cookie
+    reset_rate_limit(client_ip)
+    token = create_session_token("admin")
+
+    is_https = request.url.scheme == "https" or request.headers.get("x-forwarded-proto") == "https"
+    redirect_url = next if next and next.startswith("/") else "/"
+    response = RedirectResponse(url=redirect_url, status_code=status.HTTP_303_SEE_OTHER)
+    response.set_cookie(
+        key="session_token",
+        value=token,
+        httponly=True,
+        samesite="lax",
+        secure=is_https,
+        max_age=604800,  # 7 days
+    )
+    logger.info(f"Successful login from IP: {client_ip}")
+    return response
+
+
+@app.post("/logout")
+@app.get("/logout")
+async def logout_action():
+    """Clear session cookie and redirect to login."""
+    response = RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
+    response.delete_cookie("session_token")
+    return response
+
+
+# ==============================================================================
+# Protected Pages: Today's Digest & Job History
+# ==============================================================================
+
+@app.get("/", response_class=HTMLResponse)
+async def today_digest_page(
+    request: Request,
+    notice: Optional[str] = None,
+    notice_type: Optional[str] = None,
+    user: str = Depends(require_auth),
+    session: Optional[Session] = Depends(get_db),
+):
+    """Render today's latest job digest."""
+    digest_row = None
+    if session:
+        try:
+            digest_row = session.execute(
+                text(
+                    """
+                    SELECT sent_at, total_jobs, internships_count, fulltime_count,
+                           channels_notified, failed_sources, content_html
+                    FROM digests
+                    ORDER BY sent_at DESC
+                    LIMIT 1
+                    """
+                )
+            ).fetchone()
+        except Exception as exc:
+            logger.warning(f"Error fetching latest digest from DB: {exc}")
+
+    if digest_row:
+        sent_at, total_jobs, intern_cnt, ft_cnt, channels, failed_srcs, html_content = digest_row
+        date_str = sent_at.strftime("%A, %d %B %Y") if hasattr(sent_at, "strftime") else str(sent_at)
+        failed_list = list(failed_srcs) if failed_srcs else []
+        is_empty = total_jobs == 0
+        digest_html_body = html_content or ""
+        new_count = total_jobs
+        seen_count = 0
+    else:
+        now = datetime.now(timezone.utc)
+        date_str = now.strftime("%A, %d %B %Y")
+        total_jobs = 0
+        intern_cnt = 0
+        ft_cnt = 0
+        failed_list = []
+        is_empty = True
+        digest_html_body = ""
+        new_count = 0
+        seen_count = 0
+
+    weekly_cnt = get_weekly_applied_count(session) if session else 0
+
+    return templates.TemplateResponse(
+        request=request,
+        name="web/digest_view.html",
+        context={
+            "active_page": "digest",
+            "is_authenticated": True,
+            "digest_date": date_str,
+            "total_jobs": total_jobs,
+            "new_count": new_count,
+            "seen_count": seen_count,
+            "internships_count": intern_cnt,
+            "fulltime_count": ft_cnt,
+            "failed_sources": failed_list,
+            "is_empty": is_empty,
+            "digest_html_body": digest_html_body,
+            "weekly_applied_count": weekly_cnt,
+            "notice": notice,
+            "notice_type": notice_type,
+        },
+    )
+
+
+@app.post("/jobs/run-now")
+async def trigger_run_now_route(
+    request: Request,
+    user: str = Depends(require_auth),
+):
+    """
+    On-demand crawler & notification trigger:
+    Immediately runs all 8 sources, scores new jobs, delivers digest & urgent alerts,
+    and returns to dashboard with fresh results.
+    """
+    from urllib.parse import quote
+    try:
+        from job_digest.run import run_digest_pipeline
+        result = await run_digest_pipeline(dry_run=False)
+        total = result.get("total_in_digest", 0)
+        new_jobs = result.get("new_jobs", 0)
+        channels = result.get("delivered_channels", [])
+        channels_str = ", ".join(channels) if channels else "database"
+        urgent_count = result.get("urgent_alerts_sent", 0)
+
+        msg = f"Check completed! Found {new_jobs} new roles ({total} total in digest). Delivered via {channels_str}."
+        if urgent_count > 0:
+            msg += f" Sent {urgent_count} urgent closing alerts (< 4h left)!"
+
+        return RedirectResponse(
+            url=f"/?notice={quote(msg)}&notice_type=success",
+            status_code=303,
+        )
+    except Exception as exc:
+        logger.exception("Error executing on-demand pipeline")
+        from urllib.parse import quote
+        return RedirectResponse(
+            url=f"/?notice={quote(f'Pipeline error: {exc}')}&notice_type=error",
+            status_code=303,
+        )
+
+
+@app.get("/history", response_class=HTMLResponse)
+async def job_history_page(
+    request: Request,
+    section: str = "all",
+    min_score: float = 0.0,
+    location: str = "",
+    source: str = "all",
+    status_filter: str = "all",
+    user: str = Depends(require_auth),
+    session: Optional[Session] = Depends(get_db),
+):
+    """
+    Render job history page with multi-criteria filtering:
+    section (internships vs fulltime), score, location, source, and status.
+    """
+    jobs_list: List[Dict[str, Any]] = []
+
+    if session:
+        try:
+            query = """
+                SELECT j.fingerprint, j.title, j.company, j.location, j.canonical_url,
+                       j.salary_lpa, j.stipend, j.is_intern, j.is_apprentice, j.score,
+                       j.source, j.posted_at, s.status, s.saved_at, s.applied_at
+                FROM seen_jobs s
+                JOIN jobs j ON s.fingerprint = j.fingerprint
+                WHERE 1=1
+            """
+            params: Dict[str, Any] = {}
+
+            if section == "internships":
+                query += " AND (j.is_intern = 1 OR j.is_apprentice = 1)"
+            elif section == "fulltime":
+                query += " AND (j.is_intern = 0 AND j.is_apprentice = 0)"
+
+            if min_score > 0.0:
+                query += " AND j.score >= :min_score"
+                params["min_score"] = min_score
+
+            if location.strip():
+                query += " AND LOWER(j.location) LIKE :loc"
+                params["loc"] = f"%{location.strip().lower()}%"
+
+            if source != "all":
+                query += " AND j.source = :source"
+                params["source"] = source
+
+            if status_filter != "all":
+                query += " AND s.status = :status"
+                params["status"] = status_filter
+
+            query += " ORDER BY j.score DESC, s.last_seen_at DESC LIMIT 100"
+
+            rows = session.execute(text(query), params).fetchall()
+            for r in rows:
+                jobs_list.append(
+                    {
+                        "fingerprint": r[0],
+                        "title": r[1],
+                        "company": r[2],
+                        "location": r[3],
+                        "canonical_url": r[4],
+                        "salary_lpa": float(r[5]) if r[5] is not None else None,
+                        "stipend": float(r[6]) if r[6] is not None else None,
+                        "is_intern": bool(r[7]),
+                        "is_apprentice": bool(r[8]),
+                        "score": float(r[9]) if r[9] is not None else None,
+                        "source": r[10],
+                        "posted_at": r[11],
+                        "status": r[12],
+                        "saved_at": r[13],
+                        "applied_at": r[14],
+                    }
+                )
+        except Exception as exc:
+            logger.warning(f"Error querying job history: {exc}")
+
+    weekly_cnt = get_weekly_applied_count(session) if session else 0
+
+    return templates.TemplateResponse(
+        request=request,
+        name="web/history.html",
+        context={
+            "active_page": "history",
+            "is_authenticated": True,
+            "jobs": jobs_list,
+            "weekly_applied_count": weekly_cnt,
+            "filters": {
+                "section": section,
+                "min_score": min_score,
+                "location": location,
+                "source": source,
+                "status": status_filter,
+            },
+        },
+    )
+
+
+# ==============================================================================
+# Job Status Actions
+# ==============================================================================
+
+@app.post("/jobs/{fingerprint}/status")
+async def update_job_status_route(
+    request: Request,
+    fingerprint: str,
+    status: str = Form(...),
+    notes: Optional[str] = Form(None),
+    user: str = Depends(require_auth),
+    session: Optional[Session] = Depends(get_db),
+):
+    """Update application status (saved, applied, not_interested, seen)."""
+    if session:
+        try:
+            set_job_status(session, fingerprint, status, notes=notes)
+        except Exception as exc:
+            logger.warning(f"Error updating status for {fingerprint}: {exc}")
+
+    referer = request.headers.get("referer")
+    redirect_target = referer if referer and "/login" not in referer else "/history"
+    return RedirectResponse(url=redirect_target, status_code=303)
+
+
+# ==============================================================================
+# Profile & Match Settings Editor
+# ==============================================================================
+
+@app.get("/settings", response_class=HTMLResponse)
+async def settings_page(
+    request: Request,
+    success: Optional[str] = None,
+    error: Optional[str] = None,
+    user: str = Depends(require_auth),
+    session: Optional[Session] = Depends(get_db),
+):
+    """Render profile settings editor."""
+    profile = load_profile(session=session)
+    active_version = 1
+    profile_yaml_str = ""
+
+    if session:
+        try:
+            row = session.execute(
+                text("SELECT version, profile_yaml FROM user_profiles WHERE is_active = TRUE ORDER BY version DESC LIMIT 1")
+            ).fetchone()
+            if row:
+                active_version = row[0]
+                profile_yaml_str = row[1]
+        except Exception as exc:
+            logger.warning(f"Error querying active profile version: {exc}")
+
+    if not profile_yaml_str:
+        profile_yaml_str = yaml.dump(profile.model_dump(mode="json"), sort_keys=False)
+
+    weekly_cnt = get_weekly_applied_count(session) if session else 0
+
+    return templates.TemplateResponse(
+        request=request,
+        name="web/settings.html",
+        context={
+            "active_page": "settings",
+            "is_authenticated": True,
+            "profile": profile,
+            "active_version": active_version,
+            "profile_yaml": profile_yaml_str,
+            "weekly_applied_count": weekly_cnt,
+            "success": success,
+            "error": error,
+        },
+    )
+
+
+@app.post("/settings", response_class=HTMLResponse)
+async def update_settings_route(
+    request: Request,
+    name: Optional[str] = Form(None),
+    email: Optional[str] = Form(None),
+    min_score: Optional[float] = Form(None),
+    strong_threshold: Optional[float] = Form(None),
+    company_blocklist: Optional[str] = Form(None),
+    exclude_title_words: Optional[str] = Form(None),
+    channels: Optional[List[str]] = Form(None),
+    raw_yaml: Optional[str] = Form(None),
+    user: str = Depends(require_auth),
+    session: Optional[Session] = Depends(get_db),
+):
+    """Save updated profile version to database."""
+    if not session:
+        raise HTTPException(status_code=500, detail="Database session not available.")
+
+    current_profile = load_profile(session=session)
+
+    try:
+        # Check if direct raw YAML was provided
+        if raw_yaml and raw_yaml.strip() and raw_yaml.strip() != "None" and "version:" in raw_yaml:
+            updated_profile, new_version = save_profile_to_db(session, raw_yaml.strip())
+        else:
+            prof_dict = current_profile.model_dump(mode="json")
+            if name:
+                prof_dict["user"]["name"] = name.strip()
+            if email:
+                prof_dict["user"]["email"] = email.strip()
+            if min_score is not None:
+                prof_dict["scoring"]["min_score"] = float(min_score)
+            if strong_threshold is not None:
+                prof_dict["scoring"]["strong_threshold"] = float(strong_threshold)
+            if company_blocklist is not None:
+                prof_dict["hard_filters"]["company_blocklist"] = [
+                    c.strip().lower() for c in company_blocklist.split(",") if c.strip()
+                ]
+            if exclude_title_words is not None:
+                prof_dict["hard_filters"]["exclude_title_words"] = [
+                    w.strip().lower() for w in exclude_title_words.split(",") if w.strip()
+                ]
+            if channels:
+                prof_dict["digest"]["channels"] = channels
+
+            new_yaml = yaml.dump(prof_dict, sort_keys=False)
+            updated_profile, new_version = save_profile_to_db(session, new_yaml)
+
+        return RedirectResponse(
+            url=f"/settings?success=Profile+version+{new_version}+saved+successfully.+Takes+effect+on+tomorrow%27s+run.",
+            status_code=status.HTTP_303_SEE_OTHER,
+        )
+    except Exception as exc:
+        logger.warning(f"Error saving profile settings: {exc}")
+        weekly_cnt = get_weekly_applied_count(session) if session else 0
+        return templates.TemplateResponse(
+            request=request,
+            name="web/settings.html",
+            context={
+                "active_page": "settings",
+                "is_authenticated": True,
+                "profile": current_profile,
+                "active_version": 1,
+                "profile_yaml": raw_yaml or "",
+                "weekly_applied_count": weekly_cnt,
+                "success": None,
+                "error": f"Failed to save settings: {exc}",
+            },
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+
+# ==============================================================================
+# Source Health Page
+# ==============================================================================
+
+@app.get("/sources", response_class=HTMLResponse)
+async def source_health_page(
+    request: Request,
+    user: str = Depends(require_auth),
+    session: Optional[Session] = Depends(get_db),
+):
+    """Render source health monitoring page across all 8 permitted source adapters."""
+    all_source_names = [
+        "greenhouse", "lever", "ashby", "smartrecruiters",
+        "workable", "adzuna", "jooble", "remotive", "arbeitnow", "email_alerts",
+    ]
+    sources_metrics: List[Dict[str, Any]] = []
+    latest_by_source: Dict[str, Any] = {}
+    seven_day_metrics: Dict[str, Dict[str, int]] = {}
+
+    if session:
+        try:
+            seven_day_metrics = get_7day_source_metrics(session)
+        except Exception as exc:
+            logger.warning(f"Error computing 7-day source metrics: {exc}")
+
+        try:
+            rows = session.execute(
+                text(
+                    """
+                    SELECT source_name, started_at, jobs_found, is_success, error_message
+                    FROM source_runs
+                    ORDER BY started_at DESC
+                    LIMIT 200
+                    """
+                )
+            ).fetchall()
+            for r in rows:
+                sname = r[0]
+                if sname not in latest_by_source:
+                    latest_by_source[sname] = {
+                        "started_at": r[1],
+                        "jobs_found": r[2],
+                        "is_success": bool(r[3]),
+                        "error_message": r[4],
+                    }
+        except Exception as exc:
+            logger.warning(f"Error querying source health: {exc}")
+
+        for sname in all_source_names:
+            data = latest_by_source.get(sname)
+            s7 = seven_day_metrics.get(sname, {
+                "total_sightings": 0,
+                "unique_jobs": 0,
+                "incremental_jobs": 0,
+                "saved_jobs": 0,
+                "applied_jobs": 0,
+            })
+            if data:
+                st = data["started_at"]
+                last_run = st.strftime("%d %b %Y %H:%M UTC") if hasattr(st, "strftime") else str(st)
+                sources_metrics.append({
+                    "name": sname,
+                    "last_run": last_run,
+                    "jobs_found": data["jobs_found"],
+                    "is_success": data["is_success"],
+                    "error_message": data["error_message"],
+                    "metrics_7d": s7,
+                })
+            else:
+                sources_metrics.append({
+                    "name": sname,
+                    "last_run": None,
+                    "jobs_found": 0,
+                    "is_success": False,
+                    "error_message": "No run recorded yet",
+                    "metrics_7d": s7,
+                })
+    else:
+        for sname in all_source_names:
+            sources_metrics.append({
+                "name": sname,
+                "last_run": "Offline",
+                "jobs_found": 0,
+                "is_success": True,
+                "error_message": None,
+                "metrics_7d": {
+                    "total_sightings": 0,
+                    "unique_jobs": 0,
+                    "incremental_jobs": 0,
+                    "saved_jobs": 0,
+                    "applied_jobs": 0,
+                },
+            })
+
+    weekly_cnt = get_weekly_applied_count(session) if session else 0
+
+    return templates.TemplateResponse(
+        request=request,
+        name="web/sources.html",
+        context={
+            "active_page": "sources",
+            "is_authenticated": True,
+            "sources": sources_metrics,
+            "weekly_applied_count": weekly_cnt,
+        },
+    )
+
+
+# ==============================================================================
+# Manual Add Job Form
+# ==============================================================================
+
+@app.get("/jobs/add", response_class=HTMLResponse)
+async def add_job_page(
+    request: Request,
+    error: Optional[str] = None,
+    user: str = Depends(require_auth),
+    session: Optional[Session] = Depends(get_db),
+):
+    """Render manual add-a-job form."""
+    weekly_cnt = get_weekly_applied_count(session) if session else 0
+    return templates.TemplateResponse(
+        request=request,
+        name="web/add_job.html",
+        context={
+            "active_page": "add_job",
+            "is_authenticated": True,
+            "weekly_applied_count": weekly_cnt,
+            "error": error,
+        },
+    )
+
+
+@app.post("/jobs/add")
+async def add_job_action(
+    request: Request,
+    title: str = Form(...),
+    company: str = Form(...),
+    location: str = Form(...),
+    canonical_url: str = Form(...),
+    description_text: str = Form(""),
+    salary_lpa: Optional[float] = Form(None),
+    stipend: Optional[float] = Form(None),
+    is_intern: Optional[bool] = Form(False),
+    user: str = Depends(require_auth),
+    session: Optional[Session] = Depends(get_db),
+):
+    """Manually add an opportunity and score against active profile."""
+    if not session:
+        raise HTTPException(status_code=500, detail="Database session not available.")
+
+    profile = load_profile(session=session)
+    try:
+        add_manual_job(
+            session=session,
+            profile=profile,
+            title=title,
+            company=company,
+            location=location,
+            canonical_url=canonical_url,
+            description_text=description_text,
+            salary_lpa=salary_lpa,
+            stipend=stipend,
+            is_intern=bool(is_intern),
+        )
+        return RedirectResponse(url="/history?status=saved", status_code=status.HTTP_303_SEE_OTHER)
+    except Exception as exc:
+        logger.warning(f"Error adding manual job: {exc}")
+        return RedirectResponse(url=f"/jobs/add?error={exc}", status_code=status.HTTP_303_SEE_OTHER)
+

@@ -1,0 +1,14 @@
+From: "Marketing Spam" <promo@unauthorized-promotions.com>
+To: candidate@example.com
+Subject: You won a free lottery coupon!
+Message-ID: <spam-message-20261003-999@spam.com>
+Date: Sat, 03 Oct 2026 09:00:00 +0000
+Content-Type: text/html; charset="UTF-8"
+
+<!DOCTYPE html>
+<html>
+<body>
+  <h1>Click here to claim your prize!</h1>
+  <a href="https://malicious-spam-link.example.com">Claim Prize</a>
+</body>
+</html>

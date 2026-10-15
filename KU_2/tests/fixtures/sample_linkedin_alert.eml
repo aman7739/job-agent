@@ -1,0 +1,24 @@
+From: "LinkedIn Job Alerts" <jobalerts-noreply@linkedin.com>
+To: candidate@example.com
+Subject: 5 new jobs for 'Junior Python Developer'
+Message-ID: <linkedin-alert-20261003-001@email.linkedin.com>
+Date: Sat, 03 Oct 2026 08:00:00 +0000
+Content-Type: text/html; charset="UTF-8"
+
+<!DOCTYPE html>
+<html>
+<body>
+  <h2>New jobs matching your search:</h2>
+  <div class="job-card">
+    <a href="https://www.linkedin.com/jobs/view/4123456789?refId=xyz" class="job-title">Junior Python Developer</a>
+    <p class="company">Zomato</p>
+    <p class="location">Gurugram, Haryana, India</p>
+  </div>
+  <hr/>
+  <div class="job-card">
+    <a href="https://www.linkedin.com/jobs/view/4123456790?refId=abc" class="job-title">Associate Software Engineer - ML</a>
+    <p class="company">Swiggy</p>
+    <p class="location">Bengaluru, Karnataka, India</p>
+  </div>
+</body>
+</html>
