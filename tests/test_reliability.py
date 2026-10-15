@@ -1,4 +1,4 @@
-"""Session 12 tests: End-to-end reliability, mocked-network pipeline, error isolation, rate limits, and tuning."""
+"""Unit and integration tests: End-to-end reliability, mocked-network pipeline, error isolation, rate limits, and tuning."""
 
 import asyncio
 from datetime import datetime, timedelta, timezone
@@ -69,7 +69,7 @@ class MockChannelNotifier(Notifier):
 @pytest.mark.asyncio
 async def test_end_to_end_mocked_network_all_sources_pipeline():
     """
-    Session 12 Check:
+    Requirement check:
     End-to-end pipeline with mocked-network responses for every source adapter.
     Verifies full flow: Fetch -> Normalize -> Dedup -> Match -> Digest -> Notify.
     """
@@ -234,7 +234,7 @@ async def test_end_to_end_mocked_network_all_sources_pipeline():
 @pytest.mark.asyncio
 async def test_zero_results_graceful_handling():
     """
-    Session 12 Check:
+    Requirement check:
     Pipeline handles a day with zero new jobs gracefully:
     - Renders empty state message.
     - Notifiers receive the zero-jobs digest.
@@ -269,7 +269,7 @@ async def test_zero_results_graceful_handling():
 @pytest.mark.asyncio
 async def test_failed_source_named_in_digest_header():
     """
-    Session 12 Check:
+    Requirement check:
     When a source encounters a network failure or 500 error:
     - Other sources succeed and are processed.
     - The failed source is explicitly named in the digest header.
@@ -315,7 +315,7 @@ async def test_failed_source_named_in_digest_header():
 @pytest.mark.asyncio
 async def test_rate_limits_handling_across_sources():
     """
-    Session 12 Check:
+    Requirement check:
     Verify rate limits across sources are handled gracefully:
     - Remotive enforce_rate_limit blocks extra requests beyond limit without crashing.
     - 429 Too Many Requests response is caught and handled safely.
@@ -338,7 +338,7 @@ async def test_rate_limits_handling_across_sources():
 @pytest.mark.asyncio
 async def test_failed_delivery_channel_isolation():
     """
-    Session 12 Check:
+    Requirement check:
     If one channel fails (e.g. Telegram token invalid / API 500),
     the other channel (Email) still delivers successfully.
     """
@@ -373,7 +373,7 @@ async def test_failed_delivery_channel_isolation():
 
 def test_tuning_weights_and_thresholds():
     """
-    Session 12 Check:
+    Requirement check:
     Verify score weights and filtering thresholds:
     - Min score 4.0 threshold.
     - Weights: Skills (4.0), Role (3.0), Level (2.0), Location (1.0).
@@ -417,7 +417,7 @@ def test_tuning_weights_and_thresholds():
 
 def test_tuning_blocklist_and_batch_exclusions():
     """
-    Session 12 Check:
+    Requirement check:
     Verify tuned blocklist and hard filtering rules:
     - Blocklisted company is dropped.
     - Non-2027 batch requirement is dropped.
@@ -454,7 +454,7 @@ def test_tuning_blocklist_and_batch_exclusions():
 
 def test_database_notified_marking_and_exclusion():
     """
-    Session 12 Check:
+    Requirement check:
     Verify database operations mark notified jobs and exclude them on subsequent runs.
     """
     mock_session = MagicMock()
@@ -495,7 +495,7 @@ def test_database_notified_marking_and_exclusion():
 @pytest.mark.asyncio
 async def test_deliver_digest_all_channels_fail_does_not_mark_notified():
     """
-    Session 12 Check:
+    Requirement check:
     When ALL channels fail, jobs are NOT marked notified in DB,
     ensuring they will be retried in tomorrow's digest.
     """

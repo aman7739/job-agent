@@ -1,4 +1,4 @@
-"""Unit tests for Stage 4 job_sightings table and 7-day source attribution metrics."""
+"""Unit tests for job_sightings table and 7-day source attribution metrics."""
 
 from datetime import datetime, timedelta, timezone
 import pytest

@@ -1,4 +1,4 @@
-"""Tests for Session 16: Deployment configurations and health check endpoint."""
+"""Tests for Deployment configurations and health check endpoint."""
 
 from pathlib import Path
 from unittest.mock import MagicMock

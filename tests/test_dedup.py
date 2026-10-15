@@ -48,7 +48,7 @@ def test_freshness_filter_logic():
 
 def test_same_job_from_two_sources_counts_once():
     """
-    Session 7 Check verification:
+    Requirement verification:
     The same job arriving from two sources counts once.
     """
     now = datetime(2026, 10, 3, 12, 0, 0, tzinfo=timezone.utc)

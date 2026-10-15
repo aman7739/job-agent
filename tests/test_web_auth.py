@@ -1,4 +1,4 @@
-"""Unit and integration tests for Session 14: Single-user authentication, secure cookies, rate limiting, and web dashboard."""
+"""Unit and integration tests for Single-user authentication, secure cookies, rate limiting, and web dashboard."""
 
 import os
 from datetime import datetime, timezone
@@ -163,7 +163,7 @@ def test_session_token_signing_and_expiry():
 
 def test_wrong_password_is_rejected(client_with_db):
     """
-    Session 14 Check:
+    Requirement check:
     A wrong password is rejected with HTTP 401.
     """
     response = client_with_db.post(
@@ -177,7 +177,7 @@ def test_wrong_password_is_rejected(client_with_db):
 
 def test_login_rate_limiting_blocks_attacker(client_with_db):
     """
-    Session 14 Check:
+    Requirement check:
     Login rate limit blocks repeated failed attempts (HTTP 429).
     """
     # 5 failed attempts
@@ -193,7 +193,7 @@ def test_login_rate_limiting_blocks_attacker(client_with_db):
 
 def test_every_page_needs_a_session(client_with_db):
     """
-    Session 14 Check:
+    Requirement check:
     Every page needs a session. Unauthenticated requests are redirected to /login.
     """
     # 1. Unauthenticated root -> redirects to /login?next=/

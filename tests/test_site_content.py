@@ -1,4 +1,4 @@
-"""Session 19 Tests: Real Content, Structured Data (JSON-LD), and Visual Asset Compliance.
+"""Unit and integration tests: Real Content, Structured Data (JSON-LD), and Visual Asset Compliance.
 
 Asserts:
 1. Valid Schema.org JSON-LD structured data on all pages (SoftwareApplication, WebSite, BreadcrumbList).

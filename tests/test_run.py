@@ -41,7 +41,7 @@ def test_instantiate_notifiers():
 @pytest.mark.asyncio
 async def test_run_digest_pipeline_dry_run_offline():
     """
-    Session 11 Check:
+    Requirement check:
     Verify manual run executes the complete pipeline and generates a digest.
     """
     # Run with empty source list to test full pipeline flow without network calls

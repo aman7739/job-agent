@@ -1,4 +1,4 @@
-"""Unit and integration tests for Session 13: Database-backed profile, versioning, fallback recovery, and job status tracking."""
+"""Unit and integration tests for Database-backed profile, versioning, fallback recovery, and job status tracking."""
 
 import os
 from datetime import datetime, timezone
@@ -89,7 +89,7 @@ def db_session():
 
 def test_save_valid_profile_and_history(db_session: Session):
     """
-    Session 13 Check:
+    Requirement check:
     Moving profile into database: validated on save, version incremented, history stored.
     """
     # 1. Save initial version 1
@@ -121,7 +121,7 @@ def test_save_valid_profile_and_history(db_session: Session):
 
 def test_invalid_profile_edit_rejected_without_overwriting(db_session: Session):
     """
-    Session 13 Check:
+    Requirement check:
     An invalid edit fails loudly and does not corrupt or overwrite the active profile.
     """
     # 1. Save valid profile version 1
@@ -149,7 +149,7 @@ def test_invalid_profile_edit_rejected_without_overwriting(db_session: Session):
 
 def test_profile_edit_changes_next_run(db_session: Session):
     """
-    Session 13 Check:
+    Requirement check:
     A profile edit changes the next run.
     """
     # Initial run loads default version 1
@@ -168,7 +168,7 @@ def test_profile_edit_changes_next_run(db_session: Session):
 
 def test_corrupted_active_profile_falls_back_to_last_good_version_and_says_so(db_session: Session):
     """
-    Session 13 Check:
+    Requirement check:
     An invalid edit / corrupted active version falls back to the last good version and says so.
     """
     # Save valid version 1
@@ -200,7 +200,7 @@ def test_corrupted_active_profile_falls_back_to_last_good_version_and_says_so(db
 
 def test_job_status_transitions_and_timestamps(db_session: Session):
     """
-    Session 13 Check:
+    Requirement check:
     Add job_status (saved, applied, not_interested, with timestamps and notes).
     """
     now = datetime(2026, 10, 3, 15, 30, 0, tzinfo=timezone.utc)

@@ -2,14 +2,11 @@
 
 [![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/downloads/)
 [![Tests Passing](https://img.shields.io/badge/tests-194%20passing-success.svg)](https://pytest.org/)
-[![Status](https://img.shields.io/badge/status-production--v1.0.0-emerald.svg)]()
-[![Compliance](https://img.shields.io/badge/compliance-zero--scraping%20charter-blue.svg)]()
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-An autonomous, fault-isolated job intelligence system designed for a final-year B.Tech CSE (Batch 2027) graduate. The agent actively discovers and tracks opportunities across two parallel priority tracks:
-1. **Internships & Apprenticeships:** 3 to 6-month engineering internships with stipends.
-2. **Full-Time Fresher Roles:** Graduate Engineer Trainee (GET), Associate Software Engineer, and Junior Backend roles requiring 0 to 1 years experience.
+An autonomous job discovery and delivery pipeline built with Python 3.12, FastAPI, and PostgreSQL. It tracks both **Internships** and **Full-Time** fresher software engineering opportunities for Batch 2027 graduates.
 
-The pipeline monitors 10 permitted ATS, search, and job board feeds twice daily (08:00 AM & 07:00 PM IST), cleans and deduplicates listings, evaluates opportunities using a deterministic 10-point scoring algorithm, delivers digests via Telegram and SMTP Email, and dispatches immediate high-priority alerts for urgent roles closing in $\le 4$ hours.
+The pipeline monitors **10 Permitted Sources** twice daily (**08:00 AM** & **07:00 PM** IST), cleans and deduplicates postings, scores matches against candidate preferences, and dispatches formatted digests via Telegram and Email.
 
 ---
 
@@ -17,194 +14,126 @@ The pipeline monitors 10 permitted ATS, search, and job board feeds twice daily 
 
 ```
 [10 Permitted Sources]
- ├── Greenhouse API (slug pacing)
- ├── Lever API (slug pacing)
- ├── Ashby API (isListed=True)
- ├── SmartRecruiters API (public REST)
- ├── Workable (v3 API / v1 Widget fallback)
- ├── Adzuna Search API (targeted fresher queries)
- ├── Jooble REST API (India fresher queries)
- ├── Remotive API (remote feed <= 4/day)
- ├── Arbeitnow API (remote developer jobs)
- └── IMAP Email Alerts (Mailbox A, SSL Port 993)
+ ├── ATS APIs: Greenhouse, Lever, Ashby, SmartRecruiters, Workable
+ ├── Search & Aggregator APIs: Adzuna, Jooble, Remotive, Arbeitnow
+ └── Email Alerts: IMAP header-first parser (Mailbox A)
         │
         ▼
-[Fault-Isolated Runner] ──> Logs metrics to `source_runs` table
+[Fault-Isolated Runner] ──> Logs execution health to `source_runs`
         │
         ▼
-[Normalization Engine]
- ├── HTML tag stripping & whitespace sanitization
- ├── Location canonicalization (Gurgaon -> Gurugram, Calcutta -> Kolkata)
- ├── URL tracker removal (strips UTMs, ref tokens)
- ├── Anti-Trap regex extractors: 'C', 'Go', 'REST API'
- └── Salary/Stipend parser (LPA range, monthly INR stipend)
+[Normalization & Deduplication] ──> Deterministic SHA-256 fingerprinting
         │
         ▼
-[Deduplication & Freshness Cutoff]
- ├── Corporate suffix normalization (Inc., Pvt. Ltd., Corp)
- ├── Deterministic SHA-256 fingerprint: sha256(company | title | location)
- └── 48-Hour Freshness Window: Discards stale listings (> 48h old)
+[10-Point Scoring Algorithm] ──> Strong Match (≥7.0) & Maybe Match (4.0–6.9)
         │
         ▼
-[10-Point Scoring Algorithm]
- ├── Hard Filters: Drop Senior, Staff, Lead; drop > 2 yrs exp; match 2027 batch
- ├── Skills Overlap (4.0 pts): Python, FastAPI, PostgreSQL, React, Linux, Docker
- ├── Role Match (3.0 pts): Backend, Software Engineer, Full Stack
- ├── Level Match (2.0 pts): Internships / 0-year Fresher roles
- └── Location Match (1.0 pt): Delhi NCR, Bengaluru, Mumbai, Pune, Kolkata, Remote
+[Dual-Channel Delivery]
+ ├── Telegram Bot (4,096 char safe chunking)
+ └── SMTP Email (STARTTLS, isolated Mailbox B)
         │
         ▼
-[Dual-Channel Delivery & Fast-Track Urgency]
- ├── Twice-Daily Cadence: 08:00 AM & 07:00 PM IST
- ├── Urgent Alerts (<= 4h left): Instant dispatch via Telegram & Email
- ├── Telegram Bot: 4,096 char safe chunking (preserves Markdown links)
- └── SMTP Email: STARTTLS Port 587 (isolated Mailbox B)
-        │
-        ▼
-[Private Web Dashboard & Public Showcase]
- ├── Private Dashboard: FastAPI + Argon2id + PWA + 'Run & Notify Now' button
- └── Public Showcase: Static Jinja2 + Schema.org JSON-LD + GitHub Pages
+[FastAPI Web Dashboard & In-App APScheduler]
 ```
 
 ---
 
-## 10 Permitted Sources & Anti-Scraping Charter
+## Key Features
 
-The project maintains an ethical compliance boundary:
-- **Zero Headless Automation:** No Selenium, Playwright, or Puppeteer DOM scraping.
-- **No Direct Platform Scraping:** LinkedIn, Naukri, and Indeed are never directly crawled.
-- **Dual-Mailbox Separation:**
-  - **Mailbox A (Alerts Inbox):** Receives official forwarded email alerts from job platforms; read via SSL IMAP (Port 993) using an App Password.
-  - **Mailbox B (Notifications Inbox):** Receives the final daily digests via SMTP (Port 587 STARTTLS) to prevent circular loops.
-- **Rate-Limited Official APIs:** Sequential pacing across public ATS endpoints (Greenhouse, Lever, Ashby, SmartRecruiters, Workable), official search/aggregator APIs (Adzuna, Jooble, Remotive, Arbeitnow), and inbound email alerts.
-
----
-
-## 10-Point Scoring Algorithm
-
-Postings surviving the hard filters (excluding Senior/Lead roles, experience $> 2$ years, or incompatible batches) are scored deterministically:
-
-| Component | Max Points | Evaluation Logic |
-|---|---|---|
-| **Skills Overlap** | **4.0 pts** | Matches candidate stack (Python, FastAPI, SQL, React, Linux, Docker). 4+ matches = 4.0; 3 matches = 3.0; 2 matches = 2.0; 1 match = 1.0. |
-| **Role Match** | **3.0 pts** | Title match for Software Engineer, Backend Engineer, Systems Engineer, or Full Stack. |
-| **Experience Level** | **2.0 pts** | 2.0 pts for Internships, Apprenticeships, GET, or 0-year Fresher roles. |
-| **Preferred Location** | **1.0 pt** | Delhi NCR, Bengaluru, Mumbai, Pune, Kolkata, Indore, or Remote. |
-
-The candidate sets a minimum score threshold (default: $\ge 7.0 / 10$) to receive notifications.
+- **10 Permitted Sources:** Ingests jobs via ATS APIs (Greenhouse, Lever, Ashby, SmartRecruiters, Workable), search APIs (Adzuna, Jooble, Remotive, Arbeitnow), and inbound email alerts.
+- **Zero Web Scraping:** Strictly complies with platform terms—no Selenium, Playwright, or DOM scraping of LinkedIn/Naukri.
+- **Deduplication:** Computes deterministic SHA-256 fingerprints across normalized company, title, and URL fields.
+- **10-Point Scoring Algorithm:** Evaluates opportunities against roles, skills, experience level, and preferred locations with hard knockout guards for senior roles.
+- **Urgent Deadline Detection:** Dispatches instant alerts for opportunities expiring in $\le 4$ hours.
+- **Private Web Dashboard:** Authenticated FastAPI interface with Argon2id password hashing, weekly application counters, dynamic profile editor, and manual job entry.
 
 ---
 
-## Delivery Cadence & Urgent Expiring Alerts
+## Quickstart
 
-- **Twice-Daily Automated Delivery:** Scheduled at **08:00 AM IST** (morning review) and **07:00 PM IST** (evening review) via GitHub Actions cron and local APScheduler.
-- **Immediate Urgent Alerts:** When an eligible posting has a deadline closing in $\le 4$ hours, the agent bypasses the daily batch schedule and sends an instant high-priority notification to Telegram and Email.
-- **On-Demand Web Button:** The private dashboard provides a **⚡ Check & Notify Now** button (`POST /jobs/run-now`) allowing manual ad-hoc scans on demand.
+### 1. Installation
 
----
-
-## Local Development & Setup
-
-### 1. Prerequisites
-- Python 3.12+
-- PostgreSQL or Neon Serverless account
-- Git
-
-### 2. Environment Installation
 ```bash
 # Clone the repository
 git clone https://github.com/aman7739/job-agent.git
 cd job-agent
 
-# Create virtual environment
-py -3.12 -m venv .venv
-
-# Activate virtual environment
-# Windows PowerShell:
+# Create and activate virtual environment
+python -m venv .venv
+# Windows:
 .\.venv\Scripts\Activate.ps1
-# Linux / macOS:
+# Linux/macOS:
 source .venv/bin/activate
 
 # Install dependencies
 pip install -r requirements.txt
 ```
 
-### 3. Environment Variables Configuration
-Copy `.env.example` to `.env` and configure your credentials:
+### 2. Configuration
+
+Copy `.env.example` to `.env` and fill in your credentials:
 
 ```bash
 cp .env.example .env
 ```
 
-| Variable | Description |
-|---|---|
-| `DATABASE_URL` | Neon Serverless / PostgreSQL connection string with `sslmode=require`. |
-| `TELEGRAM_BOT_TOKEN` | Telegram Bot token from @BotFather. |
-| `TELEGRAM_CHAT_ID` | Telegram chat ID for delivery alerts. |
-| `SMTP_HOST` | Outgoing SMTP host (e.g. `smtp.gmail.com`). |
-| `SMTP_PORT` | SMTP port (587 STARTTLS). |
-| `SMTP_USER` | Sending mailbox username (Mailbox B). |
-| `SMTP_PASSWORD` | App Password for Mailbox B. |
-| `NOTIFICATION_EMAIL` | Destination email address receiving the digests. |
-| `IMAP_HOST` | Incoming IMAP server for alert forwarding (Mailbox A). |
-| `IMAP_PORT` | IMAP SSL port (993). |
-| `IMAP_USER` | Alerts mailbox username (Mailbox A). |
-| `IMAP_PASSWORD` | App Password for Mailbox A. |
-| `ADZUNA_APP_ID` | Adzuna API application ID. |
-| `ADZUNA_APP_KEY` | Adzuna API application key. |
-| `DASHBOARD_PASSWORD_HASH` | Argon2id password hash for single-user dashboard login. |
-| `SESSION_SECRET` | 32-byte secret for signing cryptographic session cookies. |
-| `WEBHOOK_TOKEN` | Secret token protecting the `POST /api/trigger` endpoint. |
-| `PORT` | Local web port (default: 8000). |
+Key environment variables:
+- `DATABASE_URL`: PostgreSQL connection string (Neon Serverless with `sslmode=require`).
+- `TELEGRAM_BOT_TOKEN` & `TELEGRAM_CHAT_ID`: Telegram bot credentials for delivery alerts.
+- `SMTP_*`: Outgoing credentials for digest delivery (Mailbox B).
+- `IMAP_*`: Incoming credentials for email alert ingestion (Mailbox A).
+- `ADZUNA_*`: Optional Adzuna API credentials.
+- `DASHBOARD_PASSWORD_HASH`: Argon2id password hash for dashboard login.
+- `SESSION_SECRET`: 32-byte secret for signed session cookies.
 
-To generate an Argon2 password hash:
+### 3. Running the Application
+
 ```bash
-python -c "from argon2 import PasswordHasher; print(PasswordHasher().hash('your_password'))"
+# Run the ingestion and scoring pipeline manually
+python -m job_digest.run
+
+# Start the web dashboard and in-app scheduler
+uvicorn job_digest.web:app --host 0.0.0.0 --port 8000 --reload
+
+# Build the public showcase site
+python site/build.py
 ```
 
 ### 4. Running Tests
-Run the complete test suite across all sessions:
+
 ```bash
 pytest -v
 ```
 
-### 5. Running the Pipeline Manually
-```bash
-python -m job_digest.main
-```
+---
 
-### 6. Starting the Web Dashboard
-```bash
-uvicorn job_digest.web:app --host 0.0.0.0 --port 8000 --reload
-```
-Navigate to `http://localhost:8000/login` in your browser.
+## Cloud Deployment
 
-### 7. Building the Static Showcase Site
-```bash
-python site/build.py
-```
-Compiled HTML, CSS, visual assets, `sitemap.xml`, `robots.txt`, and `llms.txt` will be written into `dist/`.
+- **Web Dashboard & Scheduler:** Hosted on Render using container deployment (`Dockerfile`), with in-app APScheduler triggering digests at 08:00 AM & 07:00 PM IST. A 10-minute keepalive heartbeat prevents sleep mode.
+- **Database:** Neon Serverless PostgreSQL with connection pooling.
+- **Backup Runner:** GitHub Actions workflow (`.github/workflows/daily-digest.yml`) retained as secondary fallback.
+- **Public Showcase:** Hosted on GitHub Pages via `.github/workflows/pages.yml`.
 
 ---
 
-## Cloud Deployment Architecture
+## Operational Limitations & Security
 
-- **Autonomous Crawler:** In-app APScheduler on Render triggers twice daily (08:00 AM & 07:00 PM IST) with misfire grace protection and startup catch-up, writing directly to Neon Serverless PostgreSQL. A backup GitHub Actions workflow (`.github/workflows/daily-digest.yml`) is also maintained.
-- **Private Web Dashboard:** Deployed as a secure container (`Dockerfile`, non-root `appuser`) on a free host (Render Blueprint: `render.yaml`). A 10-minute external ping (keepalive workflow) to `GET /health` prevents sleep mode.
-- **Public Showcase Site:** Compiled and deployed to GitHub Pages via `.github/workflows/pages.yml` on push to `main`. Custom domain DNS setup is documented in `docs/domain_setup.md`.
+1. **Single-User Scope:** Designed strictly for personal career tracking; no public registration or multi-tenant complexity.
+2. **Data Privacy:** Public showcase site is completely decoupled and never exposes candidate notes, profiles, or job application data.
+3. **Manual Submissions:** The agent identifies and scores opportunities; applications are submitted manually by the candidate.
+4. **Rate Limits:** Respects third-party API rate limits with backoff and sequential pacing.
 
 ---
 
-## Operational Limitations & Security Boundaries
+## Documentation
 
-1. **Strictly Single-User:** Built exclusively for one candidate. No multi-tenant accounts or public user registrations exist.
-2. **Air-Gap Privacy:** The public showcase site never exposes candidate profiles, application statuses, personal notes, or internal digest records.
-3. **Manual Submissions:** The agent curates and scores opportunities; the user always clicks the direct link to review and submit applications themselves on employer sites.
-4. **Third-Party Rate Limits:** Free-tier ATS and search feeds operate under modest rate limits; sequential delays and caching safeguards prevent aggressive polling.
-5. **Database Connection Pool:** Serverless tasks use `NullPool` to prevent hanging connection exhaustion.
+- **[Architecture Decision Records](docs/decisions.md):** Core architecture decisions (ADR 001 to ADR 010).
+- **[Operational Runbook](docs/runbook.md):** Daily routine, troubleshooting, and manual triggers.
+- **[Deployment Guide](docs/deployment.md):** Cloud deployment on Render, Neon, and GitHub Pages.
+- **[Backup & Recovery](docs/backup_plan.md):** Snapshot and recovery procedures.
 
 ---
 
 ## License
 
-This project is licensed under the MIT License for educational and personal career discovery use.
+This project is licensed under the MIT License.

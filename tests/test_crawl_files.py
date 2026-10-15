@@ -1,4 +1,4 @@
-"""Session 20 Tests: Crawl Files (sitemap.xml, robots.txt, llms.txt), 404 Routing, and GitHub Pages Deployment.
+"""Unit and integration tests: Crawl Files (sitemap.xml, robots.txt, llms.txt), 404 Routing, and GitHub Pages Deployment.
 
 Asserts:
 1. Valid sitemap.xml adhering to Sitemaps 0.9 protocol listing all indexable pages and excluding 404.
@@ -140,9 +140,9 @@ def test_github_pages_workflow_and_domain_docs():
     assert permissions.get("pages") == "write"
     assert permissions.get("id-token") == "write"
 
-    # Verify domain documentation
-    domain_doc = PROJECT_ROOT / "docs" / "domain_setup.md"
-    assert domain_doc.exists(), "docs/domain_setup.md is missing"
+    # Verify deployment documentation contains domain notes
+    domain_doc = PROJECT_ROOT / "docs" / "deployment.md"
+    assert domain_doc.exists(), "docs/deployment.md is missing"
     doc_text = domain_doc.read_text(encoding="utf-8")
     assert "185.199.108.153" in doc_text
     assert "Enforce HTTPS" in doc_text

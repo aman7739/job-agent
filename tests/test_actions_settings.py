@@ -1,4 +1,4 @@
-"""Unit and integration tests for Session 15: Actions, status updates, settings editor, source health, and manual job entry."""
+"""Unit and integration tests for Actions, status updates, settings editor, source health, and manual job entry."""
 
 import os
 from datetime import datetime, timedelta, timezone
@@ -163,7 +163,7 @@ def client_and_session(monkeypatch):
 
 def test_update_job_status_actions(client_and_session):
     """
-    Session 15 Check:
+    Requirement check:
     Buttons for saved, applied and not interested; status transitions and timestamps.
     """
     client, session = client_and_session
@@ -253,7 +253,7 @@ def test_settings_page_view(client_and_session):
 
 def test_blocklist_edit_changes_tomorrows_digest(client_and_session):
     """
-    Session 15 Check:
+    Requirement check:
     A blocklist edit made from your phone changes tomorrow's digest.
     - User edits company_blocklist in web settings to block 'Revature' and 'BadCompany'.
     - Profile is updated in DB as new version.

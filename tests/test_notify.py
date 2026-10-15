@@ -93,7 +93,7 @@ class MockChannel:
 @pytest.mark.asyncio
 async def test_digest_arrives_on_both_channels():
     """
-    Session 10 Check:
+    Requirement check:
     The digest arrives on both channels.
     """
     ch_telegram = MockChannel("telegram", should_succeed=True)
@@ -110,7 +110,7 @@ async def test_digest_arrives_on_both_channels():
 @pytest.mark.asyncio
 async def test_with_one_broken_the_other_still_delivers():
     """
-    Session 10 Check:
+    Requirement check:
     With one broken, the other still delivers.
     """
     broken_channel = MockChannel("telegram", should_succeed=False)
@@ -127,7 +127,7 @@ async def test_with_one_broken_the_other_still_delivers():
 
 def test_sending_twice_repeats_nothing():
     """
-    Session 10 Check:
+    Requirement check:
     Sending twice repeats nothing. Jobs marked as notified are excluded on second pass.
     """
     job1 = Job(

@@ -1,4 +1,4 @@
-"""Session 21 Tests: Pre-Launch Audit, Anti-Slop Verification, and Release Baseline.
+"""Unit and integration tests: Pre-Launch Audit, Anti-Slop Verification, and Release Baseline.
 
 Asserts:
 1. Zero .map source-map files ship in production dist/.
@@ -134,7 +134,7 @@ def test_readme_and_documentation_completeness():
 def test_pre_launch_audit_checklist_verified():
     """Audit check asserting that every pre-launch checklist requirement is satisfied."""
     # 1. Custom domain docs
-    assert (PROJECT_ROOT / "docs" / "domain_setup.md").exists()
+    assert (PROJECT_ROOT / "docs" / "deployment.md").exists()
 
     # 2. Clean URL slugs
     for slug_dir in ["how-it-works", "sources", "privacy", "terms"]:

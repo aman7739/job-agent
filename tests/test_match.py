@@ -151,7 +151,7 @@ def test_tracked_gaps_do_not_penalize_score():
 
 def test_fresher_python_role_in_pune_ranks_high():
     """
-    Session 8 Check verification:
+    Requirement verification:
     A fresher Python role in Pune ranks high (score >= 7.0, Strong category).
     """
     pune_python_job = Job(

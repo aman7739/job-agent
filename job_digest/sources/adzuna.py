@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 class AdzunaSource:
-    """Fetches jobs from Adzuna Search API for country=in across 5 core role groups."""
+    """Fetches jobs from Adzuna Search API for country=in across 6 core role queries."""
 
     BASE_URL = "https://api.adzuna.com/v1/api/jobs/{country}/search/{page}"
 

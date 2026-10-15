@@ -79,7 +79,7 @@ def test_parse_naukri_alert_fixture():
 
 def test_mail_from_unknown_sender_is_ignored():
     """
-    Session 5 Check verification:
+    Requirement verification:
     Mail from unknown/unauthorized senders is completely ignored.
     """
     eml_path = FIXTURES_DIR / "sample_unknown_sender.eml"

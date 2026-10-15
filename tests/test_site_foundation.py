@@ -1,4 +1,4 @@
-"""Tests for Session 18: Static site foundation, Jinja2 builder, and semantic SEO validation."""
+"""Tests for Static site foundation, Jinja2 builder, and semantic SEO validation."""
 
 import importlib.util
 from pathlib import Path
@@ -46,7 +46,7 @@ def test_build_produces_all_expected_pages(built_site):
 
 def test_semantic_seo_h1_unique_title_description_canonical(built_site):
     """
-    Session 18 Check:
+    Requirement check:
     Asserts every page has:
     1. Exactly one <h1> tag.
     2. A non-empty, unique <title>.

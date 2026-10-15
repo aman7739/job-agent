@@ -252,7 +252,7 @@ def process_and_upsert_jobs(
             },
         )
 
-        # Record sighting in job_sightings table (Stage 4 Source Attribution)
+        # Record sighting in job_sightings table (Source Attribution)
         record_sighting(session, fp, job.source, current_ts)
 
     session.commit()

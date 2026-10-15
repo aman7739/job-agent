@@ -1,4 +1,4 @@
-"""Tests for Session 17: Enterprise hardening, security headers, robots disallow, PWA manifest, and webhook token."""
+"""Tests for Enterprise hardening, security headers, robots disallow, PWA manifest, and webhook token."""
 
 import json
 from pathlib import Path

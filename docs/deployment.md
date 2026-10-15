@@ -103,7 +103,7 @@ Because UptimeRobot pings `/health` every 10 minutes, **Render never sleeps**, a
 
 ---
 
-### Step 6: Session 16 Verification Check
+### Step 6: Verification Check
 1. Turn off Wi-Fi on your phone and enable **Mobile Data**.
 2. Open your Render URL in your mobile browser: `https://your-app.onrender.com`.
 3. Log in with your master password.
@@ -111,3 +111,12 @@ Because UptimeRobot pings `/health` every 10 minutes, **Render never sleeps**, a
    - Today's digest and status cards load cleanly.
    - The navbar displays `🎯 Applied this week: X`.
    - Tap **`⚡ Check & Notify Now`** to trigger an on-demand job scan from your phone!
+
+---
+
+### Optional: Custom Domain for Showcase Site
+If deploying the public showcase to GitHub Pages with a custom domain:
+1. In repository **Settings** -> **Pages** -> **Custom domain**, enter your domain.
+2. Add DNS `A` records pointing `@` to GitHub Pages IPs (`185.199.108.153` series) or `CNAME` for subdomains.
+3. Check **Enforce HTTPS** (Let's Encrypt provisions automatically).
+

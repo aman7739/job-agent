@@ -122,7 +122,7 @@ class MockCrashingSource:
 @pytest.mark.asyncio
 async def test_fault_isolation_three_sources_succeed_when_one_killed():
     """
-    Session 4 Check verification:
+    Requirement verification:
     Three or more sources return jobs; killing one source's network still yields results from the rest.
     """
     s1 = MockSuccessfulSource("source_alpha", count=3)

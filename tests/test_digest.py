@@ -14,7 +14,7 @@ PROFILE = load_profile_from_file(Path(__file__).resolve().parent.parent / "profi
 
 def test_zero_new_jobs_renders_nothing_new_digest():
     """
-    Session 9 Check verification:
+    Requirement verification:
     A day with zero new jobs still renders a short 'nothing new' digest.
     """
     digest = build_digest(
