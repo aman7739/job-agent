@@ -1,40 +1,36 @@
 # Database Backup & Disaster Recovery Plan
 
-> **Scope:** Candidate Profile versions, Application statuses (`saved`, `applied`, `not_interested`), digests history, and job index.
+> **Scope:** Candidate profile versions, application statuses (`saved`, `applied`, `not_interested`), digest history, and job index.
 
 ---
 
-## 1. Automated Cloud Backups (Supabase)
-Supabase provides automated physical backups on all projects:
-- Daily automatic database snapshots.
-- Point-in-time recovery (PITR) available on managed plans.
-- Supabase dashboard: **Database → Backups** allows one-click restoration.
+## 1. Implemented Logical Backups (`scripts/backup_db.py`)
 
----
-
-## 2. Application-Level JSON Snapshots (`scripts/backup_db.py`)
-In addition to Supabase cloud backups, an application-level logical backup script is included:
+The repository includes a dedicated database export utility:
 
 ```bash
 python scripts/backup_db.py
 ```
 
-### What is captured:
-- **`user_profiles`**: All versions of the YAML profile, including the currently active configuration.
-- **`seen_jobs`**: Every fingerprint ever processed, along with timestamps for `first_seen_at`, `notified_at`, `saved_at`, `applied_at`, and candidate notes.
-- **`jobs`**: Metadata of recent scored jobs (title, company, score, intern/fulltime flags).
-- **`digests`**: Log of all sent digests, channel deliveries, and source failure metrics.
-
-Output is stored in `backups/backup_YYYYMMDD_HHMMSS.json`.
+### What is Captured
+The script exports critical tables into a timestamped JSON snapshot (`backups/backup_YYYYMMDD_HHMMSS.json`):
+- **`user_profiles`**: All revisions of the profile configuration, including the currently active version.
+- **`seen_jobs`**: Fingerprints, canonical URLs, application state (`saved`, `applied`, `not_interested`), notes, and audit timestamps.
+- **`jobs`**: Titles, companies, extracted skills, scores, and track flags (internship / fresher).
+- **`digests`**: Historical digest logs, channel delivery statuses, and source error counters.
 
 ---
 
-## 3. Disaster Recovery / Restoration Procedure
+## 2. Disaster Recovery & Restoration Procedure
 
-If the cloud database is ever accidentally wiped or a new database must be seeded:
-1. Initialize the tables using `database/schema.sql`.
-2. Seed the candidate profile using the latest YAML from the backup JSON or `profile.yaml`.
-3. Application statuses (`seen_jobs`) can be re-populated by running a restore query:
+If the database is reset or needs to be reseeded:
+
+1. **Re-create Schema:**
+   Apply [`database/schema.sql`](../database/schema.sql) against the target PostgreSQL instance.
+
+2. **Restore Application State from JSON Backup:**
+   Execute a restore script targeting your latest backup file:
+
    ```python
    import json
    from job_digest.db import get_db_session
@@ -52,11 +48,24 @@ If the cloud database is ever accidentally wiped or a new database must be seede
                    ON CONFLICT (fingerprint) DO NOTHING
                """),
                {
-                   "fp": s["fingerprint"], "url": s["canonical_url"],
-                   "status": s["status"], "applied_at": s["applied_at"],
-                   "saved_at": s["saved_at"], "notes": s["notes"],
-               }
+                   "fp": s["fingerprint"],
+                   "url": s["canonical_url"],
+                   "status": s["status"],
+                   "applied_at": s["applied_at"],
+                   "saved_at": s["saved_at"],
+                   "notes": s["notes"],
+               },
            )
        session.commit()
    ```
-4. The agent will resume without duplicating previously seen or notified listings.
+
+3. **Verify Pipeline Resumption:**
+   The deduplication engine reads existing fingerprints from `seen_jobs`, preventing duplicate notifications for previously tracked opportunities.
+
+---
+
+## 3. Managed Cloud Infrastructure (Neon Serverless PostgreSQL)
+
+At the cloud infrastructure level:
+- Neon provides automated storage snapshots and continuous write-ahead logging (WAL).
+- Instant point-in-time branch creation allows spinning up an isolated database branch from any point in the past without taking the production database offline.
