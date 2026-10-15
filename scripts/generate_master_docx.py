@@ -200,7 +200,7 @@ def build_docx_report(output_path: Path):
     add_h1("1. Candidate Profile & Application Constraints")
     add_p("B.Tech in Computer Science and Engineering (CSE), graduating Batch 2027.", "• Degree & Batch: ")
     add_p("Actively targeting BOTH 3 to 6-month engineering internships with stipends and full-time fresher roles (0–2 YOE). Both categories are treated as high-priority 'Apply Now' targets.", "• Dual-Track Priority: ")
-    add_p("Strictly excludes Senior, Lead, Principal, Staff, Architect, Manager, and Director positions.", "• Seniority Exclusion: ")
+    add_p("Strictly excludes Senior, Lead, Principal, Staff, Architect, Manager, and Director positions for standard roles. Intelligent false-positive guard preserves roles like 'Product Manager Intern' or 'Lead Generation Trainee'.", "• Seniority Exclusion: ")
     add_p("Noida, Delhi NCR, Gurugram, Kolkata, Mumbai, Pune, Bengaluru, Indore, or Remote (India).", "• Preferred Locations: ")
     add_p("Python, FastAPI, PostgreSQL, Supabase, React, JavaScript, HTML/CSS, Git/GitHub, Linux, Docker, REST APIs, ML/AI foundations.", "• Core Tech Stack: ")
 
@@ -231,19 +231,19 @@ def build_docx_report(output_path: Path):
     format_table(tbl_tech, [Inches(1.5), Inches(1.3), Inches(1.0), Inches(2.7)], tech_headers, tech_data)
 
     # SECTION 3
-    add_h1("3. All Ingestion Websites & API Endpoints (10 Sources)")
+    add_h1("3. All Ingestion Websites & API Endpoints (10 Sources • 57 Company Boards)")
     src_headers = ["Source", "Method / Protocol", "Endpoint / Feed URL", "Target Coverage / Details"]
     src_data = [
-        ["Greenhouse", "Public HTTP GET", "https://boards-api.greenhouse.io/v1/boards/{slug}/jobs", "24 Boards: Groww, InMobi, Twilio, Rubrik, Databricks, Okta, Stripe, etc."],
-        ["Lever", "Public HTTP GET", "https://api.lever.co/v0/postings/{slug}?mode=json", "8 Boards: CRED, Meesho, Atlan, Postman, Hotstar, Urban Company, BrowserStack"],
-        ["Ashby", "Public HTTP GET", "https://api.ashbyhq.com/posting-api/job-board/{slug}", "4 Boards: Snowflake, Linear, Replit, Vercel (isListed=True)"],
-        ["SmartRecruiters", "Public REST API", "https://api.smartrecruiters.com/v1/companies/{slug}/postings", "14 Boards: Swiggy, Freshworks, Cars24, Grab, Visa, Spotify, Square, etc."],
-        ["Workable", "Public REST / Widget", "https://apply.workable.com/api/v3/accounts/{slug}/jobs", "7 Boards: Hasura, InVideo, Scaler, Cult.fit, Curefit, etc."],
+        ["Greenhouse", "Public HTTP GET", "https://boards-api.greenhouse.io/v1/boards/{slug}/jobs", "26 Boards: Cloudflare, Stripe, Datadog, Reddit, MongoDB, Airbnb, Groww, InMobi, Twilio, Databricks, Okta, etc."],
+        ["Lever", "Public HTTP GET", "https://api.lever.co/v0/postings/{slug}?mode=json", "10 Boards: CRED, Meesho, Palantir, Spotify, Lever, Canonical, Postman, Linear, Docker, BrowserStack"],
+        ["Ashby", "Public HTTP GET", "https://api.ashbyhq.com/posting-api/job-board/{slug}", "9 Boards: OpenAI, Retool, Ramp, Anthropic, Notion, Figma, Linear, Monzo, Snowflake"],
+        ["SmartRecruiters", "Public REST API", "https://api.smartrecruiters.com/v1/companies/{slug}/postings", "8 Boards: Swiggy, Freshworks, Cars24, Grab, BoschGroup, IKEA, Ubisoft, Visa"],
+        ["Workable", "Public REST / Widget", "https://apply.workable.com/api/v3/accounts/{slug}/jobs", "4 Boards: Transferwise, Harness, TestGorilla, Farfetch"],
         ["Jooble", "Official POST API", "https://jooble.org/api/{JOOBLE_API_KEY}", "5 Targeted Indian fresher queries (Python, Backend, Trainee, Junior, ML)"],
         ["Arbeitnow", "Public HTTP GET", "https://www.arbeitnow.com/api/job-board-api", "Zero-auth public feed for remote and Indian developer postings"],
-        ["Remotive", "Public HTTP GET", "https://remotive.com/api/remote-jobs?category=software-dev", "Remote tech listings, rate-capped at <= 4/day to prevent dilution"],
+        ["Remotive", "Public HTTP GET", "https://remotive.com/api/remote-jobs?category=software-dev", "Remote tech feed; strictly limited to max 4 daily fetches to obey API terms"],
         ["Adzuna", "Official REST API", "https://api.adzuna.com/v1/api/jobs/in/search/", "6 Targeted Boolean query groups across Indian tech hubs"],
-        ["Email Alerts", "SSL IMAP Port 993", "imap.gmail.com (Mailbox A)", "Whitelisted platforms (LinkedIn, Naukri, Indeed) + Direct ATS domains"],
+        ["Email Alerts", "SSL IMAP Port 993", "imap.gmail.com (Mailbox A)", "Whitelisted platforms (LinkedIn, Naukri, Indeed) + Direct ATS career alert domains"],
     ]
     tbl_src = doc.add_table(rows=1, cols=4)
     format_table(tbl_src, [Inches(1.2), Inches(1.3), Inches(2.2), Inches(1.8)], src_headers, src_data)
@@ -255,13 +255,13 @@ def build_docx_report(output_path: Path):
         ["job_digest/run.py", "Pipeline Orchestrator", "Instantiates sources, coordinates dedup, scoring, and multi-channel dispatch"],
         ["job_digest/web.py", "FastAPI Application", "Provides web dashboard, Argon2id authentication, and in-app APScheduler"],
         ["job_digest/dedup.py", "Deduplication Engine", "Normalizes jobs, computes SHA-256 fingerprints, records sightings"],
-        ["job_digest/scoring.py", "10-Point Scoring", "Applies hard knockout filters and calculates 10-point candidate suitability"],
+        ["job_digest/match.py", "10-Point Scoring", "Applies hard knockout filters, fresher exceptions, and 10-point scoring"],
         ["job_digest/urgency.py", "Urgency Detector", "Detects deadlines closing in <= 4 hours and triggers fast-track alerts"],
         ["job_digest/notify.py", "Notification Dispatcher", "Handles 4,096-char Telegram chunking and SMTP multipart HTML emails"],
         ["job_digest/db.py", "Database Engine", "Configures SQLAlchemy NullPool engine and executes schema migrations"],
         ["job_digest/sources/*.py", "Source Adapters (10)", "Concrete implementations for Greenhouse, Lever, Ashby, Jooble, Arbeitnow, etc."],
-        ["database/schema.sql", "PostgreSQL DDL", "Defines seen_jobs, jobs, digests, source_runs, email_messages, job_sightings"],
-        ["sources.yaml", "ATS Slugs Registry", "57 verified company boards for Greenhouse, Lever, Ashby, and SmartRecruiters"],
+        ["database/schema.sql", "PostgreSQL DDL", "Defines 8 tables: job_sources, seen_jobs, user_profiles, jobs, digests, source_runs, email_messages, job_sightings"],
+        ["sources.yaml", "ATS Slugs Registry", "57 verified company boards for Greenhouse, Lever, Ashby, SmartRecruiters, and Workable"],
         ["profile.yaml", "Candidate Profile", "Defines target roles, skills, locations, and scoring thresholds"],
         ["scripts/check_ats_slugs.py", "CLI Scanner", "Automated validation tool for testing new company ATS career slugs"],
         ["site/build.py", "Showcase Generator", "Generates static HTML with Schema.org JSON-LD for GitHub Pages"],
@@ -271,24 +271,27 @@ def build_docx_report(output_path: Path):
     format_table(tbl_file, [Inches(1.8), Inches(1.5), Inches(3.2)], file_headers, file_data)
 
     # SECTION 5
-    add_h1("5. Database Schema Architecture (6 Relational Tables)")
-    add_p("The database runs on Neon Serverless PostgreSQL and comprises 6 tables with relational integrity:", "")
-    add_p("Stores SHA-256 fingerprint, canonical URL, first_seen_at, last_seen_at, and candidate tracking status (new, saved, applied, dismissed).", "1. seen_jobs: ")
-    add_p("Stores full normalized job postings (title, company, location, description, salary_lpa, stipend, batch_years, matched_skills).", "2. jobs: ")
-    add_p("Tracks historical records of morning and evening digests, total jobs selected, and delivered channels.", "3. digests: ")
-    add_p("Logs execution status, raw jobs found, error messages, and response latency per adapter.", "4. source_runs: ")
-    add_p("Maintains idempotency for parsed email alerts, preventing duplicate processing across runs.", "5. email_messages: ")
-    add_p("Tracks multi-source attribution (fingerprint, source, seen_at). Powers the 7-day source yield dashboard, calculating exclusive roles and application conversion rates.", "6. job_sightings: ")
+    add_h1("5. Database Schema Architecture (8 Relational Tables)")
+    add_p("The database runs on Neon Serverless PostgreSQL and comprises 8 tables with relational integrity:", "")
+    add_p("Source configuration registry, types (ats, search_api, feed, imap), and active status flags.", "1. job_sources: ")
+    add_p("Master tracking store with fingerprint, canonical_url, first_seen_at, last_seen_at, notified_at, status, saved_at, applied_at, not_interested_at, and notes (powers yield analytics).", "2. seen_jobs: ")
+    add_p("Versioned user profile configuration store (version, profile_yaml, profile_data, is_active, created_at) supporting ADR 007 profile evolution.", "3. user_profiles: ")
+    add_p("Stores full normalized job postings (title, company, location, description, salary_lpa, stipend, batch_years, matched_skills, score, breakdown).", "4. jobs: ")
+    add_p("Historical record of morning and evening digests, total jobs, channel notification status, and rendered HTML/text.", "5. digests: ")
+    add_p("Logs execution status, raw jobs found, error messages, and response latency per adapter (renders /sources dashboard).", "6. source_runs: ")
+    add_p("Maintains idempotency for parsed email alerts, preventing duplicate processing across runs.", "7. email_messages: ")
+    add_p("Tracks multi-source sightings per fingerprint. Powers the 7-day source yield dashboard, calculating exclusive roles and application conversion rates.", "8. job_sightings: ")
 
     # SECTION 6
     add_h1("6. 10-Point Scoring Algorithm & Knockout Rules")
-    score_headers = ["Component", "Max Points", "Evaluation Logic"]
+    add_p("Seniority knockout strictly excludes Senior, Lead, Principal, Staff, Architect, Manager, Director. Built-in exception guard ensures intern and trainee roles (e.g. 'Product Manager Intern', 'Lead Generation Trainee') are NOT knocked out on role-level words.", "• Seniority Rules & Exception Guard: ")
+    score_headers = ["Component", "Max Points", "Evaluation & Graduated Scoring Logic"]
     score_data = [
-        ["1. Skills Overlap", "4.0 pts", "Matches candidate skills (Python, FastAPI, SQL, React, Linux, Docker). 4+ = 4.0; 3 = 3.0; 2 = 2.0; 1 = 1.0"],
+        ["1. Skills Overlap", "4.0 pts", "Matches candidate skills (Python, FastAPI, SQL, React, Linux, Docker, etc.):\n• 4+ matches: 1.0 × 4.0 = 4.0 pts\n• 3 matches: 0.8 × 4.0 = 3.2 pts\n• 2 matches: 0.6 × 4.0 = 2.4 pts\n• 1 match: 0.4 × 4.0 = 1.6 pts"],
         ["2. Role Alignment", "3.0 pts", "Matches title for Software Engineer, Backend Engineer, Systems Engineer, or Full Stack"],
         ["3. Experience Level", "2.0 pts", "Awarded for Internships, Apprenticeships, GET, Associate Engineer, or 0-year Fresher roles"],
         ["4. Preferred Location", "1.0 pt", "Noida, Delhi NCR, Gurugram, Kolkata, Mumbai, Pune, Bengaluru, Indore, or Remote"],
-        ["Total Evaluation", "10.0 pts", "Default notification threshold is >= 7.0 / 10 points (customizable via dashboard)"],
+        ["Total Evaluation", "10.0 pts", "• Strong Matches (>= 7.0 pts): High-conviction delivery\n• Maybe Matches (4.0 - 6.9 pts): Secondary curated bucket in digest\n• Below 4.0 pts: Discarded"],
     ]
     tbl_score = doc.add_table(rows=1, cols=3)
     format_table(tbl_score, [Inches(1.8), Inches(1.2), Inches(3.5)], score_headers, score_data)

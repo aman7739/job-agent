@@ -55,16 +55,16 @@ The system ingests job data from **10 distinct, fully compliant sources**:
 
 ```
 [10 Permitted Ingestion Feeds]
- ├── 1. Greenhouse API (Public JSON API &bull; 24 Verified Companies)
- ├── 2. Lever API (Public JSON API &bull; 8 Verified Companies)
- ├── 3. Ashby API (Public JSON API &bull; 4 Verified Companies)
- ├── 4. SmartRecruiters API (Public REST API &bull; 14 Verified Companies)
- ├── 5. Workable API (v3 API & v1 Widget &bull; 7 Verified Companies)
- ├── 6. Jooble API (Official Aggregator REST API &bull; India Fresher Queries)
+ ├── 1. Greenhouse API (Public JSON API • 26 Verified Companies)
+ ├── 2. Lever API (Public JSON API • 10 Verified Companies)
+ ├── 3. Ashby API (Public JSON API • 9 Verified Companies)
+ ├── 4. SmartRecruiters API (Public REST API • 8 Verified Companies)
+ ├── 5. Workable API (v3 API & v1 Widget • 4 Verified Companies)
+ ├── 6. Jooble API (Official Aggregator REST API • India Fresher Queries)
  ├── 7. Arbeitnow API (Zero-Auth Remote Developer JSON Feed)
- ├── 8. Remotive API (Remote Developer JSON API &bull; Capped <= 4/day)
- ├── 9. Adzuna Search API (Official Job Search REST API &bull; 6 Query Groups)
- └── 10. Email Alerts (SSL IMAP Port 993 &bull; Mailbox A Platform & ATS Alerts)
+ ├── 8. Remotive API (Remote Developer JSON API • Max 4 fetches/day)
+ ├── 9. Adzuna Search API (Official Job Search REST API • 6 Query Groups)
+ └── 10. Email Alerts (SSL IMAP Port 993 • Mailbox A Platform & ATS Alerts)
 ```
 
 ### Detailed Source Breakdown
@@ -72,32 +72,32 @@ The system ingests job data from **10 distinct, fully compliant sources**:
 #### 1. Greenhouse (`job_digest/sources/greenhouse.py`)
 - **API Endpoint:** `https://boards-api.greenhouse.io/v1/boards/{company_slug}/jobs?content=true`
 - **Method:** Public HTTP GET (Zero auth required; respectful 0.3s slug pacing)
-- **Verified Indian & Global Tech Companies (24 boards):**
-  `groww`, `inmobi`, `druva`, `twilio`, `rubrik`, `samsara`, `databricks`, `okta`, `stripe`, `affirm`, `airbnb`, `gusto`, `dropbox`, `hashicorp`, `elastic`, `mongodb`, `cloudflare`, `github`, `reddit`, `pinterest`, `brex`, `carta`, `plaid`, `instacart`.
+- **Verified Indian & Global Tech Companies (26 boards):**
+  `cloudflare`, `stripe`, `hashicorp`, `datadog`, `instacart`, `reddit`, `gitlab`, `automattic`, `elastic`, `affirm`, `gusto`, `pagerduty`, `confluent`, `mongodb`, `cockroachlabs`, `airbnb`, `pinterest`, `dropbox`, `groww`, `inmobi`, `druva`, `twilio`, `rubrik`, `samsara`, `databricks`, `okta`.
 
 #### 2. Lever (`job_digest/sources/lever.py`)
 - **API Endpoint:** `https://api.lever.co/v0/postings/{company_slug}?mode=json`
 - **Method:** Public HTTP GET
-- **Verified Companies (8 boards):**
-  `cred`, `meesho`, `atlan`, `postman`, `hotstar`, `urbancompany`, `browserstack`, `razorpay`.
+- **Verified Companies (10 boards):**
+  `palantir`, `spotify`, `lever`, `canonical`, `postman`, `linear`, `docker`, `browserstack`, `cred`, `meesho`.
 
 #### 3. Ashby (`job_digest/sources/ashby.py`)
 - **API Endpoint:** `https://api.ashbyhq.com/posting-api/job-board/{company_slug}`
 - **Method:** Public HTTP GET (Filters for `isListed=True`)
-- **Verified Companies (4 boards):**
-  `snowflake`, `linear`, `replit`, `vercel`.
+- **Verified Companies (9 boards):**
+  `openai`, `retool`, `ramp`, `anthropic`, `notion`, `figma`, `linear`, `monzo`, `snowflake`.
 
 #### 4. SmartRecruiters (`job_digest/sources/smartrecruiters.py`)
 - **API Endpoint:** `https://api.smartrecruiters.com/v1/companies/{company_slug}/postings`
 - **Method:** Public REST API
-- **Verified Companies (14 boards):**
-  `swiggy`, `freshworks`, `cars24`, `grab`, `visa`, `square`, `spotify`, `zalando`, `bosch`, `ikea`, `ubisoft`, `epicgames`, `redbull`, `volvo`.
+- **Verified Companies (8 boards):**
+  `BoschGroup`, `IKEA`, `Ubisoft`, `visa`, `swiggy`, `cars24`, `freshworks`, `grab`.
 
 #### 5. Workable (`job_digest/sources/workable.py`)
 - **API Endpoint:** `https://apply.workable.com/api/v3/accounts/{company_slug}/jobs` (with fallback to `https://apply.workable.com/api/v1/widget/accounts/{company_slug}`)
 - **Method:** Public REST / Widget API
-- **Verified Companies (7 boards):**
-  `hasura`, `invideo`, `browserstack`, `postman`, `curefit`, `cultfit`, `scaler`.
+- **Verified Companies (4 boards):**
+  `transferwise`, `harness`, `testgorilla`, `farfetch`.
 
 #### 6. Jooble Aggregator (`job_digest/sources/jooble.py`)
 - **API Endpoint:** `https://jooble.org/api/{JOOBLE_API_KEY}`
@@ -116,8 +116,8 @@ The system ingests job data from **10 distinct, fully compliant sources**:
 - **Filtering:** Automatically captures India-eligible and global Remote software roles. Verified live with 45 jobs returned.
 
 #### 8. Remotive (`job_digest/sources/remote.py`)
-- **API Endpoint:** `https://remotive.com/api/remote-jobs?category=software-dev`
-- **Method:** Public HTTP GET (Rate-capped at $\le 4$ items per run to prevent international job dilution).
+- **API Endpoint:** `https://remotive.com/api/remote-jobs?category=software-dev&limit=50`
+- **Method:** Public HTTP GET (Strictly obeys API terms with max 4 API fetches per calendar day, tracked via `.remotive_fetch_state.json`).
 
 #### 9. Adzuna Search API (`job_digest/sources/adzuna.py`)
 - **API Endpoint:** `https://api.adzuna.com/v1/api/jobs/in/search/{page}?app_id={ID}&app_key={KEY}`
@@ -233,30 +233,54 @@ AI AGENT/
 
 ## 5. Complete Database Architecture & Schema DDL
 
-The database schema is hosted on **Neon Serverless PostgreSQL** and executed via [`database/schema.sql`](file:///C:/Users/KRAMA/OneDrive/Desktop/AI%20AGENT/database/schema.sql):
+The database schema is hosted on **Neon Serverless PostgreSQL** and executed via [`database/schema.sql`](file:///C:/Users/KRAMA/OneDrive/Desktop/AI%20AGENT/database/schema.sql), comprising **8 relational tables**:
 
 ```sql
--- 1. Seen Jobs: Deduplication and state registry
+-- 1. Permitted Source Configuration & Active Status
+CREATE TABLE IF NOT EXISTS job_sources (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(64) UNIQUE NOT NULL,
+    source_type VARCHAR(32) NOT NULL, -- 'ats', 'search_api', 'feed', 'imap', 'manual'
+    config JSONB DEFAULT '{}'::jsonb,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- 2. Master Tracking & Fingerprint Store (Prevents Re-Alerting & Powers Yield Analytics)
 CREATE TABLE IF NOT EXISTS seen_jobs (
-    fingerprint VARCHAR(64) PRIMARY KEY,
+    fingerprint VARCHAR(64) PRIMARY KEY, -- sha256(company | title | location)
     canonical_url TEXT NOT NULL,
     first_seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     last_seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    status VARCHAR(32) NOT NULL DEFAULT 'seen',
-    user_status VARCHAR(32) NOT NULL DEFAULT 'new',
-    user_action_at TIMESTAMPTZ
+    notified_at TIMESTAMPTZ,
+    status VARCHAR(32) NOT NULL DEFAULT 'seen', -- 'seen', 'saved', 'applied', 'not_interested'
+    saved_at TIMESTAMPTZ,
+    applied_at TIMESTAMPTZ,
+    not_interested_at TIMESTAMPTZ,
+    notes TEXT
 );
+CREATE INDEX IF NOT EXISTS idx_seen_jobs_canonical_url ON seen_jobs(canonical_url);
 CREATE INDEX IF NOT EXISTS idx_seen_jobs_status ON seen_jobs(status);
-CREATE INDEX IF NOT EXISTS idx_seen_jobs_last_seen ON seen_jobs(last_seen_at);
-CREATE INDEX IF NOT EXISTS idx_seen_jobs_user_status ON seen_jobs(user_status);
 
--- 2. Jobs: Master postings table
+-- 3. Versioned User Profile Store (ADR 007 Profile Versioning)
+CREATE TABLE IF NOT EXISTS user_profiles (
+    id SERIAL PRIMARY KEY,
+    version INT NOT NULL,
+    profile_yaml TEXT NOT NULL,
+    profile_data JSONB NOT NULL,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_user_profiles_active ON user_profiles(is_active, version DESC);
+
+-- 4. Jobs: Master postings table
 CREATE TABLE IF NOT EXISTS jobs (
     id BIGSERIAL PRIMARY KEY,
-    fingerprint VARCHAR(64) NOT NULL REFERENCES seen_jobs(fingerprint) ON DELETE CASCADE,
+    fingerprint VARCHAR(64) UNIQUE NOT NULL REFERENCES seen_jobs(fingerprint) ON DELETE CASCADE,
     title VARCHAR(255) NOT NULL,
     company VARCHAR(255) NOT NULL,
-    location VARCHAR(255),
+    location VARCHAR(255) NOT NULL,
     canonical_url TEXT NOT NULL,
     description_text TEXT,
     posted_at TIMESTAMPTZ,
@@ -265,33 +289,35 @@ CREATE TABLE IF NOT EXISTS jobs (
     is_apprentice BOOLEAN NOT NULL DEFAULT FALSE,
     min_years NUMERIC(3, 1),
     salary_lpa NUMERIC(6, 2),
-    stipend NUMERIC(10, 2),
-    batch_years TEXT[],
+    stipend NUMERIC(8, 2),
+    batch_years INT[],
     matched_skills TEXT[],
-    raw_data JSONB,
+    missing_skills TEXT[],
+    score NUMERIC(4, 2),
+    score_breakdown JSONB DEFAULT '{}'::jsonb,
+    raw_data JSONB DEFAULT '{}'::jsonb,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
-CREATE UNIQUE INDEX IF NOT EXISTS idx_jobs_fingerprint ON jobs(fingerprint);
+CREATE INDEX IF NOT EXISTS idx_jobs_score ON jobs(score DESC);
 CREATE INDEX IF NOT EXISTS idx_jobs_posted_at ON jobs(posted_at DESC);
-CREATE INDEX IF NOT EXISTS idx_jobs_source ON jobs(source);
+CREATE INDEX IF NOT EXISTS idx_jobs_intern ON jobs(is_intern, is_apprentice);
 
--- 3. Digests: History of generated and sent digests
+-- 5. Digests: History of generated and sent digests
 CREATE TABLE IF NOT EXISTS digests (
     id BIGSERIAL PRIMARY KEY,
     sent_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     total_jobs INT NOT NULL DEFAULT 0,
     internships_count INT NOT NULL DEFAULT 0,
     fulltime_count INT NOT NULL DEFAULT 0,
-    new_jobs_count INT NOT NULL DEFAULT 0,
-    seen_jobs_count INT NOT NULL DEFAULT 0,
-    channels_notified TEXT[],
-    content_html TEXT NOT NULL,
-    content_text TEXT NOT NULL
+    channels_notified TEXT[] NOT NULL DEFAULT '{}',
+    failed_sources TEXT[] DEFAULT '{}',
+    content_html TEXT,
+    content_text TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_digests_sent_at ON digests(sent_at DESC);
 
--- 4. Source Runs: Health and execution monitoring
+-- 6. Source Runs: Health and execution monitoring (Renders /sources page)
 CREATE TABLE IF NOT EXISTS source_runs (
     id BIGSERIAL PRIMARY KEY,
     source_name VARCHAR(64) NOT NULL,
@@ -304,7 +330,7 @@ CREATE TABLE IF NOT EXISTS source_runs (
 );
 CREATE INDEX IF NOT EXISTS idx_source_runs_source ON source_runs(source_name, started_at DESC);
 
--- 5. Email Messages: Idempotency log for email alerts
+-- 7. Email Messages: Idempotency log for email alerts
 CREATE TABLE IF NOT EXISTS email_messages (
     message_id VARCHAR(255) PRIMARY KEY,
     sender VARCHAR(255) NOT NULL,
@@ -313,7 +339,7 @@ CREATE TABLE IF NOT EXISTS email_messages (
     jobs_extracted INT NOT NULL DEFAULT 0
 );
 
--- 6. Job Sightings: Multi-source attribution and yield analytics (Stage 4)
+-- 8. Job Sightings: Multi-source attribution and yield analytics (Stage 4)
 CREATE TABLE IF NOT EXISTS job_sightings (
     id BIGSERIAL PRIMARY KEY,
     fingerprint VARCHAR(64) NOT NULL REFERENCES seen_jobs(fingerprint) ON DELETE CASCADE,
@@ -337,23 +363,26 @@ CREATE INDEX IF NOT EXISTS idx_job_sightings_fingerprint ON job_sightings(finger
   $$\text{SHA-256}\Big(\text{clean}(\text{company}) \parallel \text{clean}(\text{title}) \parallel \text{clean}(\text{location})\Big)$$
 - **48-Hour Freshness Window:** Any posting older than 48 hours is discarded to prevent stale notifications.
 
-### 2. Hard Knockout Filters
-A job is immediately discarded if:
-1. It contains senior keywords: `Senior`, `Lead`, `Principal`, `Staff`, `Architect`, `Director`, `Manager`, `Head of`.
-2. Experience requirement exceeds 2 years ($> 2.0\text{ YOE}$).
-3. Explicit graduation batch does not include 2027 (e.g. *Batch 2024 only*).
+### 2. Seniority Filtering & Built-In Fresher Exception Guard
+The eligibility engine evaluates candidate eligibility using hard knockout rules with an intelligent false-positive guard:
+1. **Hard Senior Knockout:** Strictly drops any title containing: `Senior`, `Sr`, `Sr.`, `Principal`, `Director`, `Architect`, `VP`, `Chief`, `Head`, `Expert`.
+2. **Role-Level Words & The Intern/Trainee Exception Guard:**
+   - Role-level words like `Lead`, `Leader`, `Manager`, `Staff`, `Experienced` are normally dropped for standard full-time postings.
+   - **False-Positive Exception Guard:** If a role's title explicitly indicates a fresher, intern, or apprentice role (e.g. contains `intern`, `internship`, `apprentice`, `apprenticeship`, `trainee`, `graduate trainee`, `co-op`, `fresher`), **it is NOT dropped on role-level words**! This correctly preserves titles like *Product Manager Intern*, *Staffing Intern*, or *Lead Generation Trainee*.
+3. **Experience Requirement:** Roles requiring $> 2.0\text{ YOE}$ are rejected.
+4. **Graduation Batch:** Rejects explicit batches other than 2027 (when batch restrictions are stated).
 
 ### 3. Deterministic 10-Point Scoring Algorithm
 
 Postings surviving the hard filters are scored deterministically out of 10.0 points:
 
-| Component | Max Points | Evaluation Logic |
+| Component | Max Points | Evaluation & Graduated Scoring Logic |
 |---|:---:|---|
-| **1. Skills Overlap** | **4.0 pts** | Matches candidate skills (Python, FastAPI, SQL/PostgreSQL, React, Linux, Docker, REST APIs, Git).<br>&bull; 4+ matches = 4.0 pts<br>&bull; 3 matches = 3.0 pts<br>&bull; 2 matches = 2.0 pts<br>&bull; 1 match = 1.0 pt |
+| **1. Skills Overlap** | **4.0 pts** | Matches candidate skills (Python, FastAPI, SQL/PostgreSQL, React, Linux, Docker, REST APIs, Git).<br>&bull; **4+ matches:** $1.0 \times 4.0 =$ **4.0 pts**<br>&bull; **3 matches:** $0.8 \times 4.0 =$ **3.2 pts**<br>&bull; **2 matches:** $0.6 \times 4.0 =$ **2.4 pts**<br>&bull; **1 match:** $0.4 \times 4.0 =$ **1.6 pts** |
 | **2. Role Alignment** | **3.0 pts** | Matches title: Software Engineer, Software Developer, Backend Developer, Systems Engineer, Full Stack Engineer. |
 | **3. Experience Level** | **2.0 pts** | 2.0 pts awarded for Internships, Apprenticeships, Graduate Engineer Trainee (GET), Associate Software Engineer, or 0-year Fresher roles. |
 | **4. Location Preference** | **1.0 pt** | Noida, Delhi NCR, Gurugram, Kolkata, Mumbai, Pune, Bengaluru, Indore, or Remote (India). |
-| **Total Score** | **10.0 pts** | **Default Notification Threshold: $\ge 7.0$ points.** |
+| **Total Score** | **10.0 pts** | **Digest Thresholds:**<br>&bull; **Strong Matches ($\ge 7.0$ pts):** Immediate high-conviction delivery.<br>&bull; **Maybe Matches ($4.0 - 6.9$ pts):** Secondary curated bucket in digest.<br>&bull; Roles with score $< 4.0$ are discarded. |
 
 ---
 
